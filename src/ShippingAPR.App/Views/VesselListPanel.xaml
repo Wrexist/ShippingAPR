@@ -56,7 +56,7 @@
         <!-- Vessel List — Virtualized glass items -->
         <ListBox Grid.Row="1"
                  ItemsSource="{Binding Vessels}"
-                 SelectedItem="{Binding SelectedVessel, Mode=TwoWay}"
+                 SelectedItem="{Binding SelectedListItem, Mode=TwoWay}"
                  Background="Transparent"
                  BorderThickness="0"
                  Padding="6,6"

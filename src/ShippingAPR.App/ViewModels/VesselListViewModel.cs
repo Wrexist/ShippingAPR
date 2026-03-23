@@ -17,14 +17,21 @@ public partial class VesselListViewModel : ObservableObject
     private Vessel? _selectedVessel;
 
     [ObservableProperty]
+    private VesselListItem? _selectedListItem;
+
+    [ObservableProperty]
     private string _sortBy = "Name";
 
     public ObservableCollection<VesselListItem> Vessels { get; } = [];
 
-    public VesselListViewModel(IVesselStore vesselStore)
+    private readonly FilterViewModel _filterViewModel;
+
+    public VesselListViewModel(IVesselStore vesselStore, FilterViewModel filterViewModel)
     {
         _vesselStore = vesselStore;
+        _filterViewModel = filterViewModel;
 
+        _filterViewModel.PropertyChanged += (_, _) => ScheduleRefresh();
         _vesselStore.VesselAdded += (_, _) => ScheduleRefresh();
         _vesselStore.VesselUpdated += (_, _) => ScheduleRefresh();
         _vesselStore.StoreCleared += (_, _) =>
@@ -42,6 +49,11 @@ public partial class VesselListViewModel : ObservableObject
         };
     }
 
+    partial void OnSelectedListItemChanged(VesselListItem? value)
+    {
+        SelectedVessel = value is not null ? _vesselStore.GetByMmsi(value.Mmsi) : null;
+    }
+
     private void ScheduleRefresh()
     {
         Application.Current?.Dispatcher.Invoke(() =>
@@ -55,6 +67,7 @@ public partial class VesselListViewModel : ObservableObject
     {
         var vessels = _vesselStore.Vessels.Values
             .Where(v => v.CurrentPosition is not null)
+            .Where(v => _filterViewModel.ShouldShow(v.Type, v.CurrentPosition!.SpeedOverGround))
             .Select(v => new VesselListItem
             {
                 Mmsi = v.Mmsi,
