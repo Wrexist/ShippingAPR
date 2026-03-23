@@ -1,0 +1,25 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.nupkg
+*.snupkg
+project.lock.json
+.vs/
+*.rsuser
+launchSettings.json
+
+## IDE
+.idea/
+*.swp
+*~
+.vscode/
+
+## Secrets
+appsettings.Development.json
+appsettings.Local.json
