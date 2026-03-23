@@ -77,6 +77,7 @@ public partial class App : Application
         await _host.StartAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+        var mainViewModel = _host.Services.GetRequiredService<MainViewModel>();
 
         // Check if API key is configured
         var config = _host.Services.GetRequiredService<IConfiguration>();
@@ -88,11 +89,8 @@ public partial class App : Application
             if (welcomeDialog.ShowDialog() == true && !string.IsNullOrEmpty(welcomeDialog.ApiKey))
             {
                 // Save API key to appsettings.json
-                SaveApiKey(welcomeDialog.ApiKey);
-
-                // Update the running configuration
-                var options = _host.Services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<AisStreamOptions>>();
-                // The reload on change will pick up the new key
+                MainViewModel.SaveApiKey(welcomeDialog.ApiKey);
+                mainViewModel.HasApiKey = true;
             }
         }
 
@@ -109,14 +107,4 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    private static void SaveApiKey(string apiKey)
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-        if (!File.Exists(path)) return;
-
-        var json = File.ReadAllText(path);
-        // Simple replacement for the API key field
-        json = json.Replace("\"ApiKey\": \"\"", $"\"ApiKey\": \"{apiKey}\"");
-        File.WriteAllText(path, json);
-    }
 }
