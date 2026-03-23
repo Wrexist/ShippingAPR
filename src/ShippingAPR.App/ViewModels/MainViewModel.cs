@@ -1,8 +1,11 @@
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Configuration;
+using ShippingAPR.App.Views;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Services;
@@ -13,6 +16,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
+    private readonly IConfiguration _configuration;
 
     [ObservableProperty]
     private string _connectionStatusText = "Disconnected";
@@ -35,6 +39,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _showNotification;
 
+    [ObservableProperty]
+    private bool _hasApiKey;
+
+    public string StartTrackingTooltip => HasApiKey
+        ? "Connect to AIS stream and start tracking vessels"
+        : "Add an API key first to enable tracking";
+
     public MapViewModel MapViewModel { get; }
     public VesselListViewModel VesselListViewModel { get; }
     public VesselDetailViewModel VesselDetailViewModel { get; }
@@ -44,6 +55,7 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(
         IVesselStore vesselStore,
         IVesselTrackingService trackingService,
+        IConfiguration configuration,
         MapViewModel mapViewModel,
         VesselListViewModel vesselListViewModel,
         VesselDetailViewModel vesselDetailViewModel,
@@ -52,6 +64,10 @@ public partial class MainViewModel : ObservableObject
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
+        _configuration = configuration;
+
+        // Check if API key is configured
+        HasApiKey = !string.IsNullOrEmpty(configuration["AisStream:ApiKey"]);
 
         MapViewModel = mapViewModel;
         VesselListViewModel = vesselListViewModel;
@@ -125,6 +141,33 @@ public partial class MainViewModel : ObservableObject
     private void DismissNotification()
     {
         ShowNotification = false;
+    }
+
+    [RelayCommand]
+    private void OpenApiKeyDialog()
+    {
+        var dialog = new WelcomeDialog();
+        if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.ApiKey))
+        {
+            SaveApiKey(dialog.ApiKey);
+            HasApiKey = true;
+            OnPropertyChanged(nameof(StartTrackingTooltip));
+        }
+    }
+
+    partial void OnHasApiKeyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StartTrackingTooltip));
+    }
+
+    internal static void SaveApiKey(string apiKey)
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        if (!File.Exists(path)) return;
+
+        var json = File.ReadAllText(path);
+        json = json.Replace("\"ApiKey\": \"\"", $"\"ApiKey\": \"{apiKey}\"");
+        File.WriteAllText(path, json);
     }
 
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)

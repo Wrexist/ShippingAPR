@@ -22,6 +22,7 @@
             <TextBox Grid.Column="0" Grid.ColumnSpan="3"
                      Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                      Style="{DynamicResource SearchBoxStyle}"
+                     ToolTip="Search by vessel name, MMSI, or IMO number"
                      Padding="36,10,36,10"
                      VerticalAlignment="Center"/>
 

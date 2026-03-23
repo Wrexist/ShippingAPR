@@ -13,6 +13,7 @@
                     Margin="14">
             <Button Content="{Binding IsSelectingArea, Converter={StaticResource SelectAreaText}}"
                     Command="{Binding ToggleAreaSelectionCommand}"
+                    ToolTip="Define the geographic area to track ships in"
                     Style="{DynamicResource AccentButtonStyle}"
                     FontSize="12" Padding="14,8"
                     Margin="0,0,8,0"/>
