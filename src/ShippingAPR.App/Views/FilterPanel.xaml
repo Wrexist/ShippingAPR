@@ -1,38 +1,54 @@
 <UserControl x:Class="ShippingAPR.App.Views.FilterPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Border Padding="12"
-            BorderBrush="{DynamicResource BorderBrush}"
-            BorderThickness="0,1,0,0">
-        <StackPanel>
-            <TextBlock Text="Filters" Style="{DynamicResource HeaderTextStyle}"
-                       Margin="0,0,0,10"/>
+    <Grid Margin="14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-            <!-- Vessel Type Filters -->
-            <TextBlock Text="VESSEL TYPES" Style="{DynamicResource SubTextStyle}"
-                       FontWeight="Bold" Margin="0,0,0,6"/>
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Filters"
+                   Style="{DynamicResource HeaderTextStyle}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Vessel Type Filters — Toggle switches -->
+        <StackPanel Grid.Row="1">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Border Width="3" Height="12" CornerRadius="2"
+                        Background="{DynamicResource AccentBrush}"
+                        Margin="0,0,8,0"/>
+                <TextBlock Text="VESSEL TYPES"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" FontSize="10"/>
+            </StackPanel>
+
             <CheckBox Content="Cargo" IsChecked="{Binding ShowCargo}"
-                      Foreground="{DynamicResource PrimaryTextBrush}"
-                      Margin="0,2"/>
+                      Style="{DynamicResource GlassToggleStyle}"/>
             <CheckBox Content="Tanker" IsChecked="{Binding ShowTanker}"
-                      Foreground="{DynamicResource PrimaryTextBrush}"
-                      Margin="0,2"/>
+                      Style="{DynamicResource GlassToggleStyle}"/>
             <CheckBox Content="Passenger" IsChecked="{Binding ShowPassenger}"
-                      Foreground="{DynamicResource PrimaryTextBrush}"
-                      Margin="0,2"/>
+                      Style="{DynamicResource GlassToggleStyle}"/>
             <CheckBox Content="Fishing" IsChecked="{Binding ShowFishing}"
-                      Foreground="{DynamicResource PrimaryTextBrush}"
-                      Margin="0,2"/>
+                      Style="{DynamicResource GlassToggleStyle}"/>
             <CheckBox Content="Tug / Pilot" IsChecked="{Binding ShowTugPilot}"
-                      Foreground="{DynamicResource PrimaryTextBrush}"
-                      Margin="0,2"/>
+                      Style="{DynamicResource GlassToggleStyle}"/>
             <CheckBox Content="Other" IsChecked="{Binding ShowOther}"
-                      Foreground="{DynamicResource PrimaryTextBrush}"
-                      Margin="0,2"/>
+                      Style="{DynamicResource GlassToggleStyle}"/>
+        </StackPanel>
 
-            <!-- Speed Range -->
-            <TextBlock Text="SPEED RANGE" Style="{DynamicResource SubTextStyle}"
-                       FontWeight="Bold" Margin="0,12,0,6"/>
+        <!-- Speed Range — Glass slider -->
+        <StackPanel Grid.Row="3" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Border Width="3" Height="12" CornerRadius="2"
+                        Background="{DynamicResource WarningBrush}"
+                        Margin="0,0,8,0"/>
+                <TextBlock Text="SPEED RANGE"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" FontSize="10"/>
+            </StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -41,13 +57,19 @@
                 <Slider Grid.Column="0"
                         Minimum="0" Maximum="50"
                         Value="{Binding MaxSpeed}"
-                        TickFrequency="5" IsSnapToTickEnabled="True"/>
-                <TextBlock Grid.Column="1"
-                           Text="{Binding MaxSpeed, StringFormat='{}{0:F0} kn'}"
-                           Style="{DynamicResource SubTextStyle}"
-                           Margin="8,0,0,0"
-                           VerticalAlignment="Center"/>
+                        TickFrequency="5" IsSnapToTickEnabled="True"
+                        Style="{DynamicResource GlassSliderStyle}"/>
+                <Border Grid.Column="1"
+                        Background="{DynamicResource GlassFillBrush}"
+                        CornerRadius="6" Padding="8,3"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{Binding MaxSpeed, StringFormat='{}{0:F0} kn'}"
+                               Style="{DynamicResource SubTextStyle}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                </Border>
             </Grid>
         </StackPanel>
-    </Border>
+    </Grid>
 </UserControl>
