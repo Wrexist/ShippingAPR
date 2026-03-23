@@ -82,10 +82,10 @@ public partial class VesselListViewModel : ObservableObject
             })
             .OrderBy(v => SortBy switch
             {
-                "Speed" => v.Speed as IComparable,
-                "ETA" => v.EtaHours as IComparable ?? double.MaxValue,
-                "Distance" => v.DistanceNm as IComparable ?? double.MaxValue,
-                _ => v.Name as IComparable
+                "Speed" => (IComparable)v.Speed,
+                "ETA" => (IComparable)(v.EtaHours ?? double.MaxValue),
+                "Distance" => (IComparable)(v.DistanceNm ?? double.MaxValue),
+                _ => v.Name
             })
             .ToList();
 

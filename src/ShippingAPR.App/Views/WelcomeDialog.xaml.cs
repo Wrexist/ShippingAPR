@@ -13,7 +13,14 @@ public partial class WelcomeDialog : Window
         InitializeComponent();
 
         // Allow window dragging
-        MouseLeftButtonDown += (_, _) => DragMove();
+        MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                try { DragMove(); }
+                catch (InvalidOperationException) { /* DragMove can throw if called during button click routing */ }
+            }
+        };
     }
 
     private void OpenAisStreamSite(object sender, RoutedEventArgs e)

@@ -20,6 +20,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     private ClientWebSocket? _webSocket;
     private CancellationTokenSource? _receiveCts;
     private Task? _receiveTask;
+    private SubscriptionMessage? _lastSubscription;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Disconnected;
     public event EventHandler<ConnectionStatus>? ConnectionStatusChanged;
@@ -55,6 +56,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
                 BoundingBoxes = [area.ToAisStreamFormat()],
                 FilterMessageTypes = ["PositionReport", "ShipStaticData"]
             };
+            _lastSubscription = subscription;
 
             var json = JsonSerializer.Serialize(subscription);
             var bytes = Encoding.UTF8.GetBytes(json);
@@ -92,6 +94,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             BoundingBoxes = [newArea.ToAisStreamFormat()],
             FilterMessageTypes = ["PositionReport", "ShipStaticData"]
         };
+        _lastSubscription = subscription;
 
         var json = JsonSerializer.Serialize(subscription);
         var bytes = Encoding.UTF8.GetBytes(json);
@@ -107,6 +110,15 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     public async Task DisconnectAsync()
     {
         _receiveCts?.Cancel();
+
+        // Await the receive task BEFORE disposing the socket, so the loop
+        // can observe cancellation and exit cleanly.
+        if (_receiveTask is not null)
+        {
+            try { await _receiveTask; }
+            catch (OperationCanceledException) { }
+            _receiveTask = null;
+        }
 
         if (_webSocket?.State == WebSocketState.Open)
         {
@@ -127,13 +139,6 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         _webSocket = null;
         _receiveCts?.Dispose();
         _receiveCts = null;
-
-        if (_receiveTask is not null)
-        {
-            try { await _receiveTask; }
-            catch (OperationCanceledException) { }
-            _receiveTask = null;
-        }
 
         SetStatus(ConnectionStatus.Disconnected);
     }
@@ -238,6 +243,19 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
 
                 await _webSocket.ConnectAsync(
                     new Uri(_options.WebSocketUrl), ct);
+
+                // Re-send subscription so the server knows what data to send.
+                // Without this, the reconnected socket receives no messages.
+                if (_lastSubscription is not null)
+                {
+                    var json = JsonSerializer.Serialize(_lastSubscription);
+                    var bytes = Encoding.UTF8.GetBytes(json);
+                    await _webSocket.SendAsync(
+                        new ArraySegment<byte>(bytes),
+                        WebSocketMessageType.Text,
+                        true,
+                        ct);
+                }
 
                 SetStatus(ConnectionStatus.Connected);
                 _logger.LogInformation("Reconnected to AIS stream");

@@ -12,8 +12,14 @@ public sealed class Vessel
     public EtaResult? CalculatedEta { get; set; }
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
+    private readonly object _trackLock = new();
     private readonly List<TrackPoint> _track = new();
-    public IReadOnlyList<TrackPoint> Track => _track;
+
+    /// <summary>Returns a snapshot of the track history (thread-safe).</summary>
+    public IReadOnlyList<TrackPoint> Track
+    {
+        get { lock (_trackLock) return _track.ToList(); }
+    }
 
     public string DisplayName =>
         StaticData?.Name ?? $"MMSI {Mmsi}";
@@ -23,16 +29,19 @@ public sealed class Vessel
 
     public void UpdatePosition(VesselPosition position)
     {
-        if (CurrentPosition is not null)
+        lock (_trackLock)
         {
-            _track.Add(new TrackPoint(
-                CurrentPosition.Latitude,
-                CurrentPosition.Longitude,
-                CurrentPosition.SpeedOverGround,
-                CurrentPosition.Timestamp));
+            if (CurrentPosition is not null)
+            {
+                _track.Add(new TrackPoint(
+                    CurrentPosition.Latitude,
+                    CurrentPosition.Longitude,
+                    CurrentPosition.SpeedOverGround,
+                    CurrentPosition.Timestamp));
 
-            while (_track.Count > MaxTrackPoints)
-                _track.RemoveAt(0);
+                while (_track.Count > MaxTrackPoints)
+                    _track.RemoveAt(0);
+            }
         }
 
         CurrentPosition = position;

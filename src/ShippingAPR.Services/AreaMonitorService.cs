@@ -55,7 +55,9 @@ public sealed class AreaMonitorService
             vessel.CurrentPosition.Latitude,
             vessel.CurrentPosition.Longitude);
 
-        var wasInside = _previousState.GetOrAdd(vessel.Mmsi, isInside);
+        // Use false as the default so that a vessel appearing inside the area
+        // for the first time is correctly detected as an "entry" event.
+        var wasInside = _previousState.GetOrAdd(vessel.Mmsi, false);
         _previousState[vessel.Mmsi] = isInside;
 
         // Detect transitions

@@ -30,9 +30,9 @@ public partial class MapView : UserControl
                 }
 
                 // Check if a vessel feature was clicked
-                if (args.MapInfo?.Feature?["MMSI"] is int mmsi)
+                if (args.MapInfo?.Feature?["MMSI"] is int mmsi
+                    && System.Windows.Window.GetWindow(this)?.DataContext is MainViewModel mainVm)
                 {
-                    var mainVm = (MainViewModel)System.Windows.Window.GetWindow(this)!.DataContext;
                     mainVm.VesselListViewModel.SelectVesselByMmsi(mmsi);
                 }
             };

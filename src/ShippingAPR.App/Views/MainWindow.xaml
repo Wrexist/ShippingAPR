@@ -10,6 +10,11 @@
         Icon="pack://application:,,,/Assets/Icons/app.ico"
         Background="{DynamicResource PrimaryBackgroundBrush}">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBoolToVisConverter x:Key="InverseBoolToVis"/>
+    </Window.Resources>
+
     <Grid Margin="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -300,8 +305,4 @@
         </Border>
     </Grid>
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <converters:InverseBoolToVisConverter x:Key="InverseBoolToVis"/>
-    </Window.Resources>
 </Window>

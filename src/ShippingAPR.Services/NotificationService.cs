@@ -29,10 +29,14 @@ public sealed class NotificationPublished : ValueChangedMessage<NotificationMess
 public sealed class NotificationService
 {
     private readonly ILogger<NotificationService> _logger;
+    private readonly object _historyLock = new();
     private readonly List<NotificationMessage> _history = [];
     private const int MaxHistory = 100;
 
-    public IReadOnlyList<NotificationMessage> History => _history;
+    public IReadOnlyList<NotificationMessage> History
+    {
+        get { lock (_historyLock) return _history.ToList(); }
+    }
 
     public NotificationService(
         AreaMonitorService areaMonitor,
@@ -58,9 +62,12 @@ public sealed class NotificationService
 
     public void Publish(NotificationMessage message)
     {
-        _history.Add(message);
-        while (_history.Count > MaxHistory)
-            _history.RemoveAt(0);
+        lock (_historyLock)
+        {
+            _history.Add(message);
+            while (_history.Count > MaxHistory)
+                _history.RemoveAt(0);
+        }
 
         _logger.LogDebug("Notification: {Title} - {Body}", message.Title, message.Body);
         WeakReferenceMessenger.Default.Send(new NotificationPublished(message));
