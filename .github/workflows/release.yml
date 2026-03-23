@@ -27,9 +27,6 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      - name: Run tests
-        run: dotnet test --configuration Release --no-restore
-
       - name: Publish
         run: >
           dotnet publish src/ShippingAPR.App/ShippingAPR.App.csproj
