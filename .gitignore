@@ -14,6 +14,9 @@ project.lock.json
 *.rsuser
 launchSettings.json
 
+# Allow the setup installer in repo root
+!ShippingAPR-Setup.exe
+
 ## IDE
 .idea/
 *.swp

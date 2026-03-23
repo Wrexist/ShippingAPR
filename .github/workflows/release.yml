@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+      - '[0-9]*'
 
 permissions:
   contents: write
@@ -14,6 +15,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
@@ -45,6 +49,19 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAPP_VERSION=$version installer\setup.iss
         shell: pwsh
 
+      - name: Copy installer to repo root
+        run: Copy-Item ./installer-output/ShippingAPR-Setup.exe ./ShippingAPR-Setup.exe
+        shell: pwsh
+
+      - name: Commit installer to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ShippingAPR-Setup.exe
+          git commit -m "Update ShippingAPR-Setup.exe to ${{ github.ref_name }}"
+          git push
+        shell: pwsh
+
       - name: Create portable zip
         run: Compress-Archive -Path ./publish/* -DestinationPath ./ShippingAPR-${{ github.ref_name }}-portable-win-x64.zip
         shell: pwsh
@@ -61,9 +78,9 @@ jobs:
           body: |
             ## Install
 
-            **Recommended:** Download `ShippingAPR-Setup.exe` below and run it. Follow the wizard — done.
+            **Easiest:** [Download the repo ZIP](https://github.com/Wrexist/ShippingAPR/archive/refs/heads/claude/ship-tracking-app-qdNAb.zip), extract it, and double-click `ShippingAPR-Setup.exe`.
 
-            **From repo ZIP:** If you downloaded the source code, just double-click `Install.bat` — it downloads and runs this installer for you.
+            **Direct download:** Download `ShippingAPR-Setup.exe` from the assets below.
 
             **Portable:** Download the `.zip` file, extract anywhere, and run `ShippingAPR.exe`.
 
