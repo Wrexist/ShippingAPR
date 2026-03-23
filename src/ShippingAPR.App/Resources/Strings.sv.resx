@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- App -->
+  <data name="AppTitle"><value>ShippingAPR - Fartygsradar i Realtid</value></data>
+
+  <!-- Navigation -->
+  <data name="Search"><value>Sök fartyg...</value></data>
+  <data name="VesselList"><value>Fartygslista</value></data>
+  <data name="Filters"><value>Filter</value></data>
+  <data name="Details"><value>Detaljer</value></data>
+  <data name="Settings"><value>Inställningar</value></data>
+
+  <!-- Map -->
+  <data name="SelectArea"><value>Välj Område</value></data>
+  <data name="ClearSelection"><value>Rensa Val</value></data>
+  <data name="DrawAreaHint"><value>Klicka på två punkter på kartan för att definiera spårningsområdet</value></data>
+
+  <!-- Vessel Info -->
+  <data name="VesselName"><value>Namn</value></data>
+  <data name="MMSI"><value>MMSI</value></data>
+  <data name="IMO"><value>IMO</value></data>
+  <data name="CallSign"><value>Anropssignal</value></data>
+  <data name="VesselType"><value>Typ</value></data>
+  <data name="Flag"><value>Flagg</value></data>
+  <data name="Speed"><value>Hastighet</value></data>
+  <data name="Course"><value>Kurs</value></data>
+  <data name="Heading"><value>Riktning</value></data>
+  <data name="Destination"><value>Destination</value></data>
+  <data name="Status"><value>Status</value></data>
+  <data name="Length"><value>Längd</value></data>
+  <data name="Beam"><value>Bredd</value></data>
+  <data name="Draught"><value>Djupgående</value></data>
+
+  <!-- ETA -->
+  <data name="ETA"><value>Beräknad ankomst</value></data>
+  <data name="Distance"><value>Avstånd</value></data>
+  <data name="TimeToArrival"><value>Tid till ankomst</value></data>
+  <data name="EffectiveSpeed"><value>Effektiv hastighet</value></data>
+  <data name="CourseDeviation"><value>Kursavvikelse</value></data>
+  <data name="Stationary"><value>Stillastående</value></data>
+  <data name="UnknownDestination"><value>Okänd destination</value></data>
+
+  <!-- Filters -->
+  <data name="AllTypes"><value>Alla Typer</value></data>
+  <data name="Cargo"><value>Last</value></data>
+  <data name="Tanker"><value>Tanker</value></data>
+  <data name="Passenger"><value>Passagerar</value></data>
+  <data name="Fishing"><value>Fiske</value></data>
+  <data name="TugPilot"><value>Bogserbåt / Lots</value></data>
+  <data name="Other"><value>Övrigt</value></data>
+  <data name="MinSpeed"><value>Min Hastighet</value></data>
+  <data name="MaxSpeed"><value>Max Hastighet</value></data>
+
+  <!-- Status Bar -->
+  <data name="Connected"><value>Ansluten</value></data>
+  <data name="Disconnected"><value>Frånkopplad</value></data>
+  <data name="Connecting"><value>Ansluter...</value></data>
+  <data name="Reconnecting"><value>Återansluter...</value></data>
+  <data name="Ships"><value>Fartyg</value></data>
+  <data name="Area"><value>Område</value></data>
+
+  <!-- Welcome -->
+  <data name="WelcomeTitle"><value>Välkommen till ShippingAPR</value></data>
+  <data name="WelcomeStep1"><value>Steg 1: Hämta din gratis API-nyckel</value></data>
+  <data name="WelcomeStep1Desc"><value>Registrera dig på aisstream.io för att få en gratis API-nyckel för fartygsspårning i realtid.</value></data>
+  <data name="WelcomeStep2"><value>Steg 2: Ange din API-nyckel</value></data>
+  <data name="WelcomeApiKeyPlaceholder"><value>Klistra in din API-nyckel här...</value></data>
+  <data name="TestConnection"><value>Testa Anslutning</value></data>
+  <data name="GetStarted"><value>Kom igång</value></data>
+  <data name="ConnectionSuccess"><value>Anslutningen lyckades!</value></data>
+  <data name="ConnectionFailed"><value>Anslutningen misslyckades. Kontrollera din API-nyckel.</value></data>
+
+  <!-- Notifications -->
+  <data name="VesselEnteredArea"><value>Fartyg Har Ankommit till Området</value></data>
+  <data name="VesselLeftArea"><value>Fartyg Har Lämnat Området</value></data>
+
+  <!-- Units -->
+  <data name="Knots"><value>kn</value></data>
+  <data name="NauticalMiles"><value>NM</value></data>
+  <data name="Degrees"><value>°</value></data>
+  <data name="Meters"><value>m</value></data>
+
+  <!-- Theme -->
+  <data name="DarkTheme"><value>Mörkt</value></data>
+  <data name="LightTheme"><value>Ljust</value></data>
+  <data name="Language"><value>Språk</value></data>
+</root>

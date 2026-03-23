@@ -1,0 +1,114 @@
+<Window x:Class="ShippingAPR.App.Views.WelcomeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to ShippingAPR"
+        Width="550" Height="520"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+    <Border Background="#FF1A1A2E"
+            CornerRadius="16"
+            BorderBrush="#FF2A2A4A"
+            BorderThickness="1"
+            Padding="40">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <TextBlock Grid.Row="0"
+                       Text="Welcome to ShippingAPR"
+                       FontSize="28" FontWeight="Bold"
+                       Foreground="#FFE94560"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Grid.Row="1"
+                       Text="Real-Time Ship Tracking for Swedish Waters"
+                       FontSize="14"
+                       Foreground="#FFA0A0B0"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,32"/>
+
+            <!-- Step 1: Get API Key -->
+            <StackPanel Grid.Row="2" Margin="0,0,0,20">
+                <TextBlock Text="Step 1: Get your free API key"
+                           FontSize="16" FontWeight="SemiBold"
+                           Foreground="#FFE8E8E8"
+                           Margin="0,0,0,8"/>
+                <TextBlock TextWrapping="Wrap"
+                           Foreground="#FFA0A0B0"
+                           FontSize="13"
+                           Margin="0,0,0,8">
+                    Sign up for a free account at aisstream.io to get an API key
+                    for real-time AIS ship tracking data worldwide.
+                </TextBlock>
+                <Button Content="Open aisstream.io"
+                        Click="OpenAisStreamSite"
+                        Background="#FF0F3460"
+                        Foreground="#FFE8E8E8"
+                        BorderThickness="0"
+                        Padding="16,8"
+                        Cursor="Hand"
+                        FontSize="13"
+                        HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <!-- Step 2: Enter API Key -->
+            <StackPanel Grid.Row="3" Margin="0,0,0,20">
+                <TextBlock Text="Step 2: Enter your API key"
+                           FontSize="16" FontWeight="SemiBold"
+                           Foreground="#FFE8E8E8"
+                           Margin="0,0,0,8"/>
+                <TextBox x:Name="ApiKeyInput"
+                         Background="#FF16213E"
+                         Foreground="#FFE8E8E8"
+                         BorderBrush="#FF2A2A4A"
+                         BorderThickness="1"
+                         Padding="12,10"
+                         FontSize="14"
+                         FontFamily="Consolas"
+                         CaretBrush="#FFE8E8E8"/>
+            </StackPanel>
+
+            <!-- Test Result -->
+            <TextBlock Grid.Row="4"
+                       x:Name="TestResultText"
+                       FontSize="13"
+                       Margin="0,0,0,16"
+                       Visibility="Collapsed"/>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="6" Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="Skip for now"
+                        Click="SkipClick"
+                        Background="Transparent"
+                        Foreground="#FFA0A0B0"
+                        BorderThickness="0"
+                        Padding="16,10"
+                        Cursor="Hand"
+                        FontSize="13"
+                        Margin="0,0,12,0"/>
+                <Button Content="Get Started"
+                        Click="GetStartedClick"
+                        Background="#FFE94560"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Padding="24,10"
+                        Cursor="Hand"
+                        FontSize="14"
+                        FontWeight="SemiBold"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

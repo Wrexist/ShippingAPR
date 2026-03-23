@@ -1,0 +1,86 @@
+<UserControl x:Class="ShippingAPR.App.Views.MapView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mapsui="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf">
+    <Grid>
+        <!-- Map Control -->
+        <mapsui:MapControl x:Name="MapControl"/>
+
+        <!-- Map Overlay Controls -->
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="12">
+            <Button Content="{Binding IsSelectingArea, Converter={StaticResource SelectAreaText}}"
+                    Command="{Binding ToggleAreaSelectionCommand}"
+                    Style="{DynamicResource AccentButtonStyle}"
+                    Margin="0,0,8,0"/>
+        </StackPanel>
+
+        <!-- Selection hint -->
+        <TextBlock Text="Click two points on the map to define tracking area"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Margin="0,16,0,0"
+                   FontSize="14"
+                   Foreground="{DynamicResource AccentBrush}"
+                   Background="{DynamicResource SecondaryBackgroundBrush}"
+                   Padding="12,6"
+                   Visibility="{Binding IsSelectingArea, Converter={StaticResource BoolToVis}}">
+            <TextBlock.Effect>
+                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3"/>
+            </TextBlock.Effect>
+        </TextBlock>
+
+        <!-- Map Legend -->
+        <Border HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="12"
+                Background="{DynamicResource SecondaryBackgroundBrush}"
+                CornerRadius="6"
+                Padding="10,8"
+                Opacity="0.9">
+            <StackPanel>
+                <TextBlock Text="Legend" FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontSize="11" Margin="0,0,0,4"/>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Ellipse Width="8" Height="8" Fill="#FF4CAF50" Margin="0,0,6,0"/>
+                    <TextBlock Text="Cargo" FontSize="10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Ellipse Width="8" Height="8" Fill="#FFFF5722" Margin="0,0,6,0"/>
+                    <TextBlock Text="Tanker" FontSize="10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Ellipse Width="8" Height="8" Fill="#FF2196F3" Margin="0,0,6,0"/>
+                    <TextBlock Text="Passenger" FontSize="10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Ellipse Width="8" Height="8" Fill="#FFFF9800" Margin="0,0,6,0"/>
+                    <TextBlock Text="Fishing" FontSize="10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Ellipse Width="8" Height="8" Fill="#FF9C27B0" Margin="0,0,6,0"/>
+                    <TextBlock Text="Tug/Pilot" FontSize="10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Ellipse Width="8" Height="8" Fill="#FF9E9E9E" Margin="0,0,6,0"/>
+                    <TextBlock Text="Other" FontSize="10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:SelectAreaTextConverter x:Key="SelectAreaText"
+                                       xmlns:local="clr-namespace:ShippingAPR.App.Converters"/>
+    </UserControl.Resources>
+</UserControl>

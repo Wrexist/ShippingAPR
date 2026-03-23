@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- App -->
+  <data name="AppTitle"><value>ShippingAPR - Real-Time Ship Tracker</value></data>
+
+  <!-- Navigation -->
+  <data name="Search"><value>Search vessels...</value></data>
+  <data name="VesselList"><value>Vessel List</value></data>
+  <data name="Filters"><value>Filters</value></data>
+  <data name="Details"><value>Details</value></data>
+  <data name="Settings"><value>Settings</value></data>
+
+  <!-- Map -->
+  <data name="SelectArea"><value>Select Area</value></data>
+  <data name="ClearSelection"><value>Clear Selection</value></data>
+  <data name="DrawAreaHint"><value>Click two points on the map to define the tracking area</value></data>
+
+  <!-- Vessel Info -->
+  <data name="VesselName"><value>Name</value></data>
+  <data name="MMSI"><value>MMSI</value></data>
+  <data name="IMO"><value>IMO</value></data>
+  <data name="CallSign"><value>Call Sign</value></data>
+  <data name="VesselType"><value>Type</value></data>
+  <data name="Flag"><value>Flag</value></data>
+  <data name="Speed"><value>Speed</value></data>
+  <data name="Course"><value>Course</value></data>
+  <data name="Heading"><value>Heading</value></data>
+  <data name="Destination"><value>Destination</value></data>
+  <data name="Status"><value>Status</value></data>
+  <data name="Length"><value>Length</value></data>
+  <data name="Beam"><value>Beam</value></data>
+  <data name="Draught"><value>Draught</value></data>
+
+  <!-- ETA -->
+  <data name="ETA"><value>ETA</value></data>
+  <data name="Distance"><value>Distance</value></data>
+  <data name="TimeToArrival"><value>Time to Arrival</value></data>
+  <data name="EffectiveSpeed"><value>Effective Speed</value></data>
+  <data name="CourseDeviation"><value>Course Deviation</value></data>
+  <data name="Stationary"><value>Stationary</value></data>
+  <data name="UnknownDestination"><value>Unknown destination</value></data>
+
+  <!-- Filters -->
+  <data name="AllTypes"><value>All Types</value></data>
+  <data name="Cargo"><value>Cargo</value></data>
+  <data name="Tanker"><value>Tanker</value></data>
+  <data name="Passenger"><value>Passenger</value></data>
+  <data name="Fishing"><value>Fishing</value></data>
+  <data name="TugPilot"><value>Tug / Pilot</value></data>
+  <data name="Other"><value>Other</value></data>
+  <data name="MinSpeed"><value>Min Speed</value></data>
+  <data name="MaxSpeed"><value>Max Speed</value></data>
+
+  <!-- Status Bar -->
+  <data name="Connected"><value>Connected</value></data>
+  <data name="Disconnected"><value>Disconnected</value></data>
+  <data name="Connecting"><value>Connecting...</value></data>
+  <data name="Reconnecting"><value>Reconnecting...</value></data>
+  <data name="Ships"><value>Ships</value></data>
+  <data name="Area"><value>Area</value></data>
+
+  <!-- Welcome -->
+  <data name="WelcomeTitle"><value>Welcome to ShippingAPR</value></data>
+  <data name="WelcomeStep1"><value>Step 1: Get your free API key</value></data>
+  <data name="WelcomeStep1Desc"><value>Sign up at aisstream.io to get a free API key for real-time ship tracking data.</value></data>
+  <data name="WelcomeStep2"><value>Step 2: Enter your API key</value></data>
+  <data name="WelcomeApiKeyPlaceholder"><value>Paste your API key here...</value></data>
+  <data name="TestConnection"><value>Test Connection</value></data>
+  <data name="GetStarted"><value>Get Started</value></data>
+  <data name="ConnectionSuccess"><value>Connection successful!</value></data>
+  <data name="ConnectionFailed"><value>Connection failed. Please check your API key.</value></data>
+
+  <!-- Notifications -->
+  <data name="VesselEnteredArea"><value>Vessel Entered Area</value></data>
+  <data name="VesselLeftArea"><value>Vessel Left Area</value></data>
+
+  <!-- Units -->
+  <data name="Knots"><value>kn</value></data>
+  <data name="NauticalMiles"><value>NM</value></data>
+  <data name="Degrees"><value>°</value></data>
+  <data name="Meters"><value>m</value></data>
+
+  <!-- Theme -->
+  <data name="DarkTheme"><value>Dark</value></data>
+  <data name="LightTheme"><value>Light</value></data>
+  <data name="Language"><value>Language</value></data>
+</root>
