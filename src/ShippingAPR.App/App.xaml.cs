@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,11 +23,48 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Catch any unhandled exceptions so the app doesn't silently crash
+        DispatcherUnhandledException += (_, args) =>
+        {
+            ShowStartupError(args.Exception);
+            args.Handled = true;
+            Shutdown(1);
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                ShowStartupError(ex);
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            ShowStartupError(args.Exception);
+            args.SetObserved();
+        };
+
+        try
+        {
+            await StartupAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowStartupError(ex);
+            Shutdown(1);
+        }
+    }
+
+    private async Task StartupAsync()
+    {
         _host = Host.CreateDefaultBuilder()
             .ConfigureAppConfiguration((_, config) =>
             {
-                config.SetBasePath(AppContext.BaseDirectory);
-                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                // For single-file published apps, AppContext.BaseDirectory may point
+                // to a temp extraction dir. Use the exe's actual directory instead.
+                var exePath = Environment.ProcessPath
+                    ?? Assembly.GetExecutingAssembly().Location;
+                var baseDir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
+
+                config.SetBasePath(baseDir);
+                config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
                 config.AddJsonFile("appsettings.Development.json", optional: true);
             })
             .ConfigureServices((ctx, services) =>
@@ -95,6 +133,17 @@ public partial class App : Application
         }
 
         mainWindow.Show();
+    }
+
+    private static void ShowStartupError(Exception ex)
+    {
+        var message = $"ShippingAPR failed to start.\n\n{ex.GetType().Name}: {ex.Message}";
+        if (ex.InnerException is not null)
+            message += $"\n\nInner: {ex.InnerException.Message}";
+        message += $"\n\nStack trace:\n{ex.StackTrace}";
+
+        MessageBox.Show(message, "ShippingAPR - Startup Error",
+            MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     protected override async void OnExit(ExitEventArgs e)
