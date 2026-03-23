@@ -4,15 +4,22 @@ A modern desktop application for real-time ship tracking in Swedish waters and b
 
 ## Install
 
-**[Download ShippingAPR-Setup.exe](https://github.com/Wrexist/ShippingAPR/releases/latest)**
+### Option A: Download the ZIP (easiest)
 
-1. Download `ShippingAPR-Setup.exe` from the latest release
-2. Run the installer — it creates a desktop shortcut and Start Menu entry
-3. Open **ShippingAPR** from your desktop
+1. **[Download ZIP](https://github.com/Wrexist/ShippingAPR/archive/refs/heads/main.zip)** and extract it
+2. Double-click **`Install.bat`**
+3. The installer downloads automatically — follow the setup wizard
+4. Open **ShippingAPR** from your desktop shortcut
 
-That's it. No .NET or developer tools needed. Windows 10 or later (64-bit).
+### Option B: Direct download
 
-> **Note:** Windows SmartScreen may show a warning on first run since the app is not code-signed. Click **More info** then **Run anyway**. This is normal for open-source apps.
+**[Download ShippingAPR-Setup.exe](https://github.com/Wrexist/ShippingAPR/releases/latest/download/ShippingAPR-Setup.exe)** — run it, follow the wizard, done.
+
+---
+
+No .NET or developer tools needed. Windows 10 or later (64-bit).
+
+> **Note:** Windows SmartScreen may show a warning since the app is not code-signed. Click **More info** → **Run anyway**. This is normal for open-source apps.
 
 A portable `.zip` version (no installer) is also available on the [releases page](https://github.com/Wrexist/ShippingAPR/releases/latest).
 

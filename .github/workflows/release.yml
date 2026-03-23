@@ -61,7 +61,9 @@ jobs:
           body: |
             ## Install
 
-            **Recommended:** Download `ShippingAPR-Setup.exe` and run it. The installer will set up the app with a desktop shortcut and Start Menu entry.
+            **Recommended:** Download `ShippingAPR-Setup.exe` below and run it. Follow the wizard — done.
+
+            **From repo ZIP:** If you downloaded the source code, just double-click `Install.bat` — it downloads and runs this installer for you.
 
             **Portable:** Download the `.zip` file, extract anywhere, and run `ShippingAPR.exe`.
 
