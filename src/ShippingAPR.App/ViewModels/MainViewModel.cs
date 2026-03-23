@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +19,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
     private readonly IConfiguration _configuration;
+    private CancellationTokenSource? _notificationCts;
 
     [ObservableProperty]
     private string _connectionStatusText = "Disconnected";
@@ -85,11 +88,14 @@ public partial class MainViewModel : ObservableObject
             NotificationText = $"{msg.Value.Title}: {msg.Value.Body}";
             ShowNotification = true;
 
-            // Auto-hide after 5 seconds
-            Task.Delay(5000).ContinueWith(_ =>
+            // Cancel any previous auto-hide timer so rapid notifications
+            // don't dismiss the latest one prematurely.
+            _notificationCts?.Cancel();
+            var cts = _notificationCts = new CancellationTokenSource();
+            Task.Delay(5000, cts.Token).ContinueWith(_ =>
             {
                 Application.Current?.Dispatcher.Invoke(() => ShowNotification = false);
-            });
+            }, TaskContinuationOptions.OnlyOnRanToCompletion);
         });
 
         // Wire vessel selection from list to detail
@@ -171,9 +177,19 @@ public partial class MainViewModel : ObservableObject
 
             if (!File.Exists(path)) return;
 
+            // Use proper JSON parsing to avoid injection via malformed keys
             var json = File.ReadAllText(path);
-            json = json.Replace("\"ApiKey\": \"\"", $"\"ApiKey\": \"{apiKey}\"");
-            File.WriteAllText(path, json);
+            var root = JsonNode.Parse(json) ?? new JsonObject();
+            var aisSection = root["AisStream"]?.AsObject();
+            if (aisSection is null)
+            {
+                aisSection = new JsonObject();
+                root["AisStream"] = aisSection;
+            }
+            aisSection["ApiKey"] = apiKey;
+
+            File.WriteAllText(path, root.ToJsonString(
+                new JsonSerializerOptions { WriteIndented = true }));
         }
         catch
         {
