@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;

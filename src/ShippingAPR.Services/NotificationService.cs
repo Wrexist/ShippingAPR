@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using Microsoft.Extensions.Logging;
 
 namespace ShippingAPR.Services;
