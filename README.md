@@ -4,24 +4,16 @@ A modern desktop application for real-time ship tracking in Swedish waters and b
 
 ## Install
 
-### Option A: Download the ZIP (easiest)
+1. **[Download ZIP](https://github.com/Wrexist/ShippingAPR/archive/refs/heads/claude/ship-tracking-app-qdNAb.zip)** and extract it
+2. Double-click **`ShippingAPR-Setup.exe`**
+3. Follow the setup wizard
+4. Open **ShippingAPR** from your desktop
 
-1. **[Download ZIP](https://github.com/Wrexist/ShippingAPR/archive/refs/heads/main.zip)** and extract it
-2. Double-click **`Install.bat`**
-3. The installer downloads automatically — follow the setup wizard
-4. Open **ShippingAPR** from your desktop shortcut
-
-### Option B: Direct download
-
-**[Download ShippingAPR-Setup.exe](https://github.com/Wrexist/ShippingAPR/releases/latest/download/ShippingAPR-Setup.exe)** — run it, follow the wizard, done.
-
----
-
-No .NET or developer tools needed. Windows 10 or later (64-bit).
+That's it. No .NET or developer tools needed. Windows 10 or later (64-bit).
 
 > **Note:** Windows SmartScreen may show a warning since the app is not code-signed. Click **More info** → **Run anyway**. This is normal for open-source apps.
 
-A portable `.zip` version (no installer) is also available on the [releases page](https://github.com/Wrexist/ShippingAPR/releases/latest).
+Alternatively, download `ShippingAPR-Setup.exe` directly from the [releases page](https://github.com/Wrexist/ShippingAPR/releases/latest).
 
 ## Getting Started
 
@@ -76,10 +68,10 @@ dotnet test
 
 ### Publishing a Release
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag 1.0.4
+git push origin 1.0.4
 ```
-The GitHub Actions workflow will automatically build, test, and create a release with both an installer and a portable zip.
+The GitHub Actions workflow will automatically build, test, create a release, and update `ShippingAPR-Setup.exe` in the repo.
 
 ## Architecture
 
@@ -100,7 +92,7 @@ ShippingAPR.App            WPF views, MVVM viewmodels, themes, localization
 ## Technology Stack
 
 | Component | Technology |
-|-----------|-----------|
+|-----------|------------|
 | Framework | WPF / .NET 8 |
 | Map | Mapsui 5.x (SkiaSharp) |
 | MVVM | CommunityToolkit.Mvvm 8.4 |
