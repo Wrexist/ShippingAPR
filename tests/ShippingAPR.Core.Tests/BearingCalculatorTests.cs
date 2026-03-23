@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ShippingAPR.Core.Calculations;
+using Xunit;
 
 namespace ShippingAPR.Core.Tests;
 
