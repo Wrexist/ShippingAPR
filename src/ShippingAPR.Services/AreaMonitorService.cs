@@ -35,6 +35,7 @@ public sealed class AreaMonitorService
         _vesselStore = vesselStore;
         _logger = logger;
 
+        _vesselStore.VesselAdded += OnVesselUpdated;
         _vesselStore.VesselUpdated += OnVesselUpdated;
         _vesselStore.StoreCleared += (_, _) => _previousState.Clear();
     }
