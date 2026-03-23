@@ -111,7 +111,8 @@ public partial class MapViewModel : ObservableObject
 
         // Center on Gothenburg
         var center = SphericalMercator.FromLonLat(11.97, 57.71);
-        Map.Home = n => n.CenterOnAndZoomTo(center, n.Resolutions[10]);
+        // Resolution ~152.87 corresponds to zoom level 10 in Web Mercator
+        Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), 152.87);
 
         // Draw default selection area
         UpdateSelectionOverlay(SelectedArea);
@@ -173,7 +174,7 @@ public partial class MapViewModel : ObservableObject
             vessel.CurrentPosition.Longitude,
             vessel.CurrentPosition.Latitude);
 
-        Map.Navigator.CenterOn(center);
+        Map.Navigator.CenterOn(new MPoint(center.x, center.y));
         HighlightVessel(vessel);
     }
 
@@ -214,14 +215,14 @@ public partial class MapViewModel : ObservableObject
                 // Update existing feature position
                 if (existing is GeometryFeature gf)
                 {
-                    gf.Geometry = new Point(point.X, point.Y);
+                    gf.Geometry = new NetTopologySuite.Geometries.Point(point.x, point.y);
                     gf.Styles.Clear();
                     gf.Styles.Add(CreateVesselStyle(vessel));
                 }
             }
             else
             {
-                var feature = new GeometryFeature(new Point(point.X, point.Y));
+                var feature = new GeometryFeature(new NetTopologySuite.Geometries.Point(point.x, point.y));
                 feature.Styles.Add(CreateVesselStyle(vessel));
                 feature["MMSI"] = mmsi;
                 feature["Name"] = vessel.DisplayName;
@@ -274,11 +275,11 @@ public partial class MapViewModel : ObservableObject
         var max = SphericalMercator.FromLonLat(area.MaxLongitude, area.MaxLatitude);
 
         var ring = new LinearRing([
-            new Coordinate(min.X, min.Y),
-            new Coordinate(max.X, min.Y),
-            new Coordinate(max.X, max.Y),
-            new Coordinate(min.X, max.Y),
-            new Coordinate(min.X, min.Y)
+            new Coordinate(min.x, min.y),
+            new Coordinate(max.x, min.y),
+            new Coordinate(max.x, max.y),
+            new Coordinate(min.x, max.y),
+            new Coordinate(min.x, min.y)
         ]);
 
         var polygon = new Polygon(ring);

@@ -26,7 +26,7 @@ public partial class MapView : UserControl
                     var lonLat = SphericalMercator.ToLonLat(
                         args.MapInfo.WorldPosition.X,
                         args.MapInfo.WorldPosition.Y);
-                    vm.HandleMapClick(lonLat.X, lonLat.Y);
+                    vm.HandleMapClick(lonLat.lon, lonLat.lat);
                 }
 
                 // Check if a vessel feature was clicked
