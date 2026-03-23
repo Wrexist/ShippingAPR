@@ -64,7 +64,7 @@ public partial class App : Application
                 var baseDir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
 
                 config.SetBasePath(baseDir);
-                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
                 config.AddJsonFile("appsettings.Development.json", optional: true);
             })
             .ConfigureServices((ctx, services) =>

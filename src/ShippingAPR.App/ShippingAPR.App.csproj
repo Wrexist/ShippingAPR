@@ -6,6 +6,7 @@
     <RootNamespace>ShippingAPR.App</RootNamespace>
     <ApplicationIcon>Assets\Icons\app.ico</ApplicationIcon>
     <AssemblyName>ShippingAPR</AssemblyName>
+    <StartupObject>ShippingAPR.App.Program</StartupObject>
     <Product>ShippingAPR - Real-Time Ship Tracker</Product>
     <Description>Real-time AIS ship tracking for Swedish waters and beyond</Description>
     <Version>1.0.0</Version>
@@ -24,9 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json">
+    <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

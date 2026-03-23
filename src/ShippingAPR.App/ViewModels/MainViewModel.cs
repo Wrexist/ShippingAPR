@@ -115,13 +115,12 @@ public partial class MainViewModel : ObservableObject
     private void ToggleTheme()
     {
         IsDarkTheme = !IsDarkTheme;
-        var themeUri = IsDarkTheme
-            ? "Assets/Themes/DarkTheme.xaml"
-            : "Assets/Themes/LightTheme.xaml";
+        var themeFile = IsDarkTheme ? "DarkTheme.xaml" : "LightTheme.xaml";
+        var themeUri = new Uri($"pack://application:,,,/Assets/Themes/{themeFile}");
 
         Application.Current.Resources.MergedDictionaries.Clear();
         Application.Current.Resources.MergedDictionaries.Add(
-            new ResourceDictionary { Source = new Uri(themeUri, UriKind.Relative) });
+            new ResourceDictionary { Source = themeUri });
     }
 
     [RelayCommand]
@@ -162,12 +161,24 @@ public partial class MainViewModel : ObservableObject
 
     internal static void SaveApiKey(string apiKey)
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-        if (!File.Exists(path)) return;
+        try
+        {
+            var exePath = Environment.ProcessPath;
+            var baseDir = exePath is not null
+                ? Path.GetDirectoryName(exePath)
+                : AppContext.BaseDirectory;
+            var path = Path.Combine(baseDir ?? AppContext.BaseDirectory, "appsettings.json");
 
-        var json = File.ReadAllText(path);
-        json = json.Replace("\"ApiKey\": \"\"", $"\"ApiKey\": \"{apiKey}\"");
-        File.WriteAllText(path, json);
+            if (!File.Exists(path)) return;
+
+            var json = File.ReadAllText(path);
+            json = json.Replace("\"ApiKey\": \"\"", $"\"ApiKey\": \"{apiKey}\"");
+            File.WriteAllText(path, json);
+        }
+        catch
+        {
+            // Don't crash if we can't save the API key
+        }
     }
 
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)
