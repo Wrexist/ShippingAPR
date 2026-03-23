@@ -176,10 +176,10 @@ public partial class MainViewModel : ObservableObject
         {
             ConnectionStatusText = status switch
             {
-                ConnectionStatus.Connected => Resources.Strings.Connected,
-                ConnectionStatus.Connecting => Resources.Strings.Connecting,
-                ConnectionStatus.Reconnecting => Resources.Strings.Reconnecting,
-                ConnectionStatus.Disconnected => Resources.Strings.Disconnected,
+                ConnectionStatus.Connected => "Connected",
+                ConnectionStatus.Connecting => "Connecting...",
+                ConnectionStatus.Reconnecting => "Reconnecting...",
+                ConnectionStatus.Disconnected => "Disconnected",
                 ConnectionStatus.Error => "Error",
                 _ => status.ToString()
             };

@@ -27,6 +27,13 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+        shell: pwsh
+
       - name: Publish
         run: >
           dotnet publish src/ShippingAPR.App/ShippingAPR.App.csproj
@@ -56,7 +63,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add ShippingAPR-Setup.exe
           git commit -m "Update ShippingAPR-Setup.exe to ${{ github.ref_name }}"
-          git push
+          git push origin HEAD:${{ github.event.repository.default_branch }}
         shell: pwsh
 
       - name: Create portable zip

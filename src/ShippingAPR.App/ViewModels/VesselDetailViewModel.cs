@@ -61,7 +61,7 @@ public partial class VesselDetailViewModel : ObservableObject
             : "--";
 
     public string DestinationText =>
-        Vessel?.StaticData?.Destination ?? Resources.Strings.UnknownDestination;
+        Vessel?.StaticData?.Destination ?? "Unknown destination";
 
     public string StatusText =>
         Vessel?.CurrentPosition?.Status.ToString() ?? "--";
