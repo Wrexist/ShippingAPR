@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-restore
+
+      - name: Publish
+        run: >
+          dotnet publish src/ShippingAPR.App/ShippingAPR.App.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:DebugType=none
+          --output ./publish
+
+      - name: Build installer
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAPP_VERSION=$version installer\setup.iss
+        shell: pwsh
+
+      - name: Create portable zip
+        run: Compress-Archive -Path ./publish/* -DestinationPath ./ShippingAPR-${{ github.ref_name }}-portable-win-x64.zip
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installer-output/ShippingAPR-Setup.exe
+            ShippingAPR-${{ github.ref_name }}-portable-win-x64.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          body: |
+            ## Install
+
+            **Recommended:** Download `ShippingAPR-Setup.exe` and run it. The installer will set up the app with a desktop shortcut and Start Menu entry.
+
+            **Portable:** Download the `.zip` file, extract anywhere, and run `ShippingAPR.exe`.
+
+            No .NET installation required — everything is included. Requires Windows 10 or later (64-bit).
+
+            > Windows SmartScreen may show a warning on first run since the app is not code-signed. Click **More info** → **Run anyway**.

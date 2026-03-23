@@ -1,6 +1,30 @@
 # ShippingAPR - Real-Time Ship Tracker
 
-A modern WPF desktop application for real-time ship tracking in Swedish waters and beyond, powered by live AIS data.
+A modern desktop application for real-time ship tracking in Swedish waters and beyond, powered by live AIS data.
+
+## Install
+
+**[Download ShippingAPR-Setup.exe](https://github.com/Wrexist/ShippingAPR/releases/latest)**
+
+1. Download `ShippingAPR-Setup.exe` from the latest release
+2. Run the installer — it creates a desktop shortcut and Start Menu entry
+3. Open **ShippingAPR** from your desktop
+
+That's it. No .NET or developer tools needed. Windows 10 or later (64-bit).
+
+> **Note:** Windows SmartScreen may show a warning on first run since the app is not code-signed. Click **More info** then **Run anyway**. This is normal for open-source apps.
+
+A portable `.zip` version (no installer) is also available on the [releases page](https://github.com/Wrexist/ShippingAPR/releases/latest).
+
+## Getting Started
+
+1. Launch ShippingAPR — you'll see the welcome screen
+2. Sign up for a free API key at [aisstream.io](https://aisstream.io) (it's free)
+3. Paste your API key and click **Get Started**
+4. The map shows Gothenburg harbor by default
+5. Click **Start Tracking** in the bottom bar to begin receiving live ship data
+
+You can also click **Explore without API key** to browse the app interface first. You can add your key later from within the app.
 
 ## Features
 
@@ -18,7 +42,11 @@ A modern WPF desktop application for real-time ship tracking in Swedish waters a
 - **Bilingual UI** — English and Swedish (toggle with one click)
 - **Port database** — 80+ major ports with UN/LOCODE for destination resolution
 
-## Quick Start
+---
+
+## Developer Guide
+
+> The sections below are for developers who want to build from source. **Regular users should use the installer above.**
 
 ### Prerequisites
 - Windows 10/11
@@ -34,11 +62,17 @@ dotnet build
 dotnet run --project src/ShippingAPR.App
 ```
 
-### First Launch
-1. The app will show a welcome dialog
-2. Click "Open aisstream.io" to sign up for a free API key
-3. Paste your API key and click "Get Started"
-4. The map defaults to Gothenburg harbor — click "Start Tracking" to begin
+### Running Tests
+```bash
+dotnet test
+```
+
+### Publishing a Release
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+The GitHub Actions workflow will automatically build, test, and create a release with both an installer and a portable zip.
 
 ## Architecture
 
@@ -55,11 +89,6 @@ ShippingAPR.App            WPF views, MVVM viewmodels, themes, localization
 - **ConcurrentDictionary** vessel store with UI-thread event dispatching
 - **Auto-reconnect** WebSocket with exponential backoff
 - **Course-corrected ETA**: `effectiveSpeed = SOG × cos(courseDeviation)`
-
-## Running Tests
-```bash
-dotnet test
-```
 
 ## Technology Stack
 

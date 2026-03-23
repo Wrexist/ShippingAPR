@@ -8,39 +8,131 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Padding="12,10"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,0,0,1">
+        <!-- Header — Glass panel header -->
+        <Border Grid.Row="0" Padding="14,12"
+                Background="Transparent">
             <Grid>
-                <TextBlock Text="Vessels" Style="{DynamicResource HeaderTextStyle}"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Vessels"
+                           Style="{DynamicResource HeaderTextStyle}"
+                           VerticalAlignment="Center"/>
+
+                <!-- Sort control — glass pill -->
+                <Border Grid.Column="1"
+                        Background="{DynamicResource GlassFillBrush}"
+                        BorderBrush="{DynamicResource GlassBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="2">
                     <ComboBox SelectedItem="{Binding SortBy}" Width="80" FontSize="11"
-                              Background="{DynamicResource TertiaryBackgroundBrush}"
-                              Foreground="{DynamicResource PrimaryTextBrush}">
+                              Background="Transparent"
+                              Foreground="{DynamicResource PrimaryTextBrush}"
+                              BorderThickness="0"
+                              Cursor="Hand">
                         <ComboBoxItem Content="Name"/>
                         <ComboBoxItem Content="Speed"/>
                         <ComboBoxItem Content="ETA"/>
                         <ComboBoxItem Content="Distance"/>
                     </ComboBox>
-                </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
-        <!-- Vessel List -->
+        <!-- Accent divider line -->
+        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="2" Margin="14,0"
+                CornerRadius="1">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
+                    <GradientStop Color="Transparent" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Vessel List — Virtualized glass items -->
         <ListBox Grid.Row="1"
                  ItemsSource="{Binding Vessels}"
                  SelectedItem="{Binding SelectedVessel, Mode=TwoWay}"
                  Background="Transparent"
                  BorderThickness="0"
+                 Padding="6,6"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="0"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <ContentPresenter/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Padding="10,8" Margin="2"
-                            CornerRadius="4"
-                            Background="{DynamicResource PrimaryBackgroundBrush}">
+                    <Border Padding="12,10" Margin="4,2"
+                            CornerRadius="10"
+                            Cursor="Hand"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,0"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource GlassFillBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource GlassFillHoverBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentGlowBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.01" Duration="0:0:0.12">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.01" Duration="0:0:0.12">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.0" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.0" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -52,23 +144,34 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Vessel type indicator -->
-                            <Ellipse Grid.Column="0" Grid.RowSpan="2"
-                                     Width="10" Height="10"
-                                     Margin="0,0,8,0"
-                                     VerticalAlignment="Center">
-                                <Ellipse.Fill>
-                                    <SolidColorBrush>
-                                        <SolidColorBrush.Color>
-                                            <Binding Path="Type">
-                                                <Binding.Converter>
-                                                    <converters:VesselTypeToColorConverter/>
-                                                </Binding.Converter>
-                                            </Binding>
-                                        </SolidColorBrush.Color>
-                                    </SolidColorBrush>
-                                </Ellipse.Fill>
-                            </Ellipse>
+                            <!-- Vessel type indicator with glow -->
+                            <Grid Grid.Column="0" Grid.RowSpan="2"
+                                  VerticalAlignment="Center" Margin="0,0,10,0">
+                                <Ellipse Width="12" Height="12">
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush>
+                                            <SolidColorBrush.Color>
+                                                <Binding Path="Type">
+                                                    <Binding.Converter>
+                                                        <converters:VesselTypeToColorConverter/>
+                                                    </Binding.Converter>
+                                                </Binding>
+                                            </SolidColorBrush.Color>
+                                        </SolidColorBrush>
+                                    </Ellipse.Fill>
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.5">
+                                            <DropShadowEffect.Color>
+                                                <Binding Path="Type">
+                                                    <Binding.Converter>
+                                                        <converters:VesselTypeToColorConverter/>
+                                                    </Binding.Converter>
+                                                </Binding>
+                                            </DropShadowEffect.Color>
+                                        </DropShadowEffect>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
 
                             <!-- Name -->
                             <TextBlock Grid.Column="1" Grid.Row="0"
@@ -77,23 +180,30 @@
                                        FontSize="13" FontWeight="SemiBold"
                                        TextTrimming="CharacterEllipsis"/>
 
-                            <!-- Speed -->
-                            <TextBlock Grid.Column="2" Grid.Row="0"
-                                       Text="{Binding SpeedText}"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       FontSize="11" HorizontalAlignment="Right"/>
+                            <!-- Speed pill -->
+                            <Border Grid.Column="2" Grid.Row="0"
+                                    Background="{DynamicResource GlassFillBrush}"
+                                    CornerRadius="6" Padding="6,2"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SpeedText}"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           FontSize="10" FontWeight="SemiBold"/>
+                            </Border>
 
-                            <!-- Destination + ETA -->
+                            <!-- Destination -->
                             <TextBlock Grid.Column="1" Grid.Row="1"
                                        Text="{Binding Destination}"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
-                                       FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                       FontSize="11" TextTrimming="CharacterEllipsis"
+                                       Margin="0,2,0,0"/>
 
+                            <!-- ETA with accent glow -->
                             <TextBlock Grid.Column="2" Grid.Row="1"
                                        Text="{Binding EtaText}"
                                        Foreground="{DynamicResource AccentBrush}"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       HorizontalAlignment="Right"/>
+                                       FontSize="11" FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,2,0,0"/>
                         </Grid>
                     </Border>
                 </DataTemplate>
