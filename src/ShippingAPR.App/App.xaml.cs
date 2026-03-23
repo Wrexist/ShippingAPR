@@ -1,5 +1,4 @@
 using System.IO;
-using System.Reflection;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,9 +58,10 @@ public partial class App : Application
             {
                 // For single-file published apps, AppContext.BaseDirectory may point
                 // to a temp extraction dir. Use the exe's actual directory instead.
-                var exePath = Environment.ProcessPath
-                    ?? Assembly.GetExecutingAssembly().Location;
-                var baseDir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
+                var exePath = Environment.ProcessPath;
+                var baseDir = exePath is not null
+                    ? Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory
+                    : AppContext.BaseDirectory;
 
                 config.SetBasePath(baseDir);
                 config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
