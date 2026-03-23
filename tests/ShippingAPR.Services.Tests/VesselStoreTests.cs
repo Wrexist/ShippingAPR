@@ -2,6 +2,7 @@ using FluentAssertions;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Models;
 using ShippingAPR.Services;
+using Xunit;
 
 namespace ShippingAPR.Services.Tests;
 
