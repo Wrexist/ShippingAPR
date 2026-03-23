@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>ShippingAPR.App</RootNamespace>
+    <ApplicationIcon>Assets\Icons\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShippingAPR.Core\ShippingAPR.Core.csproj" />
+    <ProjectReference Include="..\ShippingAPR.Infrastructure\ShippingAPR.Infrastructure.csproj" />
+    <ProjectReference Include="..\ShippingAPR.Services\ShippingAPR.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mapsui.Wpf" Version="5.0.0-beta.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Icons\*.png" />
+    <Resource Include="Assets\Themes\*.xaml" />
+  </ItemGroup>
+</Project>

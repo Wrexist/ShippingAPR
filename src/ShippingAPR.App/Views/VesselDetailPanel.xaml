@@ -1,0 +1,210 @@
+<UserControl x:Class="ShippingAPR.App.Views.VesselDetailPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <!-- No vessel selected -->
+        <TextBlock Text="Select a vessel to view details"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   FontSize="14"
+                   Visibility="{Binding HasVessel, Converter={StaticResource InverseBoolToVis}}"/>
+
+        <!-- Vessel details -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding HasVessel, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="16">
+                <!-- Vessel Name Header -->
+                <TextBlock Text="{Binding DisplayName}"
+                           FontSize="22" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           Margin="0,0,0,4"/>
+
+                <TextBlock Text="{Binding TypeText}"
+                           FontSize="13"
+                           Foreground="{DynamicResource AccentBrush}"
+                           Margin="0,0,0,16"/>
+
+                <!-- Identity Section -->
+                <TextBlock Text="IDENTITY"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" Margin="0,0,0,8"/>
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="MMSI"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding MmsiText}"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="IMO" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ImoText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Call Sign" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CallSignText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Flag" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FlagText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Navigation Section -->
+                <TextBlock Text="NAVIGATION"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" Margin="0,0,0,8"/>
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Speed"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SpeedText}"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="SemiBold"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Course" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CourseText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Heading" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HeadingText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Status" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding StatusText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Position" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PositionText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontSize="12"/>
+                    </Grid>
+                </Border>
+
+                <!-- Voyage / ETA Section -->
+                <TextBlock Text="VOYAGE &amp; ETA"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" Margin="0,0,0,8"/>
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Destination"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding DestinationText}"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="SemiBold"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Distance" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DistanceText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Time to Arrival" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TimeToArrivalText}" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="16" FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="ETA" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding EtaText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Effective Speed" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding EffectiveSpeedText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Course Dev." Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding CourseDeviationText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Dimensions Section -->
+                <TextBlock Text="DIMENSIONS"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" Margin="0,0,0,8"/>
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Size"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding DimensionsText}"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Draught" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DraughtText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Footer -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="Last update: "
+                               Style="{DynamicResource SubTextStyle}"/>
+                    <TextBlock Text="{Binding LastUpdateText}"
+                               Style="{DynamicResource SubTextStyle}" FontWeight="SemiBold"/>
+                </StackPanel>
+                <TextBlock Text="{Binding TrackPointCount, StringFormat='Track: {0} points'}"
+                           Style="{DynamicResource SubTextStyle}"
+                           HorizontalAlignment="Right" Margin="0,2,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:InverseBoolToVisConverter x:Key="InverseBoolToVis"
+                                         xmlns:local="clr-namespace:ShippingAPR.App.Converters"/>
+    </UserControl.Resources>
+</UserControl>
