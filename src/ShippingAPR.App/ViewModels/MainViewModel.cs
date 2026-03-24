@@ -31,6 +31,9 @@ public partial class MainViewModel : ObservableObject
     private int _vesselCount;
 
     [ObservableProperty]
+    private string _messageRateText = "";
+
+    [ObservableProperty]
     private bool _isDarkTheme = true;
 
     [ObservableProperty]
@@ -115,6 +118,29 @@ public partial class MainViewModel : ObservableObject
             VesselListViewModel.SelectedVessel = vessel;
             MapViewModel.CenterOnVessel(vessel);
         };
+
+        // Auto-start tracking if API key is available
+        if (HasApiKey)
+        {
+            _ = AutoStartTrackingAsync();
+        }
+    }
+
+    private async Task AutoStartTrackingAsync()
+    {
+        try
+        {
+            // Short delay to let the UI finish loading
+            await Task.Delay(500);
+            await MapViewModel.StartTrackingCommand.ExecuteAsync(null);
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatusText = "Failed to auto-connect";
+            ConnectionStatusColor = "#FFFF3D71";
+            // Non-fatal — user can click Start Tracking manually
+            System.Diagnostics.Debug.WriteLine($"Auto-start failed: {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -157,6 +183,9 @@ public partial class MainViewModel : ObservableObject
             SaveApiKey(dialog.ApiKey);
             HasApiKey = true;
             OnPropertyChanged(nameof(StartTrackingTooltip));
+
+            // Auto-start tracking after API key is configured
+            _ = AutoStartTrackingAsync();
         }
     }
 

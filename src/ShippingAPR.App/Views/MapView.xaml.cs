@@ -34,7 +34,14 @@ public partial class MapView : UserControl
                     && System.Windows.Window.GetWindow(this)?.DataContext is MainViewModel mainVm)
                 {
                     mainVm.VesselListViewModel.SelectVesselByMmsi(mmsi);
+                    vm.CenterOnVessel(mainVm.VesselListViewModel.SelectedVessel);
                 }
+            };
+
+            // Wire viewport changes for dynamic area tracking
+            vm.Map.Navigator.Navigated += (_, _) =>
+            {
+                vm.OnViewportChanged();
             };
         }
     }

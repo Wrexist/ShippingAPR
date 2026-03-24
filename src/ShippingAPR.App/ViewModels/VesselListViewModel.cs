@@ -37,10 +37,10 @@ public partial class VesselListViewModel : ObservableObject
         _vesselStore.StoreCleared += (_, _) =>
             Application.Current?.Dispatcher.Invoke(Vessels.Clear);
 
-        // Refresh list every 2 seconds (not on every update — too expensive)
+        // Refresh list every 3 seconds (not on every update — too expensive)
         _refreshTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(2)
+            Interval = TimeSpan.FromSeconds(3)
         };
         _refreshTimer.Tick += (_, _) =>
         {

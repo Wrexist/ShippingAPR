@@ -13,7 +13,7 @@
         <!-- Map Control -->
         <mapsui:MapControl x:Name="MapControl"/>
 
-        <!-- ═══ Map Overlay Controls — Floating glass pills ═══ -->
+        <!-- ═══ Top-Left: Area selection + Region buttons ═══ -->
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
@@ -24,6 +24,68 @@
                     Style="{DynamicResource AccentButtonStyle}"
                     FontSize="12" Padding="14,8"
                     Margin="0,0,8,0"/>
+
+            <!-- Quick region navigation buttons -->
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassEdgeBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource PillCornerRadius}"
+                    Padding="4,2">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Europe"
+                            Command="{Binding NavigateToRegionCommand}"
+                            CommandParameter="Europe"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="11" Padding="10,6"/>
+                    <Button Content="Asia"
+                            Command="{Binding NavigateToRegionCommand}"
+                            CommandParameter="Asia"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="11" Padding="10,6"/>
+                    <Button Content="Americas"
+                            Command="{Binding NavigateToRegionCommand}"
+                            CommandParameter="Americas"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="11" Padding="10,6"/>
+                    <Button Content="Global"
+                            Command="{Binding NavigateToRegionCommand}"
+                            CommandParameter="Global"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="11" Padding="10,6"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- ═══ Zoom Controls — Bottom-left floating glass ═══ -->
+        <StackPanel VerticalAlignment="Bottom"
+                    HorizontalAlignment="Left"
+                    Margin="14,0,0,14">
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassEdgeBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource LargeCornerRadius}"
+                    Padding="4">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.15" Color="#000000"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Content="+"
+                            Command="{Binding ZoomInCommand}"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="18" FontWeight="Bold"
+                            Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                    <Border Height="1"
+                            Background="{DynamicResource GlassBorderBrush}"
+                            Margin="6,0"/>
+                    <Button Content="-"
+                            Command="{Binding ZoomOutCommand}"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="18" FontWeight="Bold"
+                            Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <!-- ═══ Selection hint — Glass floating banner ═══ -->
