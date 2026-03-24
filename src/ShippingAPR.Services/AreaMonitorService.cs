@@ -19,11 +19,12 @@ public sealed class VesselAreaNotification : ValueChangedMessage<VesselAreaEvent
     public VesselAreaNotification(VesselAreaEvent value) : base(value) { }
 }
 
-public sealed class AreaMonitorService
+public sealed class AreaMonitorService : IDisposable
 {
     private readonly IVesselStore _vesselStore;
     private readonly ILogger<AreaMonitorService> _logger;
     private readonly ConcurrentDictionary<int, bool> _previousState = new();
+    private readonly EventHandler _onStoreCleared;
     private BoundingBox? _monitoredArea;
 
     public event EventHandler<VesselAreaEvent>? VesselAreaChanged;
@@ -35,9 +36,10 @@ public sealed class AreaMonitorService
         _vesselStore = vesselStore;
         _logger = logger;
 
+        _onStoreCleared = (_, _) => _previousState.Clear();
         _vesselStore.VesselAdded += OnVesselUpdated;
         _vesselStore.VesselUpdated += OnVesselUpdated;
-        _vesselStore.StoreCleared += (_, _) => _previousState.Clear();
+        _vesselStore.StoreCleared += _onStoreCleared;
     }
 
     public void SetMonitoredArea(BoundingBox area)
@@ -55,10 +57,14 @@ public sealed class AreaMonitorService
             vessel.CurrentPosition.Latitude,
             vessel.CurrentPosition.Longitude);
 
-        // Use false as the default so that a vessel appearing inside the area
-        // for the first time is correctly detected as an "entry" event.
-        var wasInside = _previousState.GetOrAdd(vessel.Mmsi, false);
-        _previousState[vessel.Mmsi] = isInside;
+        // Atomically read the previous state and update to the new state.
+        // Default to false so a vessel appearing inside the area for the
+        // first time is correctly detected as an "entry" event.
+        var wasInside = false;
+        _previousState.AddOrUpdate(
+            vessel.Mmsi,
+            isInside,
+            (_, old) => { wasInside = old; return isInside; });
 
         // Detect transitions
         if (isInside && !wasInside)
@@ -91,5 +97,12 @@ public sealed class AreaMonitorService
             VesselAreaChanged?.Invoke(this, evt);
             WeakReferenceMessenger.Default.Send(new VesselAreaNotification(evt));
         }
+    }
+
+    public void Dispose()
+    {
+        _vesselStore.VesselAdded -= OnVesselUpdated;
+        _vesselStore.VesselUpdated -= OnVesselUpdated;
+        _vesselStore.StoreCleared -= _onStoreCleared;
     }
 }

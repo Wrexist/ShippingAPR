@@ -7,6 +7,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.App.Views;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
@@ -14,11 +17,14 @@ using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
 
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject, IDisposable
 {
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<MainViewModel> _logger;
+    private readonly UiOptions _uiOptions;
+    private readonly EventHandler<ConnectionStatus> _onConnectionStatusChanged;
     private CancellationTokenSource? _notificationCts;
 
     [ObservableProperty]
@@ -62,6 +68,8 @@ public partial class MainViewModel : ObservableObject
         IVesselStore vesselStore,
         IVesselTrackingService trackingService,
         IConfiguration configuration,
+        ILogger<MainViewModel> logger,
+        IOptions<UiOptions> uiOptions,
         MapViewModel mapViewModel,
         VesselListViewModel vesselListViewModel,
         VesselDetailViewModel vesselDetailViewModel,
@@ -71,6 +79,8 @@ public partial class MainViewModel : ObservableObject
         _vesselStore = vesselStore;
         _trackingService = trackingService;
         _configuration = configuration;
+        _logger = logger;
+        _uiOptions = uiOptions.Value;
 
         // Check if API key is configured
         HasApiKey = !string.IsNullOrEmpty(configuration["AisStream:ApiKey"]);
@@ -81,7 +91,8 @@ public partial class MainViewModel : ObservableObject
         FilterViewModel = filterViewModel;
         SearchViewModel = searchViewModel;
 
-        _trackingService.ConnectionStatusChanged += OnConnectionStatusChanged;
+        _onConnectionStatusChanged = OnConnectionStatusChanged;
+        _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
         _vesselStore.VesselAdded += (_, _) => VesselCount = _vesselStore.Count;
         _vesselStore.StoreCleared += (_, _) => VesselCount = 0;
 
@@ -95,7 +106,7 @@ public partial class MainViewModel : ObservableObject
             // don't dismiss the latest one prematurely.
             _notificationCts?.Cancel();
             var cts = _notificationCts = new CancellationTokenSource();
-            Task.Delay(5000, cts.Token).ContinueWith(_ =>
+            Task.Delay(_uiOptions.NotificationTimeoutMs, cts.Token).ContinueWith(_ =>
             {
                 Application.Current?.Dispatcher.Invoke(() => ShowNotification = false);
             }, TaskContinuationOptions.OnlyOnRanToCompletion);
@@ -131,7 +142,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             // Short delay to let the UI finish loading
-            await Task.Delay(500);
+            await Task.Delay(_uiOptions.StartupDelayMs);
             await MapViewModel.StartTrackingCommand.ExecuteAsync(null);
         }
         catch (Exception ex)
@@ -220,9 +231,10 @@ public partial class MainViewModel : ObservableObject
             File.WriteAllText(path, root.ToJsonString(
                 new JsonSerializerOptions { WriteIndented = true }));
         }
-        catch
+        catch (Exception ex)
         {
-            // Don't crash if we can't save the API key
+            // Don't crash if we can't save the API key — log it for troubleshooting
+            System.Diagnostics.Debug.WriteLine($"Failed to save API key: {ex.Message}");
         }
     }
 
@@ -247,5 +259,15 @@ public partial class MainViewModel : ObservableObject
                 _ => "#FFFF3D71"
             };
         });
+    }
+
+    public void Dispose()
+    {
+        _notificationCts?.Cancel();
+        _notificationCts?.Dispose();
+        _trackingService.ConnectionStatusChanged -= _onConnectionStatusChanged;
+        WeakReferenceMessenger.Default.Unregister<NotificationPublished>(this);
+        MapViewModel.Dispose();
+        VesselListViewModel.Dispose();
     }
 }

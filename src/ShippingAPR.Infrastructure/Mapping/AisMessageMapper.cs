@@ -130,18 +130,101 @@ public sealed class AisMessageMapper
     private static string? MmsiToCountryCode(int mmsi)
     {
         // First 3 digits of MMSI = MID (Maritime Identification Digits)
+        // Source: ITU-R M.585 MID allocation table
         var mid = mmsi / 1_000_000;
         return mid switch
         {
-            265 or 266 => "SE", // Sweden
-            219 => "DK",        // Denmark
-            257 => "NO",        // Norway
-            230 or 231 => "FI", // Finland
-            211 => "DE",        // Germany
-            244 or 245 => "NL", // Netherlands
-            226 or 227 => "FR", // France
-            232 or 233 or 234 or 235 => "GB",
-            338 or 366 or 367 or 368 or 369 => "US",
+            // Northern Europe
+            265 or 266 => "SE",  // Sweden
+            219 => "DK",         // Denmark
+            257 => "NO",         // Norway
+            230 or 231 => "FI",  // Finland
+            220 => "DK",         // Denmark (additional)
+            258 => "NO",         // Norway (additional)
+
+            // Western Europe
+            211 => "DE",         // Germany
+            218 => "DE",         // Germany (additional)
+            244 or 245 => "NL",  // Netherlands
+            246 => "NL",         // Netherlands (additional)
+            226 or 227 => "FR",  // France
+            228 => "FR",         // France (additional)
+            232 or 233 or 234 or 235 => "GB", // United Kingdom
+            250 => "IE",         // Ireland
+            205 or 206 => "BE",  // Belgium
+            236 or 237 => "GI",  // Gibraltar
+
+            // Southern Europe
+            224 or 225 => "ES",  // Spain
+            263 => "PT",         // Portugal
+            247 => "IT",         // Italy
+            237 or 239 => "GR",  // Greece
+            240 => "GR",         // Greece (additional)
+            256 => "MT",         // Malta
+            249 => "MT",         // Malta (additional)
+            278 => "HR",         // Croatia
+            238 => "HR",         // Croatia (additional)
+
+            // Eastern Europe
+            261 or 262 => "PL",  // Poland
+            271 => "TR",         // Turkey
+            273 => "RU",         // Russia
+            255 => "PT",         // Madeira/Portugal
+
+            // Americas
+            338 or 366 or 367 or 368 or 369 => "US", // United States
+            316 => "CA",         // Canada
+            345 => "MX",         // Mexico
+            351 => "MX",         // Mexico (additional)
+            311 => "BS",         // Bahamas
+            309 => "BS",         // Bahamas (additional)
+            312 or 314 => "BZ",  // Belize
+            352 or 353 or 354 or 355 or 356 or 357 => "PA", // Panama
+            370 or 371 or 372 or 373 or 374 => "PA", // Panama (additional)
+            710 or 725 => "BR",  // Brazil
+            701 => "AR",         // Argentina
+            730 => "CO",         // Colombia
+
+            // Asia
+            412 or 413 or 414 => "CN",  // China
+            431 or 432 => "JP",  // Japan
+            440 or 441 => "KR",  // South Korea
+            416 => "TW",         // Taiwan
+            525 => "ID",         // Indonesia
+            533 => "MY",         // Malaysia
+            563 or 564 or 565 => "SG", // Singapore
+            548 => "PH",         // Philippines
+            567 => "TH",         // Thailand
+            574 => "VN",         // Vietnam
+            419 => "SA",         // Saudi Arabia
+            470 => "AE",         // UAE
+
+            // Oceania
+            503 => "AU",         // Australia
+            512 => "NZ",         // New Zealand
+
+            // Africa
+            601 => "ZA",         // South Africa
+            622 => "EG",         // Egypt
+            618 or 619 => "CI",  // Côte d'Ivoire
+            625 => "ER",         // Eritrea
+
+            // Convenience flags
+            209 or 210 => "CY",  // Cyprus
+            212 => "CY",         // Cyprus (additional)
+            572 => "VU",         // Vanuatu
+            375 or 376 or 377 => "VC", // Saint Vincent
+            341 => "KN",         // Saint Kitts and Nevis
+
+            // Marshall Islands (major flag state)
+            538 => "MH",         // Marshall Islands
+
+            // Liberia (major flag state)
+            636 or 637 => "LR",  // Liberia
+
+            // Hong Kong
+            477 => "HK",         // Hong Kong
+
             _ => null
         };
     }

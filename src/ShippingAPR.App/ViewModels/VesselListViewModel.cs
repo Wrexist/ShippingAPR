@@ -2,16 +2,21 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Options;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.App.ViewModels;
 
-public partial class VesselListViewModel : ObservableObject
+public partial class VesselListViewModel : ObservableObject, IDisposable
 {
     private readonly IVesselStore _vesselStore;
     private readonly DispatcherTimer _refreshTimer;
+    private readonly EventHandler<Vessel> _onVesselAdded;
+    private readonly EventHandler<Vessel> _onVesselUpdated;
+    private readonly EventHandler _onStoreCleared;
 
     [ObservableProperty]
     private Vessel? _selectedVessel;
@@ -26,21 +31,24 @@ public partial class VesselListViewModel : ObservableObject
 
     private readonly FilterViewModel _filterViewModel;
 
-    public VesselListViewModel(IVesselStore vesselStore, FilterViewModel filterViewModel)
+    public VesselListViewModel(IVesselStore vesselStore, FilterViewModel filterViewModel, IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
         _filterViewModel = filterViewModel;
 
-        _filterViewModel.PropertyChanged += (_, _) => ScheduleRefresh();
-        _vesselStore.VesselAdded += (_, _) => ScheduleRefresh();
-        _vesselStore.VesselUpdated += (_, _) => ScheduleRefresh();
-        _vesselStore.StoreCleared += (_, _) =>
-            Application.Current?.Dispatcher.Invoke(Vessels.Clear);
+        _onVesselAdded = (_, _) => ScheduleRefresh();
+        _onVesselUpdated = (_, _) => ScheduleRefresh();
+        _onStoreCleared = (_, _) => Application.Current?.Dispatcher.Invoke(Vessels.Clear);
 
-        // Refresh list every 3 seconds (not on every update — too expensive)
+        _filterViewModel.PropertyChanged += (_, _) => ScheduleRefresh();
+        _vesselStore.VesselAdded += _onVesselAdded;
+        _vesselStore.VesselUpdated += _onVesselUpdated;
+        _vesselStore.StoreCleared += _onStoreCleared;
+
+        // Refresh list periodically (not on every update — too expensive)
         _refreshTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(3)
+            Interval = TimeSpan.FromMilliseconds(uiOptions.Value.VesselListRefreshMs)
         };
         _refreshTimer.Tick += (_, _) =>
         {
@@ -122,6 +130,14 @@ public partial class VesselListViewModel : ObservableObject
     public void SelectVesselByMmsi(int mmsi)
     {
         SelectedVessel = _vesselStore.GetByMmsi(mmsi);
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer.Stop();
+        _vesselStore.VesselAdded -= _onVesselAdded;
+        _vesselStore.VesselUpdated -= _onVesselUpdated;
+        _vesselStore.StoreCleared -= _onStoreCleared;
     }
 }
 

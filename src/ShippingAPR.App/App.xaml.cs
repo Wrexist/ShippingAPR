@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.App.ViewModels;
 using ShippingAPR.App.Views;
 using ShippingAPR.Core.Interfaces;
@@ -74,6 +75,10 @@ public partial class App : Application
                     ctx.Configuration.GetSection(AisStreamOptions.SectionName));
                 services.Configure<VesselFinderOptions>(
                     ctx.Configuration.GetSection(VesselFinderOptions.SectionName));
+                services.Configure<TrackingOptions>(
+                    ctx.Configuration.GetSection(TrackingOptions.SectionName));
+                services.Configure<UiOptions>(
+                    ctx.Configuration.GetSection(UiOptions.SectionName));
 
                 // Core infrastructure
                 services.AddSingleton<AisMessageMapper>();
@@ -150,6 +155,9 @@ public partial class App : Application
     {
         if (_host is not null)
         {
+            // Dispose ViewModels to stop timers and unsubscribe events
+            _host.Services.GetRequiredService<MainViewModel>().Dispose();
+
             await _host.StopAsync(TimeSpan.FromSeconds(5));
             _host.Dispose();
         }

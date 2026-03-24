@@ -51,7 +51,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         try
         {
             _webSocket = new ClientWebSocket();
-            _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+            _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
 
             using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             connectCts.CancelAfter(ConnectTimeout);
@@ -124,8 +124,17 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         // can observe cancellation and exit cleanly.
         if (_receiveTask is not null)
         {
-            try { await _receiveTask; }
-            catch (OperationCanceledException) { }
+            try
+            {
+                var timeout = TimeSpan.FromSeconds(_options.DisconnectTimeoutSeconds);
+                await _receiveTask.WaitAsync(timeout);
+            }
+            catch (OperationCanceledException) { /* Expected when cancellation triggers */ }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("Receive task did not complete within {Timeout}s timeout during disconnect",
+                    _options.DisconnectTimeoutSeconds);
+            }
             _receiveTask = null;
         }
 
@@ -152,58 +161,138 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         SetStatus(ConnectionStatus.Disconnected);
     }
 
+    /// <summary>
+    /// Main receive loop with built-in reconnection logic.
+    /// Uses an outer loop for reconnection instead of recursion to avoid stack overflow.
+    /// </summary>
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(_options.ReceiveBufferSize);
-        try
+        var needsReconnect = false;
+
+        while (!ct.IsCancellationRequested)
         {
-            using var messageBuffer = new MemoryStream();
-
-            while (!ct.IsCancellationRequested && _webSocket?.State == WebSocketState.Open)
+            if (needsReconnect)
             {
-                try
+                var reconnected = await TryReconnectAsync(ct);
+                if (!reconnected)
+                    return; // Cancellation requested or permanent failure
+                needsReconnect = false;
+            }
+
+            var buffer = ArrayPool<byte>.Shared.Rent(_options.ReceiveBufferSize);
+            try
+            {
+                using var messageBuffer = new MemoryStream();
+
+                while (!ct.IsCancellationRequested && _webSocket?.State == WebSocketState.Open)
                 {
-                    messageBuffer.SetLength(0);
-                    WebSocketReceiveResult result;
-
-                    do
+                    try
                     {
-                        result = await _webSocket.ReceiveAsync(
-                            new ArraySegment<byte>(buffer), ct);
+                        messageBuffer.SetLength(0);
+                        WebSocketReceiveResult result;
 
-                        if (result.MessageType == WebSocketMessageType.Close)
+                        do
                         {
-                            _logger.LogInformation("WebSocket closed by server");
-                            await ReconnectAsync(ct);
-                            return;
+                            result = await _webSocket.ReceiveAsync(
+                                new ArraySegment<byte>(buffer), ct);
+
+                            if (result.MessageType == WebSocketMessageType.Close)
+                            {
+                                _logger.LogInformation("WebSocket closed by server");
+                                needsReconnect = true;
+                                break;
+                            }
+
+                            messageBuffer.Write(buffer, 0, result.Count);
+                        } while (!result.EndOfMessage);
+
+                        if (needsReconnect) break;
+
+                        if (result.MessageType == WebSocketMessageType.Text)
+                        {
+                            var json = Encoding.UTF8.GetString(
+                                messageBuffer.GetBuffer(), 0, (int)messageBuffer.Length);
+                            ProcessMessage(json);
                         }
-
-                        messageBuffer.Write(buffer, 0, result.Count);
-                    } while (!result.EndOfMessage);
-
-                    if (result.MessageType == WebSocketMessageType.Text)
+                    }
+                    catch (OperationCanceledException)
                     {
-                        var json = Encoding.UTF8.GetString(
-                            messageBuffer.GetBuffer(), 0, (int)messageBuffer.Length);
-                        ProcessMessage(json);
+                        return;
+                    }
+                    catch (WebSocketException ex)
+                    {
+                        _logger.LogWarning(ex, "WebSocket error, will reconnect...");
+                        needsReconnect = true;
+                        break;
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (WebSocketException ex)
-                {
-                    _logger.LogWarning(ex, "WebSocket error, reconnecting...");
-                    await ReconnectAsync(ct);
-                    return;
-                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
-        finally
+    }
+
+    /// <summary>
+    /// Attempts to reconnect with exponential backoff. Returns true if reconnected, false if cancelled.
+    /// </summary>
+    private async Task<bool> TryReconnectAsync(CancellationToken ct)
+    {
+        var delay = 1;
+        var maxDelay = _options.ReconnectMaxDelaySeconds;
+
+        while (!ct.IsCancellationRequested)
         {
-            ArrayPool<byte>.Shared.Return(buffer);
+            SetStatus(ConnectionStatus.Reconnecting);
+            _logger.LogInformation("Reconnecting in {Delay}s...", delay);
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(delay), ct);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+
+            try
+            {
+                _webSocket?.Dispose();
+                _webSocket = new ClientWebSocket();
+                _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
+
+                await _webSocket.ConnectAsync(
+                    new Uri(_options.WebSocketUrl), ct);
+
+                // Re-send subscription so the server knows what data to send.
+                if (_lastSubscription is not null)
+                {
+                    var json = JsonSerializer.Serialize(_lastSubscription);
+                    var bytes = Encoding.UTF8.GetBytes(json);
+                    await _webSocket.SendAsync(
+                        new ArraySegment<byte>(bytes),
+                        WebSocketMessageType.Text,
+                        true,
+                        ct);
+                }
+
+                SetStatus(ConnectionStatus.Connected);
+                _logger.LogInformation("Reconnected to AIS stream");
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Reconnection attempt failed");
+                delay = Math.Min(delay * 2, maxDelay);
+            }
         }
+
+        return false;
     }
 
     private void ProcessMessage(string json)
@@ -225,62 +314,6 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             Interlocked.Increment(ref _parseErrorCount);
             _logger.LogWarning(ex, "Failed to parse AIS message (total errors: {Count})",
                 Interlocked.Read(ref _parseErrorCount));
-        }
-    }
-
-    private async Task ReconnectAsync(CancellationToken ct)
-    {
-        var delay = 1;
-        var maxDelay = _options.ReconnectMaxDelaySeconds;
-
-        while (!ct.IsCancellationRequested)
-        {
-            SetStatus(ConnectionStatus.Reconnecting);
-            _logger.LogInformation("Reconnecting in {Delay}s...", delay);
-
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(delay), ct);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            try
-            {
-                _webSocket?.Dispose();
-                _webSocket = new ClientWebSocket();
-                _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
-
-                await _webSocket.ConnectAsync(
-                    new Uri(_options.WebSocketUrl), ct);
-
-                // Re-send subscription so the server knows what data to send.
-                // Without this, the reconnected socket receives no messages.
-                if (_lastSubscription is not null)
-                {
-                    var json = JsonSerializer.Serialize(_lastSubscription);
-                    var bytes = Encoding.UTF8.GetBytes(json);
-                    await _webSocket.SendAsync(
-                        new ArraySegment<byte>(bytes),
-                        WebSocketMessageType.Text,
-                        true,
-                        ct);
-                }
-
-                SetStatus(ConnectionStatus.Connected);
-                _logger.LogInformation("Reconnected to AIS stream");
-
-                // Re-enter receive loop
-                await ReceiveLoopAsync(ct);
-                return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Reconnection attempt failed");
-                delay = Math.Min(delay * 2, maxDelay);
-            }
         }
     }
 

@@ -4,8 +4,25 @@ namespace ShippingAPR.Core.Models;
 
 public sealed class VesselPosition
 {
-    public double Latitude { get; init; }
-    public double Longitude { get; init; }
+    private double _latitude;
+    private double _longitude;
+
+    public required double Latitude
+    {
+        get => _latitude;
+        init => _latitude = value is >= -90 and <= 90
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(Latitude), value, "Must be between -90 and 90");
+    }
+
+    public required double Longitude
+    {
+        get => _longitude;
+        init => _longitude = value is >= -180 and <= 180
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(Longitude), value, "Must be between -180 and 180");
+    }
+
     public double SpeedOverGround { get; init; }
     public double CourseOverGround { get; init; }
     public double TrueHeading { get; init; }

@@ -65,8 +65,11 @@ public sealed class NotificationService
         lock (_historyLock)
         {
             _history.Add(message);
-            while (_history.Count > MaxHistory)
-                _history.RemoveAt(0);
+            if (_history.Count > MaxHistory)
+            {
+                var excess = _history.Count - MaxHistory;
+                _history.RemoveRange(0, excess);
+            }
         }
 
         _logger.LogDebug("Notification: {Title} - {Body}", message.Title, message.Body);
