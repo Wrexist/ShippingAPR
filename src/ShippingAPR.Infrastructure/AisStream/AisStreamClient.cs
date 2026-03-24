@@ -22,7 +22,13 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     private Task? _receiveTask;
     private SubscriptionMessage? _lastSubscription;
 
+    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
+    private long _messageCount;
+    private long _parseErrorCount;
+
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Disconnected;
+    public long MessageCount => Interlocked.Read(ref _messageCount);
+    public long ParseErrorCount => Interlocked.Read(ref _parseErrorCount);
     public event EventHandler<ConnectionStatus>? ConnectionStatusChanged;
     public event EventHandler<AisMessageEventArgs>? MessageReceived;
 
@@ -47,8 +53,11 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             _webSocket = new ClientWebSocket();
             _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
 
+            using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            connectCts.CancelAfter(ConnectTimeout);
+
             await _webSocket.ConnectAsync(
-                new Uri(_options.WebSocketUrl), cancellationToken);
+                new Uri(_options.WebSocketUrl), connectCts.Token);
 
             var subscription = new SubscriptionMessage
             {
@@ -207,12 +216,15 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             var args = _mapper.Map(aisMessage);
             if (args is not null)
             {
+                Interlocked.Increment(ref _messageCount);
                 MessageReceived?.Invoke(this, args);
             }
         }
         catch (JsonException ex)
         {
-            _logger.LogDebug(ex, "Failed to parse AIS message");
+            Interlocked.Increment(ref _parseErrorCount);
+            _logger.LogWarning(ex, "Failed to parse AIS message (total errors: {Count})",
+                Interlocked.Read(ref _parseErrorCount));
         }
     }
 

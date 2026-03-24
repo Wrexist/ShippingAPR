@@ -221,13 +221,18 @@
                            FontSize="12" VerticalAlignment="Center"/>
 
                 <!-- Start Tracking Button -->
-                <Button Grid.Column="3"
-                        Content="Start Tracking"
-                        Command="{Binding MapViewModel.StartTrackingCommand}"
-                        IsEnabled="{Binding HasApiKey}"
-                        ToolTip="{Binding StartTrackingTooltip}"
-                        Style="{DynamicResource AccentButtonStyle}"
-                        FontSize="12" Padding="16,6"/>
+                <StackPanel Grid.Column="3" Orientation="Horizontal">
+                    <TextBlock Text="{Binding MessageRateText}"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="11" VerticalAlignment="Center"
+                               Margin="0,0,16,0"/>
+                    <Button Content="Start Tracking"
+                            Command="{Binding MapViewModel.StartTrackingCommand}"
+                            IsEnabled="{Binding HasApiKey}"
+                            ToolTip="{Binding StartTrackingTooltip}"
+                            Style="{DynamicResource AccentButtonStyle}"
+                            FontSize="12" Padding="16,6"/>
+                </StackPanel>
             </Grid>
         </Border>
 
