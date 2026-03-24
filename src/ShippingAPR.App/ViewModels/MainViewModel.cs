@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
@@ -13,6 +14,7 @@ using ShippingAPR.App.Configuration;
 using ShippingAPR.App.Views;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
+using ShippingAPR.Core.Models;
 using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
@@ -25,13 +27,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly ILogger<MainViewModel> _logger;
     private readonly UiOptions _uiOptions;
     private readonly EventHandler<ConnectionStatus> _onConnectionStatusChanged;
+    private readonly EventHandler<Vessel> _onVesselAdded;
+    private readonly EventHandler _onStoreCleared;
+    private readonly PropertyChangedEventHandler _onSelectedVesselChanged;
+    private readonly EventHandler<Vessel> _onVesselSelected;
     private CancellationTokenSource? _notificationCts;
 
     [ObservableProperty]
     private string _connectionStatusText = "Disconnected";
 
     [ObservableProperty]
-    private string _connectionStatusColor = "#FFFF3D71";
+    private string _connectionStatusColor;
 
     [ObservableProperty]
     private int _vesselCount;
@@ -81,6 +87,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _configuration = configuration;
         _logger = logger;
         _uiOptions = uiOptions.Value;
+        _connectionStatusColor = _uiOptions.StatusColorError;
 
         // Check if API key is configured
         HasApiKey = !string.IsNullOrEmpty(configuration["AisStream:ApiKey"]);
@@ -93,8 +100,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
-        _vesselStore.VesselAdded += (_, _) => VesselCount = _vesselStore.Count;
-        _vesselStore.StoreCleared += (_, _) => VesselCount = 0;
+
+        _onVesselAdded = (_, _) => VesselCount = _vesselStore.Count;
+        _onStoreCleared = (_, _) => VesselCount = 0;
+        _vesselStore.VesselAdded += _onVesselAdded;
+        _vesselStore.StoreCleared += _onStoreCleared;
 
         // Listen for notifications
         WeakReferenceMessenger.Default.Register<NotificationPublished>(this, (_, msg) =>
@@ -105,6 +115,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Cancel any previous auto-hide timer so rapid notifications
             // don't dismiss the latest one prematurely.
             _notificationCts?.Cancel();
+            _notificationCts?.Dispose();
             var cts = _notificationCts = new CancellationTokenSource();
             Task.Delay(_uiOptions.NotificationTimeoutMs, cts.Token).ContinueWith(_ =>
             {
@@ -113,7 +124,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         });
 
         // Wire vessel selection from list to detail
-        VesselListViewModel.PropertyChanged += (_, e) =>
+        _onSelectedVesselChanged = (_, e) =>
         {
             if (e.PropertyName == nameof(VesselListViewModel.SelectedVessel))
             {
@@ -121,14 +132,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 MapViewModel.HighlightVessel(VesselListViewModel.SelectedVessel);
             }
         };
+        VesselListViewModel.PropertyChanged += _onSelectedVesselChanged;
 
         // Wire search results
-        SearchViewModel.VesselSelected += (_, vessel) =>
+        _onVesselSelected = (_, vessel) =>
         {
             VesselDetailViewModel.Vessel = vessel;
             VesselListViewModel.SelectedVessel = vessel;
             MapViewModel.CenterOnVessel(vessel);
         };
+        SearchViewModel.VesselSelected += _onVesselSelected;
 
         // Auto-start tracking if API key is available
         if (HasApiKey)
@@ -148,9 +161,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             ConnectionStatusText = "Failed to auto-connect";
-            ConnectionStatusColor = "#FFFF3D71";
+            ConnectionStatusColor = _uiOptions.StatusColorError;
             // Non-fatal — user can click Start Tracking manually
-            System.Diagnostics.Debug.WriteLine($"Auto-start failed: {ex.Message}");
+            _logger.LogWarning(ex, "Auto-start tracking failed");
         }
     }
 
@@ -254,9 +267,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             ConnectionStatusColor = status switch
             {
-                ConnectionStatus.Connected => "#FF00D68F",
-                ConnectionStatus.Connecting or ConnectionStatus.Reconnecting => "#FFFFAA00",
-                _ => "#FFFF3D71"
+                ConnectionStatus.Connected => _uiOptions.StatusColorConnected,
+                ConnectionStatus.Connecting or ConnectionStatus.Reconnecting => _uiOptions.StatusColorConnecting,
+                _ => _uiOptions.StatusColorError
             };
         });
     }
@@ -266,6 +279,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _notificationCts?.Cancel();
         _notificationCts?.Dispose();
         _trackingService.ConnectionStatusChanged -= _onConnectionStatusChanged;
+        _vesselStore.VesselAdded -= _onVesselAdded;
+        _vesselStore.StoreCleared -= _onStoreCleared;
+        VesselListViewModel.PropertyChanged -= _onSelectedVesselChanged;
+        SearchViewModel.VesselSelected -= _onVesselSelected;
         WeakReferenceMessenger.Default.Unregister<NotificationPublished>(this);
         MapViewModel.Dispose();
         VesselListViewModel.Dispose();

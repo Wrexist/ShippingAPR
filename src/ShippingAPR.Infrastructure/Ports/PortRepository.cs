@@ -25,8 +25,16 @@ public sealed class PortRepository : IPortRepository
         if (stream is null)
             throw new InvalidOperationException($"Embedded resource '{resourceName}' not found");
 
-        var ports = JsonSerializer.Deserialize<PortEntry[]>(stream,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        PortEntry[]? ports;
+        try
+        {
+            ports = JsonSerializer.Deserialize<PortEntry[]>(stream,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException("Failed to deserialize embedded ports.json", ex);
+        }
 
         if (ports is null) return;
 

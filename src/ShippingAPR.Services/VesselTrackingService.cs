@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,10 +21,10 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
     private readonly TimeSpan _staleAge;
 
     // ETA calculation caching — only recalculate when vessel moves significantly
-    private readonly Dictionary<int, (double Lat, double Lon, double Heading)> _lastEtaPosition = new();
+    private readonly ConcurrentDictionary<int, (double Lat, double Lon, double Heading)> _lastEtaPosition = new();
 
     // Port resolution caching — avoid O(n) port scan on every message
-    private readonly Dictionary<string, Port?> _portCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Port?> _portCache = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly object _areaLock = new();
     private BoundingBox? _currentArea;
@@ -117,30 +118,23 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
             }
         }
 
-        // Periodic stale vessel cleanup
+        // Periodic stale vessel cleanup — runs until cancellation
         using var purgeTimer = new PeriodicTimer(_purgeInterval);
-        _ = Task.Run(async () =>
+        try
         {
-            while (!stoppingToken.IsCancellationRequested)
+            while (await purgeTimer.WaitForNextTickAsync(stoppingToken))
             {
                 try
                 {
-                    await purgeTimer.WaitForNextTickAsync(stoppingToken);
                     var purged = _vesselStore.PurgeStale(_staleAge);
                     if (purged > 0)
                         _logger.LogDebug("Purged {Count} stale vessels", purged);
                 }
-                catch (OperationCanceledException)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    break;
+                    _logger.LogError(ex, "Error during stale vessel purge");
                 }
             }
-        }, stoppingToken);
-
-        // Keep alive until stopped
-        try
-        {
-            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
         catch (OperationCanceledException)
         {
@@ -179,7 +173,7 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
 
     private void OnVesselRemoved(object? sender, Vessel vessel)
     {
-        _lastEtaPosition.Remove(vessel.Mmsi);
+        _lastEtaPosition.TryRemove(vessel.Mmsi, out _);
     }
 
     private bool ShouldRecalculateEta(Vessel vessel)
@@ -213,7 +207,7 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
             // Remove roughly half the cache to avoid frequent evictions
             var keysToRemove = _portCache.Keys.Take(_trackingOptions.PortCacheMaxSize / 2).ToList();
             foreach (var key in keysToRemove)
-                _portCache.Remove(key);
+                _portCache.TryRemove(key, out _);
         }
 
         var port = _portRepository.ResolveDestination(destination);

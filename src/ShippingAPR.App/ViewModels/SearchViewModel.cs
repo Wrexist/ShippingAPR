@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Options;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
@@ -9,6 +11,7 @@ namespace ShippingAPR.App.ViewModels;
 public partial class SearchViewModel : ObservableObject
 {
     private readonly IVesselStore _vesselStore;
+    private readonly int _maxResults;
 
     [ObservableProperty]
     private string _searchQuery = string.Empty;
@@ -20,9 +23,10 @@ public partial class SearchViewModel : ObservableObject
 
     public event EventHandler<Vessel>? VesselSelected;
 
-    public SearchViewModel(IVesselStore vesselStore)
+    public SearchViewModel(IVesselStore vesselStore, IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
+        _maxResults = uiOptions.Value.SearchMaxResults;
     }
 
     partial void OnSearchQueryChanged(string value)
@@ -42,7 +46,7 @@ public partial class SearchViewModel : ObservableObject
     {
         Results.Clear();
 
-        var results = _vesselStore.Search(query).Take(20);
+        var results = _vesselStore.Search(query).Take(_maxResults);
         foreach (var vessel in results)
             Results.Add(vessel);
 

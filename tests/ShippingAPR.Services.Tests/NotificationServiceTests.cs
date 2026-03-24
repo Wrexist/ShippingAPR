@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Models;
 using ShippingAPR.Services;
@@ -20,7 +21,8 @@ public class NotificationServiceTests
         _areaMonitor = new AreaMonitorService(_vesselStore, areaLogger);
 
         var notifLogger = Mock.Of<ILogger<NotificationService>>();
-        _service = new NotificationService(_areaMonitor, notifLogger);
+        var trackingOptions = Options.Create(new TrackingOptions());
+        _service = new NotificationService(_areaMonitor, notifLogger, trackingOptions);
     }
 
     [Fact]

@@ -19,6 +19,9 @@ namespace ShippingAPR.App.ViewModels;
 
 public partial class MapViewModel : ObservableObject, IDisposable
 {
+    internal const string MmsiFeatureKey = "MMSI";
+    internal const string NameFeatureKey = "Name";
+
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
     private readonly UiOptions _uiOptions;
@@ -179,8 +182,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         var viewportArea = new BoundingBox(minLat, minLon, maxLat, maxLon);
 
-        // Only update if area changed significantly (>10% shift)
-        if (SelectedArea is not null && !HasAreaChangedSignificantly(SelectedArea, viewportArea))
+        // Only update if area changed significantly
+        if (SelectedArea is not null && !HasAreaChangedSignificantly(SelectedArea, viewportArea, _uiOptions.AreaChangeThreshold))
             return;
 
         SelectedArea = viewportArea;
@@ -189,11 +192,10 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _ = _trackingService.ChangeAreaAsync(viewportArea);
     }
 
-    private static bool HasAreaChangedSignificantly(BoundingBox old, BoundingBox current)
+    private static bool HasAreaChangedSignificantly(BoundingBox old, BoundingBox current, double threshold)
     {
         var latRange = old.MaxLatitude - old.MinLatitude;
         var lonRange = old.MaxLongitude - old.MinLongitude;
-        var threshold = 0.1;
 
         return Math.Abs(old.MinLatitude - current.MinLatitude) > latRange * threshold ||
                Math.Abs(old.MaxLatitude - current.MaxLatitude) > latRange * threshold ||
@@ -307,9 +309,9 @@ public partial class MapViewModel : ObservableObject, IDisposable
         var latSpan = box.MaxLatitude - box.MinLatitude;
         var resolution = latSpan switch
         {
-            > 100 => 9784,   // Global
-            > 50 => 4892,    // Continental
-            _ => 2446        // Regional
+            > 100 => _uiOptions.ZoomGlobalResolution,
+            > 50 => _uiOptions.ZoomContinentalResolution,
+            _ => _uiOptions.ZoomRegionalResolution
         };
 
         Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), resolution);
@@ -393,8 +395,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
             {
                 var feature = new GeometryFeature(new NetTopologySuite.Geometries.Point(point.x, point.y));
                 feature.Styles.Add(CreateVesselStyle(vessel));
-                feature["MMSI"] = mmsi;
-                feature["Name"] = vessel.DisplayName;
+                feature[MmsiFeatureKey] = mmsi;
+                feature[NameFeatureKey] = vessel.DisplayName;
                 _vesselFeatures[mmsi] = feature;
                 _featuresNeedRebuild = true;
             }
@@ -424,6 +426,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         var viewport = Map.Navigator.Viewport;
         var cellSize = viewport.Resolution * _uiOptions.ClusterGridCellPx;
+        if (cellSize <= 0) return; // Guard against division by zero
 
         var clusters = new Dictionary<(int, int), List<Vessel>>();
 
@@ -458,7 +461,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
             var center = SphericalMercator.FromLonLat(avgLon, avgLat);
 
             var feature = new GeometryFeature(new NetTopologySuite.Geometries.Point(center.x, center.y));
-            var scale = Math.Min(1.0, 0.3 + vessels.Count * 0.05);
+            var scale = Math.Min(_uiOptions.ClusterScaleMax, _uiOptions.ClusterScaleMin + vessels.Count * _uiOptions.ClusterScalePerVessel);
             feature.Styles.Add(new SymbolStyle
             {
                 SymbolScale = scale,
@@ -489,7 +492,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         return new SymbolStyle
         {
-            SymbolScale = isHighlighted ? 0.6 : 0.4,
+            SymbolScale = isHighlighted ? _uiOptions.VesselScaleHighlighted : _uiOptions.VesselScaleNormal,
             SymbolRotation = vessel.CurrentPosition?.TrueHeading ?? 0,
             Fill = new Brush(color),
             Outline = isHighlighted
