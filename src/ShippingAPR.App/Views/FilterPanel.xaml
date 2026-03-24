@@ -1,6 +1,7 @@
 <UserControl x:Class="ShippingAPR.App.Views.FilterPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources">
     <Grid Margin="14,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -10,7 +11,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Filters"
+        <TextBlock Grid.Row="0" Text="{x:Static res:Strings.Filters}"
                    Style="{DynamicResource HeaderTextStyle}"
                    Margin="0,0,0,12"/>
 
@@ -20,22 +21,22 @@
                 <Border Width="3" Height="12" CornerRadius="2"
                         Background="{DynamicResource AccentBrush}"
                         Margin="0,0,8,0"/>
-                <TextBlock Text="VESSEL TYPES"
+                <TextBlock Text="{x:Static res:Strings.VesselTypes}"
                            Style="{DynamicResource SubTextStyle}"
                            FontWeight="Bold" FontSize="10"/>
             </StackPanel>
 
-            <CheckBox Content="Cargo" IsChecked="{Binding ShowCargo}"
+            <CheckBox Content="{x:Static res:Strings.Cargo}" IsChecked="{Binding ShowCargo}"
                       Style="{DynamicResource GlassToggleStyle}"/>
-            <CheckBox Content="Tanker" IsChecked="{Binding ShowTanker}"
+            <CheckBox Content="{x:Static res:Strings.Tanker}" IsChecked="{Binding ShowTanker}"
                       Style="{DynamicResource GlassToggleStyle}"/>
-            <CheckBox Content="Passenger" IsChecked="{Binding ShowPassenger}"
+            <CheckBox Content="{x:Static res:Strings.Passenger}" IsChecked="{Binding ShowPassenger}"
                       Style="{DynamicResource GlassToggleStyle}"/>
-            <CheckBox Content="Fishing" IsChecked="{Binding ShowFishing}"
+            <CheckBox Content="{x:Static res:Strings.Fishing}" IsChecked="{Binding ShowFishing}"
                       Style="{DynamicResource GlassToggleStyle}"/>
-            <CheckBox Content="Tug / Pilot" IsChecked="{Binding ShowTugPilot}"
+            <CheckBox Content="{x:Static res:Strings.TugPilot}" IsChecked="{Binding ShowTugPilot}"
                       Style="{DynamicResource GlassToggleStyle}"/>
-            <CheckBox Content="Other" IsChecked="{Binding ShowOther}"
+            <CheckBox Content="{x:Static res:Strings.Other}" IsChecked="{Binding ShowOther}"
                       Style="{DynamicResource GlassToggleStyle}"/>
         </StackPanel>
 
@@ -45,7 +46,7 @@
                 <Border Width="3" Height="12" CornerRadius="2"
                         Background="{DynamicResource WarningBrush}"
                         Margin="0,0,8,0"/>
-                <TextBlock Text="SPEED RANGE"
+                <TextBlock Text="{x:Static res:Strings.SpeedRange}"
                            Style="{DynamicResource SubTextStyle}"
                            FontWeight="Bold" FontSize="10"/>
             </StackPanel>

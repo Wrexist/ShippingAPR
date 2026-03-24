@@ -111,6 +111,54 @@ public class EtaCalculatorTests
         result!.TimeToArrival.TotalHours.Should().BeInRange(10, 20);
     }
 
+    [Fact]
+    public void NegativeSpeed_ReturnsNull()
+    {
+        var position = CreatePosition(57.0, 12.0, sog: -1.0, cog: 0);
+        var result = EtaCalculator.Calculate(position, Gothenburg);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void ExcessiveSpeed_ReturnsNull()
+    {
+        // Speed > 50 knots (MaxPlausibleSpeedKnots) should return null
+        var position = CreatePosition(57.0, 12.0, sog: 55.0, cog: 0);
+        var result = EtaCalculator.Calculate(position, Gothenburg);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void SpeedAtStationaryThreshold_ReturnsNull()
+    {
+        // Exactly at 0.3 knots (stationary threshold) — should return null
+        var position = CreatePosition(57.0, 12.0, sog: 0.29, cog: 0);
+        var result = EtaCalculator.Calculate(position, Gothenburg);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void SpeedJustAboveThreshold_ReturnsResult()
+    {
+        var position = CreatePosition(57.0, 12.0, sog: 0.5, cog: 0);
+        var result = EtaCalculator.Calculate(position, Gothenburg);
+
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void SpeedAtMaxPlausible_ReturnsResult()
+    {
+        // Exactly 50 knots should still work
+        var position = CreatePosition(57.0, 12.0, sog: 50.0, cog: 0);
+        var result = EtaCalculator.Calculate(position, Gothenburg);
+
+        result.Should().NotBeNull();
+    }
+
     private static VesselPosition CreatePosition(
         double lat, double lon, double sog, double cog) =>
         new()

@@ -16,5 +16,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Ports\ports.json" />
+    <EmbeddedResource Include="Mapping\mmsi-countries.json" />
   </ItemGroup>
 </Project>

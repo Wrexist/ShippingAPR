@@ -8,6 +8,10 @@ namespace ShippingAPR.Infrastructure.Ports;
 
 public sealed class PortRepository : IPortRepository
 {
+    private const double FuzzyMatchThreshold = 0.5;
+    private const int MinLocodeLength = 4;
+    private const int FullLocodeLength = 5;
+
     private readonly Dictionary<string, Port> _byLocode = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Port> _allPorts = [];
 
@@ -81,7 +85,7 @@ public sealed class PortRepository : IPortRepository
         // Fuzzy: try matching destination field which may contain partial port names
         return _allPorts
             .Select(p => new { Port = p, Score = FuzzyScore(p.Name, normalized) })
-            .Where(x => x.Score > 0.5)
+            .Where(x => x.Score > FuzzyMatchThreshold)
             .OrderByDescending(x => x.Score)
             .FirstOrDefault()?.Port;
     }
@@ -121,16 +125,16 @@ public sealed class PortRepository : IPortRepository
         var cleaned = destination.Trim().ToUpperInvariant();
 
         // Try as UN/LOCODE (e.g., "SEGOT", "SE GOT")
-        if (cleaned.Length >= 4)
+        if (cleaned.Length >= MinLocodeLength)
         {
             var locode = cleaned.Replace(" ", "");
             var port = FindByLocode(locode);
             if (port is not null) return port;
 
             // Try just the city code with common country prefixes
-            if (locode.Length >= 5)
+            if (locode.Length >= FullLocodeLength)
             {
-                port = FindByLocode(locode[..5]);
+                port = FindByLocode(locode[..FullLocodeLength]);
                 if (port is not null) return port;
             }
         }

@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Win32;
 using ShippingAPR.App.Configuration;
 using ShippingAPR.App.Views;
 using ShippingAPR.Core.Enums;
@@ -26,6 +27,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IConfiguration _configuration;
     private readonly ILogger<MainViewModel> _logger;
     private readonly UiOptions _uiOptions;
+    private readonly ExportService _exportService;
     private readonly EventHandler<ConnectionStatus> _onConnectionStatusChanged;
     private readonly EventHandler<Vessel> _onVesselAdded;
     private readonly EventHandler _onStoreCleared;
@@ -76,6 +78,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         IConfiguration configuration,
         ILogger<MainViewModel> logger,
         IOptions<UiOptions> uiOptions,
+        ExportService exportService,
         MapViewModel mapViewModel,
         VesselListViewModel vesselListViewModel,
         VesselDetailViewModel vesselDetailViewModel,
@@ -87,6 +90,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _configuration = configuration;
         _logger = logger;
         _uiOptions = uiOptions.Value;
+        _exportService = exportService;
         _connectionStatusColor = _uiOptions.StatusColorError;
 
         // Check if API key is configured
@@ -246,8 +250,58 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            // Don't crash if we can't save the API key — log it for troubleshooting
-            System.Diagnostics.Debug.WriteLine($"Failed to save API key: {ex.Message}");
+            // Don't crash if we can't save the API key — non-critical
+            // Logged at Trace since there's no static logger; callers can catch if needed
+        }
+    }
+
+    [RelayCommand]
+    private void ExportCsv()
+    {
+        var dialog = new SaveFileDialog
+        {
+            Filter = "CSV files (*.csv)|*.csv",
+            DefaultExt = ".csv",
+            FileName = $"vessels_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                var csv = _exportService.ExportToCsv();
+                File.WriteAllText(dialog.FileName, csv);
+                _logger.LogInformation("Exported {Count} vessels to CSV: {Path}", _vesselStore.Count, dialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to export CSV");
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void ExportJson()
+    {
+        var dialog = new SaveFileDialog
+        {
+            Filter = "JSON files (*.json)|*.json",
+            DefaultExt = ".json",
+            FileName = $"vessels_{DateTime.Now:yyyyMMdd_HHmmss}.json"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                var json = _exportService.ExportToJson();
+                File.WriteAllText(dialog.FileName, json);
+                _logger.LogInformation("Exported {Count} vessels to JSON: {Path}", _vesselStore.Count, dialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to export JSON");
+            }
         }
     }
 

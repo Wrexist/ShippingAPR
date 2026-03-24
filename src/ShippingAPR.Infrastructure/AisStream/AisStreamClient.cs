@@ -229,14 +229,18 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
                 return false;
             }
 
+            ClientWebSocket? newSocket = null;
             try
             {
                 _webSocket?.Dispose();
-                _webSocket = new ClientWebSocket();
-                _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
+                newSocket = new ClientWebSocket();
+                newSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
 
-                await _webSocket.ConnectAsync(
+                await newSocket.ConnectAsync(
                     new Uri(_options.WebSocketUrl), ct);
+
+                _webSocket = newSocket;
+                newSocket = null; // Ownership transferred
 
                 // Re-send subscription so the server knows what data to send.
                 if (_lastSubscription is not null)
@@ -256,10 +260,12 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             }
             catch (OperationCanceledException)
             {
+                newSocket?.Dispose();
                 return false;
             }
             catch (Exception ex)
             {
+                newSocket?.Dispose();
                 _logger.LogWarning(ex, "Reconnection attempt failed");
                 delay = Math.Min(delay * 2, maxDelay);
             }
@@ -324,7 +330,18 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     public void Dispose()
     {
         _receiveCts?.Cancel();
+
+        // Wait briefly for the receive loop to exit gracefully
+        if (_receiveTask is not null)
+        {
+            try { _receiveTask.Wait(TimeSpan.FromSeconds(5)); }
+            catch { /* Best-effort shutdown */ }
+            _receiveTask = null;
+        }
+
         _webSocket?.Dispose();
+        _webSocket = null;
         _receiveCts?.Dispose();
+        _receiveCts = null;
     }
 }

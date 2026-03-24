@@ -39,8 +39,13 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("VesselFinder API returned {Status} for MMSI {Mmsi}",
-                    response.StatusCode, mmsi);
+                var statusCode = (int)response.StatusCode;
+                if (statusCode == 401 || statusCode == 403)
+                    _logger.LogError("VesselFinder API authentication failed ({Status}) — check ApiKey configuration", response.StatusCode);
+                else if (statusCode == 404)
+                    _logger.LogDebug("VesselFinder: MMSI {Mmsi} not found", mmsi);
+                else
+                    _logger.LogWarning("VesselFinder API returned {Status} for MMSI {Mmsi}", response.StatusCode, mmsi);
                 return null;
             }
 

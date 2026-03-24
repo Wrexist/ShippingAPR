@@ -1,13 +1,62 @@
 using System.Windows;
+using System.Windows.Input;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.App.ViewModels;
 
 namespace ShippingAPR.App.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow(MainViewModel viewModel)
+    private readonly MainViewModel _viewModel;
+    private readonly UserPreferences? _preferences;
+
+    public MainWindow(MainViewModel viewModel, UserPreferences? preferences = null)
     {
         InitializeComponent();
         DataContext = viewModel;
+        _viewModel = viewModel;
+        _preferences = preferences;
+
+        // Restore window size/position from preferences
+        if (_preferences is not null)
+        {
+            Width = _preferences.WindowWidth;
+            Height = _preferences.WindowHeight;
+            if (!double.IsNaN(_preferences.WindowLeft) && !double.IsNaN(_preferences.WindowTop))
+            {
+                Left = _preferences.WindowLeft;
+                Top = _preferences.WindowTop;
+                WindowStartupLocation = WindowStartupLocation.Manual;
+            }
+        }
+
+        // Register keyboard shortcuts
+        InputBindings.Add(new KeyBinding(viewModel.SearchViewModel.FocusSearchCommand, Key.F, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(viewModel.DismissNotificationCommand, Key.Escape, ModifierKeys.None));
+
+        Closing += OnWindowClosing;
+    }
+
+    private void OnWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (_preferences is null) return;
+
+        _preferences.WindowWidth = Width;
+        _preferences.WindowHeight = Height;
+        _preferences.WindowLeft = Left;
+        _preferences.WindowTop = Top;
+        _preferences.IsDarkTheme = _viewModel.IsDarkTheme;
+        _preferences.Language = _viewModel.CurrentLanguage;
+
+        // Save filter state
+        _preferences.ShowCargo = _viewModel.FilterViewModel.ShowCargo;
+        _preferences.ShowTanker = _viewModel.FilterViewModel.ShowTanker;
+        _preferences.ShowPassenger = _viewModel.FilterViewModel.ShowPassenger;
+        _preferences.ShowFishing = _viewModel.FilterViewModel.ShowFishing;
+        _preferences.ShowTugPilot = _viewModel.FilterViewModel.ShowTugPilot;
+        _preferences.ShowOther = _viewModel.FilterViewModel.ShowOther;
+        _preferences.MaxSpeed = _viewModel.FilterViewModel.MaxSpeed;
+
+        _preferences.Save();
     }
 }
