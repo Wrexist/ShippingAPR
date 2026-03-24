@@ -22,6 +22,13 @@ public partial class SearchViewModel : ObservableObject
     public ObservableCollection<Vessel> Results { get; } = [];
 
     public event EventHandler<Vessel>? VesselSelected;
+    public event EventHandler? FocusRequested;
+
+    [RelayCommand]
+    private void FocusSearch()
+    {
+        FocusRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     public SearchViewModel(IVesselStore vesselStore, IOptions<UiOptions> uiOptions)
     {

@@ -105,4 +105,55 @@
   <data name="DarkTheme"><value>Dark</value></data>
   <data name="LightTheme"><value>Light</value></data>
   <data name="Language"><value>Language</value></data>
+
+  <!-- UI Labels -->
+  <data name="AppName"><value>ShippingAPR</value></data>
+  <data name="AppSubtitle"><value>Real-Time Ship Tracker</value></data>
+  <data name="ToggleLanguageTooltip"><value>Toggle EN/SV</value></data>
+  <data name="ToggleThemeTooltip"><value>Toggle Dark/Light Theme</value></data>
+  <data name="StartTracking"><value>Start Tracking</value></data>
+  <data name="NoApiKeyWarning"><value>No API key configured — tracking is disabled.</value></data>
+  <data name="AddApiKey"><value>Add API Key</value></data>
+  <data name="Dismiss"><value>Dismiss</value></data>
+  <data name="SelectVesselHint"><value>Select a vessel to view details</value></data>
+  <data name="SelectVesselSubHint"><value>Click on any ship in the list or on the map</value></data>
+  <data name="Legend"><value>Legend</value></data>
+  <data name="TugPilotShort"><value>Tug/Pilot</value></data>
+  <data name="AreaSelectionHint"><value>Click two points on the map to define tracking area</value></data>
+  <data name="VesselTypes"><value>VESSEL TYPES</value></data>
+  <data name="SpeedRange"><value>SPEED RANGE</value></data>
+  <data name="Identity"><value>IDENTITY</value></data>
+  <data name="Navigation"><value>NAVIGATION</value></data>
+  <data name="VoyageEta"><value>VOYAGE &amp; ETA</value></data>
+  <data name="Dimensions"><value>DIMENSIONS</value></data>
+  <data name="Position"><value>Position</value></data>
+  <data name="Size"><value>Size</value></data>
+  <data name="LastUpdate"><value>Last update: </value></data>
+  <data name="CourseDev"><value>Course Dev.</value></data>
+  <data name="Europe"><value>Europe</value></data>
+  <data name="Asia"><value>Asia</value></data>
+  <data name="Americas"><value>Americas</value></data>
+  <data name="Global"><value>Global</value></data>
+  <data name="Error"><value>Error</value></data>
+  <data name="ZoomIn"><value>Zoom In</value></data>
+  <data name="ZoomOut"><value>Zoom Out</value></data>
+
+  <!-- Export -->
+  <data name="Export"><value>Export</value></data>
+  <data name="ExportCsv"><value>Export as CSV</value></data>
+  <data name="ExportJson"><value>Export as JSON</value></data>
+
+  <!-- Settings -->
+  <data name="SettingsTitle"><value>Settings</value></data>
+  <data name="ApiKeySection"><value>API Key</value></data>
+  <data name="ThemeSection"><value>Theme</value></data>
+  <data name="About"><value>About</value></data>
+  <data name="Version"><value>Version</value></data>
+
+  <!-- Keyboard Shortcuts -->
+  <data name="KeyboardShortcuts"><value>Keyboard Shortcuts</value></data>
+  <data name="ShortcutSearch"><value>Focus search</value></data>
+  <data name="ShortcutExport"><value>Export vessels</value></data>
+  <data name="ShortcutHelp"><value>Show shortcuts</value></data>
+  <data name="ShortcutEscape"><value>Deselect / Close</value></data>
 </root>

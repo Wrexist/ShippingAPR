@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:ShippingAPR.App.Views"
         xmlns:converters="clr-namespace:ShippingAPR.App.Converters"
+        xmlns:res="clr-namespace:ShippingAPR.App.Resources"
         Title="ShippingAPR - Real-Time Ship Tracker"
         Width="1400" Height="900"
         MinWidth="1000" MinHeight="600"
@@ -53,10 +54,10 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="ShippingAPR"
+                        <TextBlock Text="{x:Static res:Strings.AppName}"
                                    FontSize="18" FontWeight="Bold"
                                    Foreground="{DynamicResource AccentBrush}"/>
-                        <TextBlock Text="Real-Time Ship Tracker"
+                        <TextBlock Text="{x:Static res:Strings.AppSubtitle}"
                                    FontSize="11"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                    Margin="0,-2,0,0"/>
@@ -73,13 +74,13 @@
                     <Button Content="{Binding CurrentLanguage}"
                             Command="{Binding ToggleLanguageCommand}"
                             Style="{DynamicResource IconButtonStyle}"
-                            ToolTip="Toggle EN/SV"
+                            ToolTip="{x:Static res:Strings.ToggleLanguageTooltip}"
                             Margin="0,0,6,0"/>
 
                     <Button Content="T"
                             Command="{Binding ToggleThemeCommand}"
                             Style="{DynamicResource IconButtonStyle}"
-                            ToolTip="Toggle Dark/Light Theme"/>
+                            ToolTip="{x:Static res:Strings.ToggleThemeTooltip}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -203,7 +204,7 @@
 
                 <!-- Vessel Count — with accent highlight -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,24,0">
-                    <TextBlock Text="Ships: "
+                    <TextBlock Text="{Binding Source={x:Static res:Strings.Ships}, StringFormat='{}{0}: '}"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="12" VerticalAlignment="Center"/>
                     <Border Background="{DynamicResource AccentGlowBrush}"
@@ -226,7 +227,7 @@
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="11" VerticalAlignment="Center"
                                Margin="0,0,16,0"/>
-                    <Button Content="Start Tracking"
+                    <Button Content="{x:Static res:Strings.StartTracking}"
                             Command="{Binding MapViewModel.StartTrackingCommand}"
                             IsEnabled="{Binding HasApiKey}"
                             ToolTip="{Binding StartTrackingTooltip}"
@@ -253,10 +254,10 @@
             </Border.Effect>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#x26A0;" FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                <TextBlock Text="No API key configured — tracking is disabled."
+                <TextBlock Text="{x:Static res:Strings.NoApiKeyWarning}"
                            Foreground="{DynamicResource PrimaryTextBrush}"
                            FontSize="13" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                <Button Content="Add API Key"
+                <Button Content="{x:Static res:Strings.AddApiKey}"
                         Command="{Binding OpenApiKeyDialogCommand}"
                         Style="{DynamicResource AccentButtonStyle}"
                         FontSize="12" Padding="14,6"/>
@@ -301,7 +302,7 @@
                 <TextBlock Text="{Binding NotificationText}"
                            Foreground="{DynamicResource PrimaryTextBrush}"
                            FontSize="13" TextWrapping="Wrap"/>
-                <Button Content="Dismiss" Margin="0,10,0,0"
+                <Button Content="{x:Static res:Strings.Dismiss}" Margin="0,10,0,0"
                         Command="{Binding DismissNotificationCommand}"
                         Style="{DynamicResource GhostButtonStyle}"
                         HorizontalAlignment="Right"

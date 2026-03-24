@@ -105,4 +105,55 @@
   <data name="DarkTheme"><value>Mörkt</value></data>
   <data name="LightTheme"><value>Ljust</value></data>
   <data name="Language"><value>Språk</value></data>
+
+  <!-- UI Labels -->
+  <data name="AppName"><value>ShippingAPR</value></data>
+  <data name="AppSubtitle"><value>Fartygsradar i Realtid</value></data>
+  <data name="ToggleLanguageTooltip"><value>Växla EN/SV</value></data>
+  <data name="ToggleThemeTooltip"><value>Växla Mörkt/Ljust Tema</value></data>
+  <data name="StartTracking"><value>Starta Spårning</value></data>
+  <data name="NoApiKeyWarning"><value>Ingen API-nyckel konfigurerad — spårning är inaktiverad.</value></data>
+  <data name="AddApiKey"><value>Lägg till API-nyckel</value></data>
+  <data name="Dismiss"><value>Stäng</value></data>
+  <data name="SelectVesselHint"><value>Välj ett fartyg för att se detaljer</value></data>
+  <data name="SelectVesselSubHint"><value>Klicka på ett fartyg i listan eller på kartan</value></data>
+  <data name="Legend"><value>Förklaring</value></data>
+  <data name="TugPilotShort"><value>Bogserbåt/Lots</value></data>
+  <data name="AreaSelectionHint"><value>Klicka på två punkter på kartan för att definiera spårningsområdet</value></data>
+  <data name="VesselTypes"><value>FARTYGSTYPER</value></data>
+  <data name="SpeedRange"><value>HASTIGHETSINTERVALL</value></data>
+  <data name="Identity"><value>IDENTITET</value></data>
+  <data name="Navigation"><value>NAVIGERING</value></data>
+  <data name="VoyageEta"><value>RESA &amp; BERÄKNAD ANKOMST</value></data>
+  <data name="Dimensions"><value>DIMENSIONER</value></data>
+  <data name="Position"><value>Position</value></data>
+  <data name="Size"><value>Storlek</value></data>
+  <data name="LastUpdate"><value>Senast uppdaterad: </value></data>
+  <data name="CourseDev"><value>Kursavvikelse</value></data>
+  <data name="Europe"><value>Europa</value></data>
+  <data name="Asia"><value>Asien</value></data>
+  <data name="Americas"><value>Amerika</value></data>
+  <data name="Global"><value>Globalt</value></data>
+  <data name="Error"><value>Fel</value></data>
+  <data name="ZoomIn"><value>Zooma in</value></data>
+  <data name="ZoomOut"><value>Zooma ut</value></data>
+
+  <!-- Export -->
+  <data name="Export"><value>Exportera</value></data>
+  <data name="ExportCsv"><value>Exportera som CSV</value></data>
+  <data name="ExportJson"><value>Exportera som JSON</value></data>
+
+  <!-- Settings -->
+  <data name="SettingsTitle"><value>Inställningar</value></data>
+  <data name="ApiKeySection"><value>API-nyckel</value></data>
+  <data name="ThemeSection"><value>Tema</value></data>
+  <data name="About"><value>Om</value></data>
+  <data name="Version"><value>Version</value></data>
+
+  <!-- Keyboard Shortcuts -->
+  <data name="KeyboardShortcuts"><value>Tangentbordsgenvägar</value></data>
+  <data name="ShortcutSearch"><value>Fokusera sökning</value></data>
+  <data name="ShortcutExport"><value>Exportera fartyg</value></data>
+  <data name="ShortcutHelp"><value>Visa genvägar</value></data>
+  <data name="ShortcutEscape"><value>Avmarkera / Stäng</value></data>
 </root>

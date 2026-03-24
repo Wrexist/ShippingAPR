@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ShippingAPR.App.Configuration;
 using ShippingAPR.App.ViewModels;
 using ShippingAPR.App.Views;
@@ -95,6 +96,10 @@ public partial class App : Application
                 services.AddHostedService(sp => sp.GetRequiredService<VesselTrackingService>());
                 services.AddSingleton<AreaMonitorService>();
                 services.AddSingleton<NotificationService>();
+                services.AddSingleton<ExportService>();
+
+                // User preferences (persisted between sessions)
+                services.AddSingleton<UserPreferences>();
 
                 // ViewModels
                 services.AddSingleton<MainViewModel>();
@@ -108,6 +113,13 @@ public partial class App : Application
                 services.AddSingleton<MainWindow>();
             })
             .Build();
+
+        // Validate configuration at startup
+        ValidateConfiguration(_host.Services);
+
+        // Load persisted user preferences
+        var prefs = _host.Services.GetRequiredService<UserPreferences>();
+        prefs.Load();
 
         // Set sync context for UI thread dispatching
         var vesselStore = _host.Services.GetRequiredService<VesselStore>();
@@ -138,6 +150,33 @@ public partial class App : Application
         }
 
         mainWindow.Show();
+    }
+
+    private static void ValidateConfiguration(IServiceProvider services)
+    {
+        var logger = services.GetRequiredService<ILogger<App>>();
+        var config = services.GetRequiredService<IConfiguration>();
+
+        // Validate AisStream settings
+        var aisSection = config.GetSection(AisStreamOptions.SectionName);
+        var wsUrl = aisSection["WebSocketUrl"];
+        if (!string.IsNullOrEmpty(wsUrl) && !Uri.TryCreate(wsUrl, UriKind.Absolute, out _))
+            throw new InvalidOperationException($"AisStream:WebSocketUrl is not a valid URI: '{wsUrl}'");
+
+        var connectTimeout = aisSection.GetValue<int>("ConnectTimeoutSeconds");
+        if (connectTimeout < 0)
+            throw new InvalidOperationException("AisStream:ConnectTimeoutSeconds must be non-negative");
+
+        // Validate Tracking settings
+        var trackingSection = config.GetSection(TrackingOptions.SectionName);
+        var portCacheMaxSize = trackingSection.GetValue<int>("PortCacheMaxSize");
+        if (portCacheMaxSize < 0)
+            throw new InvalidOperationException("Tracking:PortCacheMaxSize must be non-negative");
+
+        // Warn about missing optional keys
+        var vesselFinderKey = config[$"{VesselFinderOptions.SectionName}:ApiKey"];
+        if (string.IsNullOrEmpty(vesselFinderKey))
+            logger.LogInformation("VesselFinder API key not configured — vessel enrichment will be disabled");
     }
 
     private static void ShowStartupError(Exception ex)

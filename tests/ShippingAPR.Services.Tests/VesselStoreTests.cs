@@ -145,6 +145,53 @@ public class VesselStoreTests
         vessel!.Track.Count.Should().BeLessOrEqualTo(Vessel.DefaultMaxTrackPoints);
     }
 
+    [Fact]
+    public void Search_WithWhitespace_ReturnsAllVessels()
+    {
+        _store.AddOrUpdate(265000001, CreatePosition(57.7, 11.9), null);
+
+        var results = _store.Search("   ").ToList();
+        results.Should().HaveCount(1); // Whitespace-only returns all
+    }
+
+    [Fact]
+    public void Search_EmptyString_ReturnsAllVessels()
+    {
+        _store.AddOrUpdate(265000001, CreatePosition(57.7, 11.9), null);
+
+        var results = _store.Search("").ToList();
+        results.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Search_MmsiWithWhitespace_FindsVessel()
+    {
+        _store.AddOrUpdate(265000001, CreatePosition(57.7, 11.9), null);
+
+        var results = _store.Search("  265000001  ").ToList();
+        results.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Search_ByCallSign_FindsVessel()
+    {
+        var staticData = new VesselStaticData { CallSign = "SFDG" };
+        _store.AddOrUpdate(265000001, CreatePosition(57.7, 11.9), staticData);
+
+        var results = _store.Search("SFDG").ToList();
+        results.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Search_ByDestination_FindsVessel()
+    {
+        var staticData = new VesselStaticData { Destination = "GOTHENBURG" };
+        _store.AddOrUpdate(265000001, CreatePosition(57.7, 11.9), staticData);
+
+        var results = _store.Search("GOTHEN").ToList();
+        results.Should().HaveCount(1);
+    }
+
     private static VesselPosition CreatePosition(double lat, double lon) =>
         new()
         {

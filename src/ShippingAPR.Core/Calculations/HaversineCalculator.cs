@@ -3,6 +3,7 @@ namespace ShippingAPR.Core.Calculations;
 public static class HaversineCalculator
 {
     private const double EarthRadiusNauticalMiles = 3440.065;
+    private const double NauticalMilesToKmFactor = 1.852;
 
     public static double DistanceInNauticalMiles(
         double lat1, double lon1,
@@ -26,7 +27,7 @@ public static class HaversineCalculator
     public static double DistanceInKilometers(
         double lat1, double lon1,
         double lat2, double lon2) =>
-        DistanceInNauticalMiles(lat1, lon1, lat2, lon2) * 1.852;
+        DistanceInNauticalMiles(lat1, lon1, lat2, lon2) * NauticalMilesToKmFactor;
 
     private static double DegreesToRadians(double degrees) =>
         degrees * Math.PI / 180.0;

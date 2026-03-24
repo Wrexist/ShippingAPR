@@ -162,6 +162,11 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
                             vessel.CurrentPosition.Longitude,
                             vessel.CurrentPosition.TrueHeading);
                     }
+                    else
+                    {
+                        _logger.LogDebug("Could not resolve destination '{Destination}' to a port for MMSI {Mmsi}",
+                            vessel.StaticData.Destination, vessel.Mmsi);
+                    }
                 }
             }
         }
@@ -204,10 +209,12 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         // Evict oldest entries when cache is full
         if (_portCache.Count >= _trackingOptions.PortCacheMaxSize)
         {
-            // Remove roughly half the cache to avoid frequent evictions
-            var keysToRemove = _portCache.Keys.Take(_trackingOptions.PortCacheMaxSize / 2).ToList();
+            var evictCount = _trackingOptions.PortCacheMaxSize / 2;
+            var keysToRemove = _portCache.Keys.Take(evictCount).ToList();
             foreach (var key in keysToRemove)
                 _portCache.TryRemove(key, out _);
+            _logger.LogDebug("Port cache eviction: removed {Count} entries (was at capacity {Max})",
+                keysToRemove.Count, _trackingOptions.PortCacheMaxSize);
         }
 
         var port = _portRepository.ResolveDestination(destination);

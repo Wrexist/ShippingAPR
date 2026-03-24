@@ -23,9 +23,9 @@
     <Color x:Key="AccentGlowColor">#404F46E5</Color>
     <Color x:Key="AccentTextColor">#FF4338CA</Color>
 
-    <!-- Text Colors -->
+    <!-- Text Colors (WCAG AA contrast: min 4.5:1 against #FFEEF1F8 backgrounds) -->
     <Color x:Key="PrimaryTextColor">#FF1A1A2E</Color>
-    <Color x:Key="SecondaryTextColor">#FF6B7280</Color>
+    <Color x:Key="SecondaryTextColor">#FF4B5563</Color>
 
     <!-- Status Colors -->
     <Color x:Key="SuccessColor">#FF059669</Color>

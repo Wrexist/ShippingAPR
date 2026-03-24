@@ -333,8 +333,51 @@ public partial class MapViewModel : ObservableObject, IDisposable
     public void HighlightVessel(Vessel? vessel)
     {
         _highlightedVessel = vessel;
+        UpdateTrackVisualization(vessel);
         // Trigger re-render to update highlight style
         _vesselLayer?.DataHasChanged();
+    }
+
+    /// <summary>
+    /// Draws the track history of the highlighted vessel as a polyline on the map.
+    /// </summary>
+    private void UpdateTrackVisualization(Vessel? vessel)
+    {
+        if (_trailLayer is null) return;
+
+        if (vessel?.Track is null || vessel.Track.Count < 2)
+        {
+            _trailLayer.Features = [];
+            _trailLayer.DataHasChanged();
+            return;
+        }
+
+        var (r, g, b) = Core.VesselTypeColors.GetRgb(vessel.Type);
+
+        var coordinates = vessel.Track
+            .Select(tp =>
+            {
+                var p = SphericalMercator.FromLonLat(tp.Longitude, tp.Latitude);
+                return new Coordinate(p.x, p.y);
+            })
+            .ToArray();
+
+        if (coordinates.Length < 2)
+        {
+            _trailLayer.Features = [];
+            _trailLayer.DataHasChanged();
+            return;
+        }
+
+        var lineString = new LineString(coordinates);
+        var feature = new GeometryFeature(lineString);
+        feature.Styles.Add(new VectorStyle
+        {
+            Line = new Pen(new Mapsui.Styles.Color(r, g, b, 180), 3)
+        });
+
+        _trailLayer.Features = [feature];
+        _trailLayer.DataHasChanged();
     }
 
     public void CenterOnVessel(Vessel? vessel)

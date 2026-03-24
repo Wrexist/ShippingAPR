@@ -1,7 +1,8 @@
 <UserControl x:Class="ShippingAPR.App.Views.VesselListPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="clr-namespace:ShippingAPR.App.Converters">
+             xmlns:converters="clr-namespace:ShippingAPR.App.Converters"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -17,7 +18,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="Vessels"
+                <TextBlock Grid.Column="0" Text="{x:Static res:Strings.VesselList}"
                            Style="{DynamicResource HeaderTextStyle}"
                            VerticalAlignment="Center"/>
 
