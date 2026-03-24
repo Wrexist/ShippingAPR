@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
@@ -7,6 +8,7 @@ namespace ShippingAPR.Services;
 public sealed class VesselStore : IVesselStore
 {
     private readonly ConcurrentDictionary<int, Vessel> _vessels = new();
+    private readonly int _maxTrackPoints;
     private SynchronizationContext? _syncContext;
 
     public IReadOnlyDictionary<int, Vessel> Vessels => _vessels;
@@ -16,6 +18,16 @@ public sealed class VesselStore : IVesselStore
     public event EventHandler<Vessel>? VesselAdded;
     public event EventHandler<Vessel>? VesselRemoved;
     public event EventHandler? StoreCleared;
+
+    public VesselStore() : this(Vessel.DefaultMaxTrackPoints) { }
+
+    public VesselStore(IOptions<TrackingOptions> trackingOptions)
+        : this(trackingOptions.Value.MaxTrackPoints) { }
+
+    private VesselStore(int maxTrackPoints)
+    {
+        _maxTrackPoints = maxTrackPoints;
+    }
 
     public void SetSynchronizationContext(SynchronizationContext? context) =>
         _syncContext = context;
@@ -29,7 +41,7 @@ public sealed class VesselStore : IVesselStore
             _ =>
             {
                 isNew = true;
-                var v = new Vessel { Mmsi = mmsi };
+                var v = new Vessel(_maxTrackPoints) { Mmsi = mmsi };
                 if (position is not null) v.UpdatePosition(position);
                 if (staticData is not null) v.UpdateStaticData(staticData);
                 return v;

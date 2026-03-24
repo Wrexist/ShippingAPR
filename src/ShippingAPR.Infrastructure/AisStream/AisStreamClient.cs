@@ -22,7 +22,8 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     private Task? _receiveTask;
     private SubscriptionMessage? _lastSubscription;
 
-    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
+    private static readonly string[] DefaultMessageTypeFilters = ["PositionReport", "ShipStaticData"];
+
     private long _messageCount;
     private long _parseErrorCount;
 
@@ -54,7 +55,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
 
             using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            connectCts.CancelAfter(ConnectTimeout);
+            connectCts.CancelAfter(TimeSpan.FromSeconds(_options.ConnectTimeoutSeconds));
 
             await _webSocket.ConnectAsync(
                 new Uri(_options.WebSocketUrl), connectCts.Token);
@@ -295,7 +296,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         {
             ApiKey = _options.ApiKey,
             BoundingBoxes = [area.ToAisStreamFormat()],
-            FilterMessageTypes = ["PositionReport", "ShipStaticData"]
+            FilterMessageTypes = DefaultMessageTypeFilters
         };
         _lastSubscription = subscription;
 

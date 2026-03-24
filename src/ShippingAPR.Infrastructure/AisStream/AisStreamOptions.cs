@@ -10,4 +10,5 @@ public sealed class AisStreamOptions
     public int ReceiveBufferSize { get; set; } = 8192;
     public int KeepAliveIntervalSeconds { get; set; } = 30;
     public int DisconnectTimeoutSeconds { get; set; } = 10;
+    public int ConnectTimeoutSeconds { get; set; } = 10;
 }

@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Options;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.Core.Enums;
 
 namespace ShippingAPR.App.ViewModels;
@@ -27,7 +29,12 @@ public partial class FilterViewModel : ObservableObject
     private double _minSpeed;
 
     [ObservableProperty]
-    private double _maxSpeed = 50;
+    private double _maxSpeed;
+
+    public FilterViewModel(IOptions<UiOptions> uiOptions)
+    {
+        _maxSpeed = uiOptions.Value.DefaultMaxSpeedFilter;
+    }
 
     public bool ShouldShow(VesselType type, double speed)
     {

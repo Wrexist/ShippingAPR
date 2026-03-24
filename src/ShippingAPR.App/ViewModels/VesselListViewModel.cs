@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -13,10 +14,12 @@ namespace ShippingAPR.App.ViewModels;
 public partial class VesselListViewModel : ObservableObject, IDisposable
 {
     private readonly IVesselStore _vesselStore;
+    private readonly FilterViewModel _filterViewModel;
     private readonly DispatcherTimer _refreshTimer;
     private readonly EventHandler<Vessel> _onVesselAdded;
     private readonly EventHandler<Vessel> _onVesselUpdated;
     private readonly EventHandler _onStoreCleared;
+    private readonly PropertyChangedEventHandler _onFilterChanged;
 
     [ObservableProperty]
     private Vessel? _selectedVessel;
@@ -29,8 +32,6 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<VesselListItem> Vessels { get; } = [];
 
-    private readonly FilterViewModel _filterViewModel;
-
     public VesselListViewModel(IVesselStore vesselStore, FilterViewModel filterViewModel, IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
@@ -39,8 +40,9 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
         _onVesselAdded = (_, _) => ScheduleRefresh();
         _onVesselUpdated = (_, _) => ScheduleRefresh();
         _onStoreCleared = (_, _) => Application.Current?.Dispatcher.Invoke(Vessels.Clear);
+        _onFilterChanged = (_, _) => ScheduleRefresh();
 
-        _filterViewModel.PropertyChanged += (_, _) => ScheduleRefresh();
+        _filterViewModel.PropertyChanged += _onFilterChanged;
         _vesselStore.VesselAdded += _onVesselAdded;
         _vesselStore.VesselUpdated += _onVesselUpdated;
         _vesselStore.StoreCleared += _onStoreCleared;
@@ -135,6 +137,7 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _refreshTimer.Stop();
+        _filterViewModel.PropertyChanged -= _onFilterChanged;
         _vesselStore.VesselAdded -= _onVesselAdded;
         _vesselStore.VesselUpdated -= _onVesselUpdated;
         _vesselStore.StoreCleared -= _onStoreCleared;
