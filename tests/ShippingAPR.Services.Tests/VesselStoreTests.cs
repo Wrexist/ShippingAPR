@@ -135,14 +135,14 @@ public class VesselStoreTests
     public void TrackHistory_CappedAtMax()
     {
         // Add many position updates to test track capping
-        for (int i = 0; i < Vessel.MaxTrackPoints + 50; i++)
+        for (int i = 0; i < Vessel.DefaultMaxTrackPoints + 50; i++)
         {
             _store.AddOrUpdate(1, CreatePosition(57.7 + i * 0.001, 11.9), null);
         }
 
         var vessel = _store.GetByMmsi(1);
         vessel.Should().NotBeNull();
-        vessel!.Track.Count.Should().BeLessOrEqualTo(Vessel.MaxTrackPoints);
+        vessel!.Track.Count.Should().BeLessOrEqualTo(Vessel.DefaultMaxTrackPoints);
     }
 
     private static VesselPosition CreatePosition(double lat, double lon) =>
