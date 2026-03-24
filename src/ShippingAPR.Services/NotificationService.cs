@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ShippingAPR.Services;
 
@@ -31,7 +32,7 @@ public sealed class NotificationService
     private readonly ILogger<NotificationService> _logger;
     private readonly object _historyLock = new();
     private readonly List<NotificationMessage> _history = [];
-    private const int MaxHistory = 100;
+    private readonly int _maxHistory;
 
     public IReadOnlyList<NotificationMessage> History
     {
@@ -40,9 +41,11 @@ public sealed class NotificationService
 
     public NotificationService(
         AreaMonitorService areaMonitor,
-        ILogger<NotificationService> logger)
+        ILogger<NotificationService> logger,
+        IOptions<TrackingOptions> trackingOptions)
     {
         _logger = logger;
+        _maxHistory = trackingOptions.Value.MaxNotificationHistory;
 
         areaMonitor.VesselAreaChanged += (_, evt) =>
         {
@@ -65,9 +68,9 @@ public sealed class NotificationService
         lock (_historyLock)
         {
             _history.Add(message);
-            if (_history.Count > MaxHistory)
+            if (_history.Count > _maxHistory)
             {
-                var excess = _history.Count - MaxHistory;
+                var excess = _history.Count - _maxHistory;
                 _history.RemoveRange(0, excess);
             }
         }

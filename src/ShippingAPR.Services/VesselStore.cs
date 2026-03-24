@@ -54,8 +54,9 @@ public sealed class VesselStore : IVesselStore
 
     public IEnumerable<Vessel> Search(string query)
     {
+        // Snapshot values to avoid concurrent modification during enumeration
         if (string.IsNullOrWhiteSpace(query))
-            return _vessels.Values;
+            return _vessels.Values.ToList();
 
         var q = query.Trim();
 
@@ -64,13 +65,15 @@ public sealed class VesselStore : IVesselStore
         {
             return _vessels.Values.Where(v =>
                 v.Mmsi.ToString().Contains(q) ||
-                (v.StaticData?.ImoNumber.ToString().Contains(q) ?? false));
+                (v.StaticData?.ImoNumber.ToString().Contains(q) ?? false))
+                .ToList();
         }
 
         return _vessels.Values.Where(v =>
             (v.StaticData?.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (v.StaticData?.CallSign?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
-            (v.StaticData?.Destination?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false));
+            (v.StaticData?.Destination?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
+            .ToList();
     }
 
     public void Clear()

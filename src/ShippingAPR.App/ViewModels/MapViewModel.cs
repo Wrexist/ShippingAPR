@@ -19,6 +19,8 @@ namespace ShippingAPR.App.ViewModels;
 
 public partial class MapViewModel : ObservableObject, IDisposable
 {
+    internal const string MmsiFeatureKey = "MMSI";
+
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
     private readonly UiOptions _uiOptions;
@@ -179,8 +181,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         var viewportArea = new BoundingBox(minLat, minLon, maxLat, maxLon);
 
-        // Only update if area changed significantly (>10% shift)
-        if (SelectedArea is not null && !HasAreaChangedSignificantly(SelectedArea, viewportArea))
+        // Only update if area changed significantly
+        if (SelectedArea is not null && !HasAreaChangedSignificantly(SelectedArea, viewportArea, _uiOptions.AreaChangeThreshold))
             return;
 
         SelectedArea = viewportArea;
@@ -189,11 +191,10 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _ = _trackingService.ChangeAreaAsync(viewportArea);
     }
 
-    private static bool HasAreaChangedSignificantly(BoundingBox old, BoundingBox current)
+    private static bool HasAreaChangedSignificantly(BoundingBox old, BoundingBox current, double threshold)
     {
         var latRange = old.MaxLatitude - old.MinLatitude;
         var lonRange = old.MaxLongitude - old.MinLongitude;
-        var threshold = 0.1;
 
         return Math.Abs(old.MinLatitude - current.MinLatitude) > latRange * threshold ||
                Math.Abs(old.MaxLatitude - current.MaxLatitude) > latRange * threshold ||
@@ -393,7 +394,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
             {
                 var feature = new GeometryFeature(new NetTopologySuite.Geometries.Point(point.x, point.y));
                 feature.Styles.Add(CreateVesselStyle(vessel));
-                feature["MMSI"] = mmsi;
+                feature[MmsiFeatureKey] = mmsi;
                 feature["Name"] = vessel.DisplayName;
                 _vesselFeatures[mmsi] = feature;
                 _featuresNeedRebuild = true;
@@ -424,6 +425,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         var viewport = Map.Navigator.Viewport;
         var cellSize = viewport.Resolution * _uiOptions.ClusterGridCellPx;
+        if (cellSize <= 0) return; // Guard against division by zero
 
         var clusters = new Dictionary<(int, int), List<Vessel>>();
 

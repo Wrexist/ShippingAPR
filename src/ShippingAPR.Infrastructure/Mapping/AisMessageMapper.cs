@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
@@ -8,6 +9,13 @@ namespace ShippingAPR.Infrastructure.Mapping;
 
 public sealed class AisMessageMapper
 {
+    private readonly ILogger<AisMessageMapper> _logger;
+
+    public AisMessageMapper(ILogger<AisMessageMapper> logger)
+    {
+        _logger = logger;
+    }
+
     public AisMessageEventArgs? Map(AisMessage message)
     {
         return message.MessageType switch
@@ -44,7 +52,7 @@ public sealed class AisMessageMapper
         };
     }
 
-    private static AisMessageEventArgs? MapStaticData(AisMessage message)
+    private AisMessageEventArgs? MapStaticData(AisMessage message)
     {
         var report = message.Message.Deserialize<ShipStaticDataMessage>();
         var data = report?.ShipStaticData;
@@ -65,9 +73,9 @@ public sealed class AisMessageMapper
                 if (reportedEta < DateTime.UtcNow.AddDays(-1))
                     reportedEta = reportedEta.Value.AddYears(1);
             }
-            catch
+            catch (ArgumentOutOfRangeException ex)
             {
-                // Invalid ETA data from AIS
+                _logger.LogDebug(ex, "Invalid ETA date from AIS for MMSI {Mmsi}", message.MetaData?.Mmsi);
             }
         }
 

@@ -105,6 +105,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Cancel any previous auto-hide timer so rapid notifications
             // don't dismiss the latest one prematurely.
             _notificationCts?.Cancel();
+            _notificationCts?.Dispose();
             var cts = _notificationCts = new CancellationTokenSource();
             Task.Delay(_uiOptions.NotificationTimeoutMs, cts.Token).ContinueWith(_ =>
             {
@@ -150,7 +151,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             ConnectionStatusText = "Failed to auto-connect";
             ConnectionStatusColor = "#FFFF3D71";
             // Non-fatal — user can click Start Tracking manually
-            System.Diagnostics.Debug.WriteLine($"Auto-start failed: {ex.Message}");
+            _logger.LogWarning(ex, "Auto-start tracking failed");
         }
     }
 

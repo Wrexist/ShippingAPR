@@ -59,21 +59,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             await _webSocket.ConnectAsync(
                 new Uri(_options.WebSocketUrl), connectCts.Token);
 
-            var subscription = new SubscriptionMessage
-            {
-                ApiKey = _options.ApiKey,
-                BoundingBoxes = [area.ToAisStreamFormat()],
-                FilterMessageTypes = ["PositionReport", "ShipStaticData"]
-            };
-            _lastSubscription = subscription;
-
-            var json = JsonSerializer.Serialize(subscription);
-            var bytes = Encoding.UTF8.GetBytes(json);
-            await _webSocket.SendAsync(
-                new ArraySegment<byte>(bytes),
-                WebSocketMessageType.Text,
-                true,
-                cancellationToken);
+            await SendSubscriptionAsync(area, cancellationToken);
 
             SetStatus(ConnectionStatus.Connected);
             _logger.LogInformation("Connected to AIS stream for area {Area}", area);
@@ -97,21 +83,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             return;
         }
 
-        var subscription = new SubscriptionMessage
-        {
-            ApiKey = _options.ApiKey,
-            BoundingBoxes = [newArea.ToAisStreamFormat()],
-            FilterMessageTypes = ["PositionReport", "ShipStaticData"]
-        };
-        _lastSubscription = subscription;
-
-        var json = JsonSerializer.Serialize(subscription);
-        var bytes = Encoding.UTF8.GetBytes(json);
-        await _webSocket.SendAsync(
-            new ArraySegment<byte>(bytes),
-            WebSocketMessageType.Text,
-            true,
-            cancellationToken);
+        await SendSubscriptionAsync(newArea, cancellationToken);
 
         _logger.LogInformation("Updated AIS stream subscription to area {Area}", newArea);
     }
@@ -315,6 +287,25 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             _logger.LogWarning(ex, "Failed to parse AIS message (total errors: {Count})",
                 Interlocked.Read(ref _parseErrorCount));
         }
+    }
+
+    private async Task SendSubscriptionAsync(BoundingBox area, CancellationToken cancellationToken)
+    {
+        var subscription = new SubscriptionMessage
+        {
+            ApiKey = _options.ApiKey,
+            BoundingBoxes = [area.ToAisStreamFormat()],
+            FilterMessageTypes = ["PositionReport", "ShipStaticData"]
+        };
+        _lastSubscription = subscription;
+
+        var json = JsonSerializer.Serialize(subscription);
+        var bytes = Encoding.UTF8.GetBytes(json);
+        await _webSocket!.SendAsync(
+            new ArraySegment<byte>(bytes),
+            WebSocketMessageType.Text,
+            true,
+            cancellationToken);
     }
 
     private void SetStatus(ConnectionStatus status)

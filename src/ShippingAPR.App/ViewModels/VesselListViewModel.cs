@@ -171,7 +171,8 @@ public partial class VesselListItem : ObservableObject
     {
         get
         {
-            if (EtaHours is null) return "--";
+            if (EtaHours is null || double.IsNaN(EtaHours.Value) || double.IsInfinity(EtaHours.Value) || EtaHours < 0)
+                return "--";
             if (EtaHours >= 24)
                 return $"{(int)(EtaHours / 24)}d {(int)(EtaHours % 24)}h";
             if (EtaHours >= 1)

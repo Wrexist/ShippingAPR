@@ -33,9 +33,9 @@ public partial class WelcomeDialog : Window
                 UseShellExecute = true
             });
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail if browser can't be opened
+            System.Diagnostics.Debug.WriteLine($"Failed to open browser: {ex.Message}");
         }
     }
 
