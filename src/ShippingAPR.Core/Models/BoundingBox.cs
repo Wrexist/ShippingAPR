@@ -1,11 +1,25 @@
 namespace ShippingAPR.Core.Models;
 
-public sealed record BoundingBox(
-    double MinLatitude,
-    double MinLongitude,
-    double MaxLatitude,
-    double MaxLongitude)
+public sealed record BoundingBox
 {
+    public double MinLatitude { get; }
+    public double MinLongitude { get; }
+    public double MaxLatitude { get; }
+    public double MaxLongitude { get; }
+
+    public BoundingBox(double MinLatitude, double MinLongitude, double MaxLatitude, double MaxLongitude)
+    {
+        if (MinLatitude > MaxLatitude)
+            throw new ArgumentException($"MinLatitude ({MinLatitude}) must be <= MaxLatitude ({MaxLatitude})");
+        if (MinLongitude > MaxLongitude)
+            throw new ArgumentException($"MinLongitude ({MinLongitude}) must be <= MaxLongitude ({MaxLongitude})");
+
+        this.MinLatitude = MinLatitude;
+        this.MinLongitude = MinLongitude;
+        this.MaxLatitude = MaxLatitude;
+        this.MaxLongitude = MaxLongitude;
+    }
+
     public bool Contains(double latitude, double longitude) =>
         latitude >= MinLatitude && latitude <= MaxLatitude &&
         longitude >= MinLongitude && longitude <= MaxLongitude;

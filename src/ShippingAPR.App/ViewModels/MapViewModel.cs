@@ -8,17 +8,20 @@ using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling;
+using Microsoft.Extensions.Options;
 using NetTopologySuite.Geometries;
+using ShippingAPR.App.Configuration;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.App.ViewModels;
 
-public partial class MapViewModel : ObservableObject
+public partial class MapViewModel : ObservableObject, IDisposable
 {
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
+    private readonly UiOptions _uiOptions;
     private readonly DispatcherTimer _updateTimer;
     private readonly DispatcherTimer _viewportDebounceTimer;
     private readonly Dictionary<int, IFeature> _vesselFeatures = new();
@@ -33,6 +36,8 @@ public partial class MapViewModel : ObservableObject
     private bool _viewportTrackingEnabled = true;
     private bool _isTracking;
     private bool _featuresNeedRebuild;
+    private readonly EventHandler<Vessel> _onVesselChanged;
+    private readonly EventHandler _onStoreCleared;
 
     [ObservableProperty]
     private Map _map = new();
@@ -53,29 +58,34 @@ public partial class MapViewModel : ObservableObject
 
     public MapViewModel(
         IVesselStore vesselStore,
-        IVesselTrackingService trackingService)
+        IVesselTrackingService trackingService,
+        IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
+        _uiOptions = uiOptions.Value;
+
+        _onVesselChanged = (_, v) => OnVesselChanged(null, v);
+        _onStoreCleared = (_, _) => ClearVessels();
 
         InitializeMap();
 
-        _vesselStore.VesselAdded += OnVesselChanged;
-        _vesselStore.VesselUpdated += OnVesselChanged;
-        _vesselStore.StoreCleared += (_, _) => ClearVessels();
+        _vesselStore.VesselAdded += _onVesselChanged;
+        _vesselStore.VesselUpdated += _onVesselChanged;
+        _vesselStore.StoreCleared += _onStoreCleared;
 
-        // Batch UI updates every 250ms for performance
+        // Batch UI updates for performance
         _updateTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(250)
+            Interval = TimeSpan.FromMilliseconds(_uiOptions.MapBatchUpdateMs)
         };
         _updateTimer.Tick += FlushPendingUpdates;
         _updateTimer.Start();
 
-        // Debounce viewport changes — 500ms after last pan/zoom
+        // Debounce viewport changes after last pan/zoom
         _viewportDebounceTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(500)
+            Interval = TimeSpan.FromMilliseconds(_uiOptions.ViewportDebounceMs)
         };
         _viewportDebounceTimer.Tick += OnViewportDebounceElapsed;
     }
@@ -132,10 +142,9 @@ public partial class MapViewModel : ObservableObject
         };
         Map.Layers.Add(_vesselLayer);
 
-        // Start with Northern Europe view (busy shipping area)
-        var center = SphericalMercator.FromLonLat(10.0, 54.0);
-        // Resolution ~2446 = zoom level 6 (shows Northern Europe)
-        Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2446);
+        // Start with default view (Northern Europe by default — busy shipping area)
+        var center = SphericalMercator.FromLonLat(_uiOptions.DefaultCenterLon, _uiOptions.DefaultCenterLat);
+        Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), _uiOptions.DefaultResolution);
     }
 
     /// <summary>Called by MapView when the viewport changes (pan/zoom).</summary>
@@ -184,7 +193,7 @@ public partial class MapViewModel : ObservableObject
     {
         var latRange = old.MaxLatitude - old.MinLatitude;
         var lonRange = old.MaxLongitude - old.MinLongitude;
-        var threshold = 0.1; // 10%
+        var threshold = 0.1;
 
         return Math.Abs(old.MinLatitude - current.MinLatitude) > latRange * threshold ||
                Math.Abs(old.MaxLatitude - current.MaxLatitude) > latRange * threshold ||
@@ -217,7 +226,7 @@ public partial class MapViewModel : ObservableObject
     private void UpdateClusterVisibility()
     {
         var resolution = Map.Navigator.Viewport.Resolution;
-        var shouldCluster = resolution > 1000;
+        var shouldCluster = resolution > _uiOptions.ClusterResolutionThreshold;
 
         if (shouldCluster != ShowClusters)
         {
@@ -414,7 +423,7 @@ public partial class MapViewModel : ObservableObject
         if (_clusterLayer is null) return;
 
         var viewport = Map.Navigator.Viewport;
-        var cellSize = viewport.Resolution * 80; // 80px grid cells
+        var cellSize = viewport.Resolution * _uiOptions.ClusterGridCellPx;
 
         var clusters = new Dictionary<(int, int), List<Vessel>>();
 
@@ -490,19 +499,11 @@ public partial class MapViewModel : ObservableObject
         };
     }
 
-    private static Mapsui.Styles.Color GetVesselColor(VesselType type) => type switch
+    private static Mapsui.Styles.Color GetVesselColor(VesselType type)
     {
-        VesselType.Cargo => new Mapsui.Styles.Color(76, 175, 80),
-        VesselType.Tanker => new Mapsui.Styles.Color(255, 87, 34),
-        VesselType.Passenger => new Mapsui.Styles.Color(33, 150, 243),
-        VesselType.Fishing => new Mapsui.Styles.Color(255, 152, 0),
-        VesselType.Tug or VesselType.Pilot => new Mapsui.Styles.Color(156, 39, 176),
-        VesselType.Military => new Mapsui.Styles.Color(96, 125, 139),
-        VesselType.Sailing or VesselType.PleasureCraft => new Mapsui.Styles.Color(0, 188, 212),
-        VesselType.HighSpeedCraft => new Mapsui.Styles.Color(255, 235, 59),
-        VesselType.SearchAndRescue => new Mapsui.Styles.Color(244, 67, 54),
-        _ => new Mapsui.Styles.Color(158, 158, 158)
-    };
+        var (r, g, b) = Core.VesselTypeColors.GetRgb(type);
+        return new Mapsui.Styles.Color(r, g, b);
+    }
 
     private void UpdateSelectionOverlay(BoundingBox area)
     {
@@ -544,5 +545,14 @@ public partial class MapViewModel : ObservableObject
                 _clusterLayer.DataHasChanged();
             }
         });
+    }
+
+    public void Dispose()
+    {
+        _updateTimer.Stop();
+        _viewportDebounceTimer.Stop();
+        _vesselStore.VesselAdded -= _onVesselChanged;
+        _vesselStore.VesselUpdated -= _onVesselChanged;
+        _vesselStore.StoreCleared -= _onStoreCleared;
     }
 }

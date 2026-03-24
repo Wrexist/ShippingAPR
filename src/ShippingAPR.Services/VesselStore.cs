@@ -14,6 +14,7 @@ public sealed class VesselStore : IVesselStore
 
     public event EventHandler<Vessel>? VesselUpdated;
     public event EventHandler<Vessel>? VesselAdded;
+    public event EventHandler<Vessel>? VesselRemoved;
     public event EventHandler? StoreCleared;
 
     public void SetSynchronizationContext(SynchronizationContext? context) =>
@@ -90,7 +91,10 @@ public sealed class VesselStore : IVesselStore
             .ToList();
 
         foreach (var key in staleKeys)
-            _vessels.TryRemove(key, out _);
+        {
+            if (_vessels.TryRemove(key, out var removed))
+                RaiseOnContext(VesselRemoved, removed);
+        }
 
         return staleKeys.Count;
     }

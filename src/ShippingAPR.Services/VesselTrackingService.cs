@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ShippingAPR.Core.Calculations;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
@@ -14,17 +15,17 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
     private readonly IVesselStore _vesselStore;
     private readonly PortRepository _portRepository;
     private readonly ILogger<VesselTrackingService> _logger;
-    private readonly TimeSpan _purgeInterval = TimeSpan.FromMinutes(2);
-    private readonly TimeSpan _staleAge = TimeSpan.FromMinutes(10);
+    private readonly TrackingOptions _trackingOptions;
+    private readonly TimeSpan _purgeInterval;
+    private readonly TimeSpan _staleAge;
 
     // ETA calculation caching — only recalculate when vessel moves significantly
     private readonly Dictionary<int, (double Lat, double Lon, double Heading)> _lastEtaPosition = new();
-    private const double EtaDistanceThresholdNm = 0.5;
-    private const double EtaHeadingThresholdDeg = 5.0;
 
     // Port resolution caching — avoid O(n) port scan on every message
     private readonly Dictionary<string, Port?> _portCache = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly object _areaLock = new();
     private BoundingBox? _currentArea;
     private TaskCompletionSource<BoundingBox>? _areaWaiter;
 
@@ -35,22 +36,31 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         IAisStreamClient aisClient,
         IVesselStore vesselStore,
         PortRepository portRepository,
-        ILogger<VesselTrackingService> logger)
+        ILogger<VesselTrackingService> logger,
+        IOptions<TrackingOptions> trackingOptions)
     {
         _aisClient = aisClient;
         _vesselStore = vesselStore;
         _portRepository = portRepository;
         _logger = logger;
+        _trackingOptions = trackingOptions.Value;
+        _purgeInterval = TimeSpan.FromMinutes(_trackingOptions.PurgeIntervalMinutes);
+        _staleAge = TimeSpan.FromMinutes(_trackingOptions.StaleAgeMinutes);
 
         _aisClient.ConnectionStatusChanged += (_, status) =>
             ConnectionStatusChanged?.Invoke(this, status);
 
         _aisClient.MessageReceived += OnMessageReceived;
+
+        _vesselStore.VesselRemoved += OnVesselRemoved;
     }
 
     public Task StartTrackingAsync(BoundingBox area, CancellationToken cancellationToken = default)
     {
-        _currentArea = area;
+        lock (_areaLock)
+        {
+            _currentArea = area;
+        }
         _areaWaiter?.TrySetResult(area);
         return _aisClient.ConnectAsync(area, cancellationToken);
     }
@@ -58,13 +68,19 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
     public async Task StopTrackingAsync()
     {
         await _aisClient.DisconnectAsync();
-        _currentArea = null;
+        lock (_areaLock)
+        {
+            _currentArea = null;
+        }
     }
 
     public async Task ChangeAreaAsync(BoundingBox newArea, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Changing tracking area to {Area}", newArea);
-        _currentArea = newArea;
+        lock (_areaLock)
+        {
+            _currentArea = newArea;
+        }
         // Don't clear vessel store — let stale purge handle it naturally
         // This avoids a data gap when panning the map
         await _aisClient.UpdateSubscriptionAsync(newArea, cancellationToken);
@@ -75,7 +91,13 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         _logger.LogInformation("VesselTrackingService starting...");
 
         // Wait for initial area selection if not already set
-        if (_currentArea is null)
+        bool hasArea;
+        lock (_areaLock)
+        {
+            hasArea = _currentArea is not null;
+        }
+
+        if (!hasArea)
         {
             _areaWaiter = new TaskCompletionSource<BoundingBox>();
             using var reg = stoppingToken.Register(() =>
@@ -83,7 +105,11 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
 
             try
             {
-                _currentArea = await _areaWaiter.Task;
+                var area = await _areaWaiter.Task;
+                lock (_areaLock)
+                {
+                    _currentArea = area;
+                }
             }
             catch (OperationCanceledException)
             {
@@ -100,7 +126,7 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
                 try
                 {
                     await purgeTimer.WaitForNextTickAsync(stoppingToken);
-                    var purged = ((VesselStore)_vesselStore).PurgeStale(_staleAge);
+                    var purged = _vesselStore.PurgeStale(_staleAge);
                     if (purged > 0)
                         _logger.LogDebug("Purged {Count} stale vessels", purged);
                 }
@@ -151,6 +177,11 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         }
     }
 
+    private void OnVesselRemoved(object? sender, Vessel vessel)
+    {
+        _lastEtaPosition.Remove(vessel.Mmsi);
+    }
+
     private bool ShouldRecalculateEta(Vessel vessel)
     {
         if (vessel.CurrentPosition is null) return false;
@@ -161,20 +192,29 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         // Check if heading changed significantly
         var headingDelta = Math.Abs(vessel.CurrentPosition.TrueHeading - last.Heading);
         if (headingDelta > 180) headingDelta = 360 - headingDelta;
-        if (headingDelta > EtaHeadingThresholdDeg) return true;
+        if (headingDelta > _trackingOptions.EtaHeadingThresholdDeg) return true;
 
         // Check if vessel moved significantly
         var distance = HaversineCalculator.DistanceInNauticalMiles(
             last.Lat, last.Lon,
             vessel.CurrentPosition.Latitude, vessel.CurrentPosition.Longitude);
 
-        return distance > EtaDistanceThresholdNm;
+        return distance > _trackingOptions.EtaDistanceThresholdNm;
     }
 
     private Port? ResolvePortCached(string destination)
     {
         if (_portCache.TryGetValue(destination, out var cached))
             return cached;
+
+        // Evict oldest entries when cache is full
+        if (_portCache.Count >= _trackingOptions.PortCacheMaxSize)
+        {
+            // Remove roughly half the cache to avoid frequent evictions
+            var keysToRemove = _portCache.Keys.Take(_trackingOptions.PortCacheMaxSize / 2).ToList();
+            foreach (var key in keysToRemove)
+                _portCache.Remove(key);
+        }
 
         var port = _portRepository.ResolveDestination(destination);
         _portCache[destination] = port;

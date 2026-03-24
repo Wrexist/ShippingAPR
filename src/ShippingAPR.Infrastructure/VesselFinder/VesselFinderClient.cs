@@ -32,6 +32,7 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
 
         try
         {
+            // VesselFinder API requires the key as a query parameter (no header auth supported)
             var response = await _httpClient.GetAsync(
                 $"/vessels?userkey={_options.ApiKey}&mmsi={mmsi}&format=json",
                 cancellationToken);
