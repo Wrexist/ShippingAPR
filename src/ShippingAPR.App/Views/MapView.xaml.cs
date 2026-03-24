@@ -43,12 +43,10 @@ public partial class MapView : UserControl
                     vm.HandleMapClick(lonLat.lon, lonLat.lat);
                 }
 
-                // Check if a vessel feature was clicked
-                if (args.MapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi
-                    && System.Windows.Window.GetWindow(this)?.DataContext is MainViewModel mainVm)
+                // Delegate vessel click handling to ViewModel (no Window.GetWindow coupling)
+                if (args.MapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi)
                 {
-                    mainVm.VesselListViewModel.SelectVesselByMmsi(mmsi);
-                    vm.CenterOnVessel(mainVm.VesselListViewModel.SelectedVessel);
+                    vm.HandleVesselClick(mmsi);
                 }
             };
             MapControl.Info += _infoHandler;

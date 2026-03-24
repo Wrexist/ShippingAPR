@@ -27,11 +27,11 @@ public class AreaMonitorServiceTests
         _monitor.VesselAreaChanged += (_, evt) => receivedEvent = evt;
 
         // First update: outside area
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.5, 11.9), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.5, 11.9), null);
         receivedEvent.Should().BeNull(); // First position establishes baseline
 
         // Second update: inside area
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.70, 11.95), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null);
 
         receivedEvent.Should().NotBeNull();
         receivedEvent!.Entered.Should().BeTrue();
@@ -43,12 +43,12 @@ public class AreaMonitorServiceTests
         VesselAreaEvent? receivedEvent = null;
 
         // First: inside area (establishes baseline as "inside")
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.70, 11.95), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null);
 
         _monitor.VesselAreaChanged += (_, evt) => receivedEvent = evt;
 
         // Second: outside area
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.5, 11.9), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.5, 11.9), null);
 
         receivedEvent.Should().NotBeNull();
         receivedEvent!.Entered.Should().BeFalse();
@@ -60,13 +60,13 @@ public class AreaMonitorServiceTests
         var eventCount = 0;
 
         // Start inside
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.70, 11.95), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null);
 
         _monitor.VesselAreaChanged += (_, _) => eventCount++;
 
         // Stay inside
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.71, 11.96), null);
-        _vesselStore.AddOrUpdate(1, CreatePosition(57.72, 11.97), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.71, 11.96), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.72, 11.97), null);
 
         eventCount.Should().Be(0);
     }

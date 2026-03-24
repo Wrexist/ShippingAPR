@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using ShippingAPR.App.Resources;
 
 namespace ShippingAPR.App.Views;
 
@@ -45,8 +46,8 @@ public partial class WelcomeDialog : Window
 
         if (string.IsNullOrEmpty(key))
         {
-            TestResultText.Text = "Please enter an API key to continue.";
-            TestResultText.Foreground = new SolidColorBrush(Color.FromRgb(255, 61, 113));
+            TestResultText.Text = Resources.Strings.ConnectionFailed;
+            TestResultText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
             TestResultText.Visibility = Visibility.Visible;
             return;
         }

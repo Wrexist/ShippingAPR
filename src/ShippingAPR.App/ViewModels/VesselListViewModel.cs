@@ -30,6 +30,9 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _sortBy = "Name";
 
+    [ObservableProperty]
+    private bool _isEmpty;
+
     public ObservableCollection<VesselListItem> Vessels { get; } = [];
 
     public VesselListViewModel(IVesselStore vesselStore, FilterViewModel filterViewModel, IOptions<UiOptions> uiOptions)
@@ -39,7 +42,7 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
 
         _onVesselAdded = (_, _) => ScheduleRefresh();
         _onVesselUpdated = (_, _) => ScheduleRefresh();
-        _onStoreCleared = (_, _) => Application.Current?.Dispatcher.Invoke(Vessels.Clear);
+        _onStoreCleared = (_, _) => Application.Current?.Dispatcher.Invoke(() => { Vessels.Clear(); IsEmpty = true; });
         _onFilterChanged = (_, _) => ScheduleRefresh();
 
         _filterViewModel.PropertyChanged += _onFilterChanged;
@@ -99,22 +102,26 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
             })
             .ToList();
 
-        // Efficient diff: update existing, add new, remove stale
-        var existingMmsis = Vessels.Select(v => v.Mmsi).ToHashSet();
-        var newMmsis = vessels.Select(v => v.Mmsi).ToHashSet();
+        // Efficient dictionary-based diff: update existing, add new, remove stale
+        var newByMmsi = new Dictionary<int, VesselListItem>(vessels.Count);
+        foreach (var v in vessels)
+            newByMmsi[v.Mmsi] = v;
 
-        // Remove stale
+        // Remove stale (reverse iteration for safe removal)
         for (int i = Vessels.Count - 1; i >= 0; i--)
         {
-            if (!newMmsis.Contains(Vessels[i].Mmsi))
+            if (!newByMmsi.ContainsKey(Vessels[i].Mmsi))
                 Vessels.RemoveAt(i);
         }
 
-        // Update or add
-        var vesselDict = Vessels.ToDictionary(v => v.Mmsi);
+        // Update or add — use dictionary for O(1) lookup
+        var existingByMmsi = new Dictionary<int, VesselListItem>(Vessels.Count);
+        foreach (var v in Vessels)
+            existingByMmsi[v.Mmsi] = v;
+
         foreach (var item in vessels)
         {
-            if (vesselDict.TryGetValue(item.Mmsi, out var existing))
+            if (existingByMmsi.TryGetValue(item.Mmsi, out var existing))
             {
                 existing.Name = item.Name;
                 existing.Speed = item.Speed;
@@ -127,6 +134,8 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
                 Vessels.Add(item);
             }
         }
+
+        IsEmpty = Vessels.Count == 0;
     }
 
     public void SelectVesselByMmsi(int mmsi)

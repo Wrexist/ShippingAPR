@@ -9,7 +9,7 @@ public sealed class VesselStore : IVesselStore
 {
     private readonly ConcurrentDictionary<int, Vessel> _vessels = new();
     private readonly int _maxTrackPoints;
-    private SynchronizationContext? _syncContext;
+    private volatile SynchronizationContext? _syncContext;
 
     public IReadOnlyDictionary<int, Vessel> Vessels => _vessels;
     public int Count => _vessels.Count;
@@ -32,8 +32,15 @@ public sealed class VesselStore : IVesselStore
     public void SetSynchronizationContext(SynchronizationContext? context) =>
         _syncContext = context;
 
+    private const int MinValidMmsi = 100_000_000;
+    private const int MaxValidMmsi = 799_999_999;
+
     public Vessel AddOrUpdate(int mmsi, VesselPosition? position, VesselStaticData? staticData)
     {
+        if (mmsi < MinValidMmsi || mmsi > MaxValidMmsi)
+            throw new ArgumentOutOfRangeException(nameof(mmsi),
+                $"MMSI must be between {MinValidMmsi} and {MaxValidMmsi}, got {mmsi}");
+
         var isNew = false;
 
         var vessel = _vessels.AddOrUpdate(
@@ -64,20 +71,25 @@ public sealed class VesselStore : IVesselStore
     public Vessel? GetByMmsi(int mmsi) =>
         _vessels.TryGetValue(mmsi, out var vessel) ? vessel : null;
 
-    public IEnumerable<Vessel> Search(string query)
+    private const int DefaultMaxSearchResults = 50;
+
+    public IEnumerable<Vessel> Search(string query, int maxResults = DefaultMaxSearchResults)
     {
+        if (maxResults <= 0) maxResults = DefaultMaxSearchResults;
+
         // Snapshot values to avoid concurrent modification during enumeration
         if (string.IsNullOrWhiteSpace(query))
-            return _vessels.Values.ToList();
+            return _vessels.Values.Take(maxResults).ToList();
 
         var q = query.Trim();
 
-        // Try MMSI search
+        // Try MMSI / IMO numeric search
         if (int.TryParse(q, out var mmsi))
         {
             return _vessels.Values.Where(v =>
                 v.Mmsi.ToString().Contains(q) ||
                 (v.StaticData?.ImoNumber.ToString().Contains(q) ?? false))
+                .Take(maxResults)
                 .ToList();
         }
 
@@ -85,6 +97,7 @@ public sealed class VesselStore : IVesselStore
             (v.StaticData?.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (v.StaticData?.CallSign?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (v.StaticData?.Destination?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Take(maxResults)
             .ToList();
     }
 
@@ -114,23 +127,24 @@ public sealed class VesselStore : IVesselStore
         return staleKeys.Count;
     }
 
+    private void RaiseOnContext(Action callback)
+    {
+        var ctx = _syncContext;
+        if (ctx is not null)
+            ctx.Post(_ => callback(), null);
+        else
+            callback();
+    }
+
     private void RaiseOnContext(EventHandler<Vessel>? handler, Vessel vessel)
     {
         if (handler is null) return;
-
-        if (_syncContext is not null)
-            _syncContext.Post(_ => handler.Invoke(this, vessel), null);
-        else
-            handler.Invoke(this, vessel);
+        RaiseOnContext(() => handler.Invoke(this, vessel));
     }
 
     private void RaiseOnContext(EventHandler? handler)
     {
         if (handler is null) return;
-
-        if (_syncContext is not null)
-            _syncContext.Post(_ => handler.Invoke(this, EventArgs.Empty), null);
-        else
-            handler.Invoke(this, EventArgs.Empty);
+        RaiseOnContext(() => handler.Invoke(this, EventArgs.Empty));
     }
 }

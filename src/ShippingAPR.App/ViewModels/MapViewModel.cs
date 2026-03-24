@@ -59,6 +59,12 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
     private MPoint? _selectionStart;
 
+    /// <summary>
+    /// Raised when a vessel feature is clicked on the map.
+    /// The event argument is the MMSI of the clicked vessel.
+    /// </summary>
+    public event EventHandler<int>? VesselFeatureClicked;
+
     public MapViewModel(
         IVesselStore vesselStore,
         IVesselTrackingService trackingService,
@@ -109,7 +115,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
             Name = "Trails",
             Style = new VectorStyle
             {
-                Line = new Pen(Mapsui.Styles.Color.FromArgb(128, 0, 150, 255), 2)
+                Line = new Pen(Mapsui.Styles.Color.FromArgb(_uiOptions.TrailAlpha, 0, 150, 255), 2)
             }
         };
         Map.Layers.Add(_trailLayer);
@@ -120,8 +126,10 @@ public partial class MapViewModel : ObservableObject, IDisposable
             Name = "Selection",
             Style = new VectorStyle
             {
-                Fill = new Brush(Mapsui.Styles.Color.FromArgb(40, 233, 69, 96)),
-                Line = new Pen(Mapsui.Styles.Color.FromArgb(200, 233, 69, 96), 2)
+                Fill = new Brush(Mapsui.Styles.Color.FromArgb(_uiOptions.SelectionFillAlpha,
+                    _uiOptions.SelectionRed, _uiOptions.SelectionGreen, _uiOptions.SelectionBlue)),
+                Line = new Pen(Mapsui.Styles.Color.FromArgb(_uiOptions.SelectionLineAlpha,
+                    _uiOptions.SelectionRed, _uiOptions.SelectionGreen, _uiOptions.SelectionBlue), 2)
                 {
                     PenStyle = PenStyle.Dash
                 }
@@ -250,6 +258,9 @@ public partial class MapViewModel : ObservableObject, IDisposable
         if (IsSelectingArea)
             _viewportTrackingEnabled = false;
     }
+
+    public void HandleVesselClick(int mmsi) =>
+        VesselFeatureClicked?.Invoke(this, mmsi);
 
     public void HandleMapClick(double longitude, double latitude)
     {
@@ -410,13 +421,13 @@ public partial class MapViewModel : ObservableObject, IDisposable
             _pendingUpdates.Clear();
         }
 
-        // Deduplicate — keep latest update per MMSI
-        var latestByMmsi = updates
-            .GroupBy(u => u.Mmsi)
-            .Select(g => g.Last())
-            .ToList();
+        // Deduplicate — keep latest update per MMSI using dictionary (O(n) vs O(n log n))
+        var latestDict = new Dictionary<int, Vessel>(updates.Count);
+        foreach (var (mmsi, vessel) in updates)
+            latestDict[mmsi] = vessel;
+        var latestByMmsi = latestDict;
 
-        foreach (var (mmsi, vessel) in latestByMmsi)
+        foreach (var (mmsi, vessel) in latestDict)
         {
             if (vessel.CurrentPosition is null) continue;
 
@@ -508,7 +519,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
             feature.Styles.Add(new SymbolStyle
             {
                 SymbolScale = scale,
-                Fill = new Brush(Mapsui.Styles.Color.FromArgb(200, 108, 99, 255)),
+                Fill = new Brush(Mapsui.Styles.Color.FromArgb(_uiOptions.ClusterFillAlpha,
+                    _uiOptions.ClusterRed, _uiOptions.ClusterGreen, _uiOptions.ClusterBlue)),
                 Outline = new Pen(Mapsui.Styles.Color.White, 2),
                 SymbolType = SymbolType.Ellipse
             });
