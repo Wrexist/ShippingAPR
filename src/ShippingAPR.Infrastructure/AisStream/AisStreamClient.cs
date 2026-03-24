@@ -282,10 +282,10 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
                 MessageReceived?.Invoke(this, args);
             }
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
             Interlocked.Increment(ref _parseErrorCount);
-            _logger.LogWarning(ex, "Failed to parse AIS message (total errors: {Count})",
+            _logger.LogWarning(ex, "Failed to process AIS message (total errors: {Count})",
                 Interlocked.Read(ref _parseErrorCount));
         }
     }
@@ -300,9 +300,15 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         };
         _lastSubscription = subscription;
 
+        if (_webSocket is null)
+        {
+            _logger.LogWarning("Cannot send subscription — WebSocket is null");
+            return;
+        }
+
         var json = JsonSerializer.Serialize(subscription);
         var bytes = Encoding.UTF8.GetBytes(json);
-        await _webSocket!.SendAsync(
+        await _webSocket.SendAsync(
             new ArraySegment<byte>(bytes),
             WebSocketMessageType.Text,
             true,

@@ -67,10 +67,10 @@ public sealed class Vessel
                 if (_trackCount < _maxTrackPoints)
                     _trackCount++;
             }
-        }
 
-        CurrentPosition = position;
-        LastUpdated = DateTime.UtcNow;
+            CurrentPosition = position;
+            LastUpdated = DateTime.UtcNow;
+        }
     }
 
     public void UpdateStaticData(VesselStaticData data)
