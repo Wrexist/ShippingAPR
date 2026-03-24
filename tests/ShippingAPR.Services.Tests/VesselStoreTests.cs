@@ -102,8 +102,8 @@ public class VesselStoreTests
     [Fact]
     public void Clear_RemovesAllVessels()
     {
-        _store.AddOrUpdate(1, CreatePosition(57.7, 11.9), null);
-        _store.AddOrUpdate(2, CreatePosition(57.8, 12.0), null);
+        _store.AddOrUpdate(100000001, CreatePosition(57.7, 11.9), null);
+        _store.AddOrUpdate(100000002, CreatePosition(57.8, 12.0), null);
 
         var cleared = false;
         _store.StoreCleared += (_, _) => cleared = true;
@@ -117,18 +117,18 @@ public class VesselStoreTests
     [Fact]
     public void PurgeStale_RemovesOldVessels()
     {
-        var vessel = _store.AddOrUpdate(1, CreatePosition(57.7, 11.9), null);
+        var vessel = _store.AddOrUpdate(100000001, CreatePosition(57.7, 11.9), null);
         // Simulate old update
         vessel.LastUpdated = DateTime.UtcNow.AddMinutes(-15);
 
-        _store.AddOrUpdate(2, CreatePosition(57.8, 12.0), null); // Fresh
+        _store.AddOrUpdate(100000002, CreatePosition(57.8, 12.0), null); // Fresh
 
         var purged = _store.PurgeStale(TimeSpan.FromMinutes(10));
 
         purged.Should().Be(1);
         _store.Count.Should().Be(1);
-        _store.GetByMmsi(1).Should().BeNull();
-        _store.GetByMmsi(2).Should().NotBeNull();
+        _store.GetByMmsi(100000001).Should().BeNull();
+        _store.GetByMmsi(100000002).Should().NotBeNull();
     }
 
     [Fact]
@@ -137,12 +137,47 @@ public class VesselStoreTests
         // Add many position updates to test track capping
         for (int i = 0; i < Vessel.DefaultMaxTrackPoints + 50; i++)
         {
-            _store.AddOrUpdate(1, CreatePosition(57.7 + i * 0.001, 11.9), null);
+            _store.AddOrUpdate(100000001, CreatePosition(57.7 + i * 0.001, 11.9), null);
         }
 
-        var vessel = _store.GetByMmsi(1);
+        var vessel = _store.GetByMmsi(100000001);
         vessel.Should().NotBeNull();
         vessel!.Track.Count.Should().BeLessOrEqualTo(Vessel.DefaultMaxTrackPoints);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(99_999_999)]
+    [InlineData(800_000_000)]
+    [InlineData(-1)]
+    public void AddOrUpdate_InvalidMmsi_ThrowsArgumentOutOfRange(int invalidMmsi)
+    {
+        var act = () => _store.AddOrUpdate(invalidMmsi, CreatePosition(57.7, 11.9), null);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Theory]
+    [InlineData(100_000_000)]
+    [InlineData(265000001)]
+    [InlineData(799_999_999)]
+    public void AddOrUpdate_ValidMmsi_Succeeds(int validMmsi)
+    {
+        var vessel = _store.AddOrUpdate(validMmsi, CreatePosition(57.7, 11.9), null);
+        vessel.Should().NotBeNull();
+        vessel.Mmsi.Should().Be(validMmsi);
+    }
+
+    [Fact]
+    public void Search_RespectsMaxResults()
+    {
+        for (int i = 0; i < 30; i++)
+        {
+            _store.AddOrUpdate(100000000 + i, CreatePosition(57.7, 11.9),
+                new VesselStaticData { Name = $"Ship {i}" });
+        }
+
+        var results = _store.Search("Ship", maxResults: 5).ToList();
+        results.Should().HaveCountLessOrEqualTo(5);
     }
 
     [Fact]

@@ -42,9 +42,9 @@ public sealed class AreaMonitorService : IDisposable
         _vesselStore.StoreCleared += _onStoreCleared;
     }
 
-    public void SetMonitoredArea(BoundingBox area)
+    public void SetMonitoredArea(BoundingBox? area)
     {
-        _monitoredArea = area;
+        _monitoredArea = area ?? throw new ArgumentNullException(nameof(area));
         _previousState.Clear();
     }
 

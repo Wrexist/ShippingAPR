@@ -335,7 +335,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         if (_receiveTask is not null)
         {
             try { _receiveTask.Wait(TimeSpan.FromSeconds(5)); }
-            catch { /* Best-effort shutdown */ }
+            catch (Exception ex) { _logger.LogDebug(ex, "Error waiting for receive task during disposal"); }
             _receiveTask = null;
         }
 

@@ -19,6 +19,9 @@ public partial class SearchViewModel : ObservableObject
     [ObservableProperty]
     private bool _showResults;
 
+    [ObservableProperty]
+    private bool _hasNoResults;
+
     public ObservableCollection<Vessel> Results { get; } = [];
 
     public event EventHandler<Vessel>? VesselSelected;
@@ -57,7 +60,8 @@ public partial class SearchViewModel : ObservableObject
         foreach (var vessel in results)
             Results.Add(vessel);
 
-        ShowResults = Results.Count > 0;
+        HasNoResults = Results.Count == 0 && !string.IsNullOrWhiteSpace(query);
+        ShowResults = Results.Count > 0 || HasNoResults;
     }
 
     [RelayCommand]

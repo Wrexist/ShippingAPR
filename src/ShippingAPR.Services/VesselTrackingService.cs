@@ -58,6 +58,7 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
 
     public Task StartTrackingAsync(BoundingBox area, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(area);
         lock (_areaLock)
         {
             _currentArea = area;
@@ -189,8 +190,7 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
             return true; // Never calculated
 
         // Check if heading changed significantly
-        var headingDelta = Math.Abs(vessel.CurrentPosition.TrueHeading - last.Heading);
-        if (headingDelta > 180) headingDelta = 360 - headingDelta;
+        var headingDelta = BearingCalculator.AngleDifference(vessel.CurrentPosition.TrueHeading, last.Heading);
         if (headingDelta > _trackingOptions.EtaHeadingThresholdDeg) return true;
 
         // Check if vessel moved significantly
@@ -201,20 +201,33 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         return distance > _trackingOptions.EtaDistanceThresholdNm;
     }
 
+    private readonly object _portCacheLock = new();
+
     private Port? ResolvePortCached(string destination)
     {
         if (_portCache.TryGetValue(destination, out var cached))
             return cached;
 
-        // Evict oldest entries when cache is full
+        // Evict entries when cache is full (lock prevents concurrent eviction storms)
         if (_portCache.Count >= _trackingOptions.PortCacheMaxSize)
         {
-            var evictCount = _trackingOptions.PortCacheMaxSize / 2;
-            var keysToRemove = _portCache.Keys.Take(evictCount).ToList();
-            foreach (var key in keysToRemove)
-                _portCache.TryRemove(key, out _);
-            _logger.LogDebug("Port cache eviction: removed {Count} entries (was at capacity {Max})",
-                keysToRemove.Count, _trackingOptions.PortCacheMaxSize);
+            lock (_portCacheLock)
+            {
+                // Double-check after acquiring lock
+                if (_portCache.Count >= _trackingOptions.PortCacheMaxSize)
+                {
+                    var evictCount = _trackingOptions.PortCacheMaxSize / 2;
+                    var removed = 0;
+                    foreach (var key in _portCache.Keys.ToArray())
+                    {
+                        if (removed >= evictCount) break;
+                        if (_portCache.TryRemove(key, out _))
+                            removed++;
+                    }
+                    _logger.LogDebug("Port cache eviction: removed {Count} entries (was at capacity {Max})",
+                        removed, _trackingOptions.PortCacheMaxSize);
+                }
+            }
         }
 
         var port = _portRepository.ResolveDestination(destination);

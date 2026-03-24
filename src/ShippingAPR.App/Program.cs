@@ -22,7 +22,11 @@ public static class Program
             var message = $"ShippingAPR failed to start.\n\n{ex.GetType().Name}: {ex.Message}";
             if (ex.InnerException is not null)
                 message += $"\n\nInner: {ex.InnerException.Message}";
+#if DEBUG
             message += $"\n\nStack trace:\n{ex.StackTrace}";
+#else
+            message += "\n\nPlease restart the application. If the problem persists, check the logs or contact support.";
+#endif
 
             MessageBox.Show(message, "ShippingAPR - Startup Error",
                 MessageBoxButton.OK, MessageBoxImage.Error);

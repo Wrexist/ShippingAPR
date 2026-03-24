@@ -16,6 +16,7 @@ using ShippingAPR.App.Views;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.App.Resources;
 using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
@@ -36,7 +37,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _notificationCts;
 
     [ObservableProperty]
-    private string _connectionStatusText = "Disconnected";
+    private string _connectionStatusText = Strings.Disconnected;
 
     [ObservableProperty]
     private string _connectionStatusColor;
@@ -115,16 +116,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             NotificationText = $"{msg.Value.Title}: {msg.Value.Body}";
             ShowNotification = true;
-
-            // Cancel any previous auto-hide timer so rapid notifications
-            // don't dismiss the latest one prematurely.
-            _notificationCts?.Cancel();
-            _notificationCts?.Dispose();
-            var cts = _notificationCts = new CancellationTokenSource();
-            Task.Delay(_uiOptions.NotificationTimeoutMs, cts.Token).ContinueWith(_ =>
-            {
-                Application.Current?.Dispatcher.Invoke(() => ShowNotification = false);
-            }, TaskContinuationOptions.OnlyOnRanToCompletion);
+            AutoHideNotification();
         });
 
         // Wire vessel selection from list to detail
@@ -146,6 +138,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             MapViewModel.CenterOnVessel(vessel);
         };
         SearchViewModel.VesselSelected += _onVesselSelected;
+
+        // Wire vessel clicks on map
+        MapViewModel.VesselFeatureClicked += (_, mmsi) =>
+        {
+            VesselListViewModel.SelectVesselByMmsi(mmsi);
+            MapViewModel.CenterOnVessel(VesselListViewModel.SelectedVessel);
+        };
 
         // Auto-start tracking if API key is available
         if (HasApiKey)
@@ -272,10 +271,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 var csv = _exportService.ExportToCsv();
                 File.WriteAllText(dialog.FileName, csv);
                 _logger.LogInformation("Exported {Count} vessels to CSV: {Path}", _vesselStore.Count, dialog.FileName);
+                ShowExportNotification(_vesselStore.Count, dialog.FileName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to export CSV");
+                ShowErrorNotification(Strings.Export, ex.Message);
             }
         }
     }
@@ -297,12 +298,40 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 var json = _exportService.ExportToJson();
                 File.WriteAllText(dialog.FileName, json);
                 _logger.LogInformation("Exported {Count} vessels to JSON: {Path}", _vesselStore.Count, dialog.FileName);
+                ShowExportNotification(_vesselStore.Count, dialog.FileName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to export JSON");
+                ShowErrorNotification(Strings.Export, ex.Message);
             }
         }
+    }
+
+    private void ShowExportNotification(int count, string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        NotificationText = $"{Strings.Export}: {count} {Strings.Ships.ToLowerInvariant()} → {fileName}";
+        ShowNotification = true;
+        AutoHideNotification();
+    }
+
+    private void ShowErrorNotification(string title, string message)
+    {
+        NotificationText = $"{Strings.Error}: {message}";
+        ShowNotification = true;
+        AutoHideNotification();
+    }
+
+    private void AutoHideNotification()
+    {
+        _notificationCts?.Cancel();
+        _notificationCts?.Dispose();
+        var cts = _notificationCts = new CancellationTokenSource();
+        Task.Delay(_uiOptions.NotificationTimeoutMs, cts.Token).ContinueWith(_ =>
+        {
+            Application.Current?.Dispatcher.Invoke(() => ShowNotification = false);
+        }, TaskContinuationOptions.OnlyOnRanToCompletion);
     }
 
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)
@@ -311,11 +340,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             ConnectionStatusText = status switch
             {
-                ConnectionStatus.Connected => "Connected",
-                ConnectionStatus.Connecting => "Connecting...",
-                ConnectionStatus.Reconnecting => "Reconnecting...",
-                ConnectionStatus.Disconnected => "Disconnected",
-                ConnectionStatus.Error => "Error",
+                ConnectionStatus.Connected => Strings.Connected,
+                ConnectionStatus.Connecting => Strings.Connecting,
+                ConnectionStatus.Reconnecting => Strings.Reconnecting,
+                ConnectionStatus.Disconnected => Strings.Disconnected,
+                ConnectionStatus.Error => Strings.Error,
                 _ => status.ToString()
             };
 

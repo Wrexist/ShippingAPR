@@ -3,6 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:ShippingAPR.App.Converters"
              xmlns:res="clr-namespace:ShippingAPR.App.Resources">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -52,6 +55,21 @@
                     <GradientStop Color="Transparent" Offset="1"/>
                 </LinearGradientBrush>
             </Border.Background>
+        </Border>
+
+        <!-- Empty state message -->
+        <Border Grid.Row="1" Padding="20"
+                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="&#x1F6A2;" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <TextBlock Text="No vessels found"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           FontSize="13" HorizontalAlignment="Center"/>
+                <TextBlock Text="Adjust filters or zoom the map to track ships"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           FontSize="11" Opacity="0.7"
+                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
         </Border>
 
         <!-- Vessel List — Virtualized glass items -->

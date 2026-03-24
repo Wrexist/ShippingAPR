@@ -40,6 +40,18 @@ public sealed class UiOptions
     public string StatusColorConnecting { get; set; } = "#FFFFAA00";
     public string StatusColorError { get; set; } = "#FFFF3D71";
 
+    // Map colors (ARGB bytes)
+    public byte TrailAlpha { get; set; } = 128;
+    public byte SelectionFillAlpha { get; set; } = 40;
+    public byte SelectionLineAlpha { get; set; } = 200;
+    public byte SelectionRed { get; set; } = 233;
+    public byte SelectionGreen { get; set; } = 69;
+    public byte SelectionBlue { get; set; } = 96;
+    public byte ClusterFillAlpha { get; set; } = 200;
+    public byte ClusterRed { get; set; } = 108;
+    public byte ClusterGreen { get; set; } = 99;
+    public byte ClusterBlue { get; set; } = 255;
+
     // Filter defaults
     public double DefaultMaxSpeedFilter { get; set; } = 50;
 
