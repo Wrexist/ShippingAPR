@@ -19,6 +19,12 @@ public class ShipmentTrackingServiceTests : IDisposable
 
     public ShipmentTrackingServiceTests()
     {
+        // Delete persisted data to prevent cross-test contamination
+        var dataPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ShippingAPR", "shipments.json");
+        if (File.Exists(dataPath)) File.Delete(dataPath);
+
         _storeMock.Setup(s => s.Vessels).Returns(new Dictionary<int, Vessel>());
 
         var areaMonitor = new AreaMonitorService(_storeMock.Object, Mock.Of<ILogger<AreaMonitorService>>());

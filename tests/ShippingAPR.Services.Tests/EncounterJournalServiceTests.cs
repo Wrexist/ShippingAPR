@@ -17,6 +17,12 @@ public class EncounterJournalServiceTests : IDisposable
 
     public EncounterJournalServiceTests()
     {
+        // Delete persisted data to prevent cross-test contamination
+        var dataPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ShippingAPR", "encounter-journal.json");
+        if (File.Exists(dataPath)) File.Delete(dataPath);
+
         _storeMock.Setup(s => s.Vessels).Returns(new Dictionary<int, Vessel>());
         _service = new EncounterJournalService(_storeMock.Object, _loggerMock.Object);
     }
