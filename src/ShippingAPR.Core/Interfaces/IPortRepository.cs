@@ -8,4 +8,5 @@ public interface IPortRepository
     Port? FindByName(string name);
     Port? FindNearest(double latitude, double longitude);
     IEnumerable<Port> SearchPorts(string query);
+    IReadOnlyList<Port> GetAll();
 }

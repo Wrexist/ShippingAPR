@@ -185,12 +185,106 @@
                     <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.12" Color="#000000" Direction="270"/>
                 </Border.Effect>
                 <Grid>
-                    <!-- Vessel Detail (default) -->
-                    <views:VesselDetailPanel DataContext="{Binding VesselDetailViewModel}"
-                                             Visibility="{Binding IsDashboardVisible, Converter={StaticResource InverseBoolToVis}}"/>
-                    <!-- Dashboard (toggled) -->
-                    <views:DashboardPanel DataContext="{Binding StatisticsViewModel}"
-                                          Visibility="{Binding IsDashboardVisible, Converter={StaticResource BoolToVis}}"/>
+                    <!-- Panel selector tabs -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Tab Strip -->
+                    <Border Grid.Row="0" Background="{DynamicResource GlassFillBrush}"
+                            Padding="4,4" Margin="4,4,4,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="&#x26F5;" ToolTip="Vessel Details"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="0"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x1F4CA;" ToolTip="Dashboard"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="1"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x1F3C6;" ToolTip="Ship Spotter"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="2"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x2693;" ToolTip="Port Activity"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="3"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x26A1;" ToolTip="Smart Alerts"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="4"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Panel Content -->
+                    <Grid Grid.Row="1">
+                        <!-- Vessel Detail (index 0) -->
+                        <views:VesselDetailPanel DataContext="{Binding VesselDetailViewModel}">
+                            <views:VesselDetailPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:VesselDetailPanel.Style>
+                        </views:VesselDetailPanel>
+
+                        <!-- Dashboard (index 1) -->
+                        <views:DashboardPanel DataContext="{Binding StatisticsViewModel}">
+                            <views:DashboardPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="1">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:DashboardPanel.Style>
+                        </views:DashboardPanel>
+
+                        <!-- Ship Spotter / Achievements (index 2) -->
+                        <views:AchievementPanel DataContext="{Binding AchievementViewModel}">
+                            <views:AchievementPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="2">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:AchievementPanel.Style>
+                        </views:AchievementPanel>
+
+                        <!-- Port Activity (index 3) -->
+                        <views:PortDashboardPanel DataContext="{Binding PortDashboardViewModel}">
+                            <views:PortDashboardPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="3">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:PortDashboardPanel.Style>
+                        </views:PortDashboardPanel>
+
+                        <!-- Smart Alerts (index 4) -->
+                        <views:AlertRulePanel DataContext="{Binding AlertRuleViewModel}">
+                            <views:AlertRulePanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="4">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:AlertRulePanel.Style>
+                        </views:AlertRulePanel>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
@@ -259,11 +353,6 @@
 
                 <!-- Start Tracking Button + Dashboard toggle -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
-                    <Button Content="&#x1F4CA;"
-                            Command="{Binding ToggleDashboardCommand}"
-                            Style="{DynamicResource IconButtonStyle}"
-                            ToolTip="Toggle Dashboard"
-                            FontSize="14" Margin="0,0,8,0"/>
                     <TextBlock Text="{Binding MessageRateText}"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="11" VerticalAlignment="Center"
