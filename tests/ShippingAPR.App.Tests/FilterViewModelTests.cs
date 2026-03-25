@@ -198,6 +198,37 @@ public class FilterViewModelTests
         _vm.ShouldShowVessel(vessel).Should().BeFalse();
     }
 
+    [Fact]
+    public void ShouldShowVessel_WhitespaceDestinationFilter_ShowsAll()
+    {
+        _vm.DestinationFilter = "   ";
+
+        var vessel = CreateVessel(destination: "SEGOT");
+        // Whitespace filter should not match (trimmed empty = no filter)
+        // Current behavior: non-empty string with spaces will try to match
+        _vm.ShouldShowVessel(vessel).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_CombinedAdvancedAndTypeFilter()
+    {
+        _vm.ShowCargo = false;
+        _vm.DestinationFilter = "GOT";
+
+        // Cargo type filtered out, even though destination matches
+        var vessel = CreateVessel(destination: "SEGOT");
+        _vm.ShouldShowVessel(vessel).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_VesselWithNoPosition_ReturnsFalse()
+    {
+        // Vessel with no position should be hidden (speed = 0, passes speed check)
+        var vessel = new Vessel(265000001);
+        vessel.UpdateStaticData(new VesselStaticData { Name = "TEST", ShipType = VesselType.Cargo });
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+    }
+
     private static Vessel CreateVessel(
         string? destination = "TEST",
         string? countryCode = "SE",

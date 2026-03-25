@@ -12,6 +12,9 @@ public sealed class TrackingOptions
     public int MaxNotificationHistory { get; set; } = 100;
     public int MaxTrackPoints { get; set; } = 200;
 
+    // Vessel Enrichment
+    public int EnrichmentDelayMs { get; set; } = 1000;
+
     // Collision Risk Detection
     public double CpaWarningDistanceNm { get; set; } = 0.5;
     public int TcpaWindowMinutes { get; set; } = 30;

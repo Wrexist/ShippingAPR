@@ -228,8 +228,8 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
                     _logger.LogDebug(ex, "Failed to enrich MMSI {Mmsi}", mmsi);
                 }
 
-                // Rate limit: 1 request per second
-                await Task.Delay(1000, ct);
+                // Rate limit enrichment requests
+                await Task.Delay(_trackingOptions.EnrichmentDelayMs, ct);
             }
         }
         catch (OperationCanceledException) { /* expected on shutdown */ }

@@ -83,7 +83,7 @@
                     </Border>
                 </WrapPanel>
 
-                <!-- Step 1: Get API Key -->
+                <!-- Step 1: Choose Provider + Get API Key -->
                 <StackPanel Grid.Row="3" Margin="0,0,0,24">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                         <Border Width="26" Height="26" CornerRadius="13"
@@ -98,6 +98,19 @@
                                    Foreground="{DynamicResource PrimaryTextBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
+
+                    <!-- Provider selector -->
+                    <StackPanel Orientation="Horizontal" Margin="36,0,0,10">
+                        <TextBlock Text="Provider:" FontSize="13"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="ProviderSelector" SelectedIndex="0" Width="180">
+                            <ComboBoxItem Content="AisStream (free, WebSocket)"/>
+                            <ComboBoxItem Content="Datalastic (REST API)"/>
+                            <ComboBoxItem Content="Data Docked (REST + Satellite)"/>
+                        </ComboBox>
+                    </StackPanel>
+
                     <TextBlock Text="{x:Static res:Strings.WelcomeStep1Desc}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource SecondaryTextBrush}"

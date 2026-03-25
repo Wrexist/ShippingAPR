@@ -2,132 +2,56 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Infrastructure.Providers;
 
 namespace ShippingAPR.Infrastructure.Datalastic;
 
 /// <summary>
-/// AIS data provider that polls the Datalastic REST API for vessel positions
-/// within a bounding box and emits them as events compatible with <see cref="IAisDataProvider"/>.
+/// AIS data provider that polls the Datalastic REST API for vessel positions.
 /// </summary>
-public sealed class DatalasticClient : IAisDataProvider, IDisposable
+public sealed class DatalasticClient : PollingAisProviderBase
 {
     private readonly HttpClient _httpClient;
     private readonly DatalasticOptions _options;
     private readonly ILogger<DatalasticClient> _logger;
-    private CancellationTokenSource? _pollCts;
-    private Task? _pollTask;
-    private BoundingBox? _currentArea;
-    private readonly object _areaLock = new();
 
-    public ConnectionStatus Status { get; private set; } = ConnectionStatus.Disconnected;
-    public event EventHandler<ConnectionStatus>? ConnectionStatusChanged;
-    public event EventHandler<AisMessageEventArgs>? MessageReceived;
+    protected override string ProviderName => "Datalastic";
+    protected override string ApiKey => _options.ApiKey;
+    protected override string MissingKeyMessage =>
+        "Datalastic API key is not configured. Set it in appsettings.json under Datalastic:ApiKey.";
 
     public DatalasticClient(
         HttpClient httpClient,
         IOptions<DatalasticOptions> options,
         ILogger<DatalasticClient> logger)
+        : base(logger, options.Value.PollIntervalSeconds)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
     }
 
-    public Task ConnectAsync(BoundingBox area, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(_options.ApiKey))
-            throw new InvalidOperationException("Datalastic API key is not configured. Set it in appsettings.json under Datalastic:ApiKey.");
-
-        lock (_areaLock) { _currentArea = area; }
-
-        _pollCts?.Cancel();
-        _pollCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _pollTask = PollLoopAsync(_pollCts.Token);
-
-        SetStatus(ConnectionStatus.Connected);
-        _logger.LogInformation("Datalastic provider started polling for area {Area}", area);
-        return Task.CompletedTask;
-    }
-
-    public Task UpdateSubscriptionAsync(BoundingBox newArea, CancellationToken cancellationToken = default)
-    {
-        lock (_areaLock) { _currentArea = newArea; }
-        _logger.LogInformation("Datalastic subscription updated to area {Area}", newArea);
-        return Task.CompletedTask;
-    }
-
-    public async Task DisconnectAsync()
-    {
-        _pollCts?.Cancel();
-        if (_pollTask is not null)
-        {
-            try { await _pollTask.WaitAsync(TimeSpan.FromSeconds(5)); }
-            catch (OperationCanceledException) { }
-            catch (TimeoutException) { }
-            _pollTask = null;
-        }
-        _pollCts?.Dispose();
-        _pollCts = null;
-        SetStatus(ConnectionStatus.Disconnected);
-    }
-
-    private async Task PollLoopAsync(CancellationToken ct)
-    {
-        var interval = TimeSpan.FromSeconds(_options.PollIntervalSeconds);
-        var consecutiveErrors = 0;
-
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(interval, ct);
-
-                BoundingBox area;
-                lock (_areaLock) { area = _currentArea!; }
-
-                await FetchAndEmitAsync(area, ct);
-                consecutiveErrors = 0;
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-            catch (Exception ex)
-            {
-                consecutiveErrors++;
-                _logger.LogWarning(ex, "Datalastic poll error (consecutive: {Count})", consecutiveErrors);
-
-                if (consecutiveErrors >= 10)
-                {
-                    _logger.LogError("Datalastic: too many consecutive errors, marking as failed");
-                    SetStatus(ConnectionStatus.Failed);
-                    return;
-                }
-
-                SetStatus(ConnectionStatus.Reconnecting);
-                try { await Task.Delay(TimeSpan.FromSeconds(Math.Min(consecutiveErrors * 2, 30)), ct); }
-                catch (OperationCanceledException) { return; }
-            }
-        }
-    }
-
-    private async Task FetchAndEmitAsync(BoundingBox area, CancellationToken ct)
+    protected override async Task FetchAndEmitAsync(BoundingBox area, CancellationToken ct)
     {
         var url = $"{_options.BaseUrl}/vessel_find" +
-                  $"?api-key={_options.ApiKey}" +
-                  $"&params.min_latitude={area.MinLatitude.ToString(CultureInfo.InvariantCulture)}" +
+                  $"?params.min_latitude={area.MinLatitude.ToString(CultureInfo.InvariantCulture)}" +
                   $"&params.max_latitude={area.MaxLatitude.ToString(CultureInfo.InvariantCulture)}" +
                   $"&params.min_longitude={area.MinLongitude.ToString(CultureInfo.InvariantCulture)}" +
                   $"&params.max_longitude={area.MaxLongitude.ToString(CultureInfo.InvariantCulture)}";
 
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("X-Api-Key", _options.ApiKey);
+
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeoutCts.CancelAfter(TimeSpan.FromSeconds(_options.RequestTimeoutSeconds));
 
-        var response = await _httpClient.GetStringAsync(url, timeoutCts.Token);
-        var doc = JsonDocument.Parse(response);
+        var response = await _httpClient.SendAsync(request, timeoutCts.Token);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+        var doc = JsonDocument.Parse(json);
 
         if (!doc.RootElement.TryGetProperty("data", out var data) ||
             data.ValueKind != JsonValueKind.Array)
@@ -146,30 +70,25 @@ public sealed class DatalasticClient : IAisDataProvider, IDisposable
                 var course = vessel.TryGetProperty("course", out var courseProp) ? courseProp.GetDouble() : 0;
                 var heading = vessel.TryGetProperty("heading", out var headingProp) ? headingProp.GetDouble() : 0;
 
-                var position = new VesselPosition
-                {
-                    Latitude = lat,
-                    Longitude = lon,
-                    SpeedOverGround = speed,
-                    CourseOverGround = course,
-                    TrueHeading = heading > 0 ? heading : course,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                var args = new AisMessageEventArgs
+                EmitMessage(new AisMessageEventArgs
                 {
                     MessageType = "PositionReport",
                     Mmsi = mmsi,
-                    Position = position
-                };
+                    Position = new VesselPosition
+                    {
+                        Latitude = lat,
+                        Longitude = lon,
+                        SpeedOverGround = speed,
+                        CourseOverGround = course,
+                        TrueHeading = heading > 0 ? heading : course,
+                        Timestamp = DateTime.UtcNow
+                    }
+                });
 
-                MessageReceived?.Invoke(this, args);
-
-                // Also emit static data if available
                 var name = vessel.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
                 if (!string.IsNullOrEmpty(name))
                 {
-                    var staticArgs = new AisMessageEventArgs
+                    EmitMessage(new AisMessageEventArgs
                     {
                         MessageType = "ShipStaticData",
                         Mmsi = mmsi,
@@ -180,8 +99,7 @@ public sealed class DatalasticClient : IAisDataProvider, IDisposable
                             ImoNumber = vessel.TryGetProperty("imo", out var imoProp) && imoProp.ValueKind == JsonValueKind.Number ? imoProp.GetInt32() : 0,
                             Destination = vessel.TryGetProperty("destination", out var destProp) ? destProp.GetString() : null
                         }
-                    };
-                    MessageReceived?.Invoke(this, staticArgs);
+                    });
                 }
             }
             catch (Exception ex)
@@ -189,26 +107,5 @@ public sealed class DatalasticClient : IAisDataProvider, IDisposable
                 _logger.LogDebug(ex, "Failed to parse Datalastic vessel entry");
             }
         }
-
-        if (Status != ConnectionStatus.Connected)
-            SetStatus(ConnectionStatus.Connected);
-    }
-
-    private void SetStatus(ConnectionStatus status)
-    {
-        Status = status;
-        ConnectionStatusChanged?.Invoke(this, status);
-    }
-
-    public void Dispose()
-    {
-        _pollCts?.Cancel();
-        var task = _pollTask;
-        if (task is not null)
-        {
-            try { task.Wait(TimeSpan.FromSeconds(3)); }
-            catch { /* best effort */ }
-        }
-        _pollCts?.Dispose();
     }
 }

@@ -73,18 +73,35 @@
                                       SelectedItem="{Binding FallbackProvider}"/>
                         </Grid>
 
-                        <!-- Poll interval -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                            <TextBlock Text="Poll Interval (seconds):" FontSize="13"
+                        <!-- Poll intervals -->
+                        <Grid Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Datalastic poll (sec):" FontSize="13"
                                        Foreground="{DynamicResource PrimaryTextBrush}"
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox Text="{Binding PollIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
-                                     Width="60"
+                                       VerticalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBox Grid.Column="1" Width="60"
+                                     Text="{Binding DatalasticPollInterval, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{DynamicResource GlassFillBrush}"
+                                     Foreground="{DynamicResource PrimaryTextBrush}"
+                                     BorderBrush="{DynamicResource GlassBorderBrush}"
+                                     Padding="8,6" Margin="0,0,0,6"/>
+                            <TextBlock Grid.Row="1" Text="Data Docked poll (sec):" FontSize="13"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Width="60"
+                                     Text="{Binding DataDockedPollInterval, UpdateSourceTrigger=PropertyChanged}"
                                      Background="{DynamicResource GlassFillBrush}"
                                      Foreground="{DynamicResource PrimaryTextBrush}"
                                      BorderBrush="{DynamicResource GlassBorderBrush}"
                                      Padding="8,6"/>
-                        </StackPanel>
+                        </Grid>
 
                         <!-- API Keys -->
                         <TextBlock Text="API KEYS" FontSize="11" FontWeight="SemiBold"

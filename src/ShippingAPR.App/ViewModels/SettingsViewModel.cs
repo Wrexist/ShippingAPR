@@ -20,7 +20,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private AisProviderType _activeProvider = AisProviderType.AisStream;
     [ObservableProperty] private string _fallbackProvider = string.Empty;
 
-    [ObservableProperty] private int _pollIntervalSeconds = 15;
+    [ObservableProperty] private int _datalasticPollInterval = 15;
+    [ObservableProperty] private int _dataDockedPollInterval = 15;
 
     public AisProviderType[] AvailableProviders { get; } = Enum.GetValues<AisProviderType>();
     public string[] FallbackOptions { get; } = ["", "AisStream", "Datalastic", "DataDocked"];
@@ -43,8 +44,10 @@ public partial class SettingsViewModel : ObservableObject
 
         FallbackProvider = _configuration["AisProvider:Fallback"] ?? string.Empty;
 
-        if (int.TryParse(_configuration["Datalastic:PollIntervalSeconds"], out var poll))
-            PollIntervalSeconds = poll;
+        if (int.TryParse(_configuration["Datalastic:PollIntervalSeconds"], out var dPoll))
+            DatalasticPollInterval = dPoll;
+        if (int.TryParse(_configuration["DataDocked:PollIntervalSeconds"], out var ddPoll))
+            DataDockedPollInterval = ddPoll;
     }
 
     [RelayCommand]
@@ -82,13 +85,13 @@ public partial class SettingsViewModel : ObservableObject
             // Datalastic
             var datalasticSection = root["Datalastic"]?.AsObject() ?? new JsonObject();
             datalasticSection["ApiKey"] = DatalasticApiKey;
-            datalasticSection["PollIntervalSeconds"] = PollIntervalSeconds;
+            datalasticSection["PollIntervalSeconds"] = DatalasticPollInterval;
             root["Datalastic"] = datalasticSection;
 
             // DataDocked
             var dataDockedSection = root["DataDocked"]?.AsObject() ?? new JsonObject();
             dataDockedSection["ApiKey"] = DataDockedApiKey;
-            dataDockedSection["PollIntervalSeconds"] = PollIntervalSeconds;
+            dataDockedSection["PollIntervalSeconds"] = DataDockedPollInterval;
             root["DataDocked"] = dataDockedSection;
 
             // VesselFinder

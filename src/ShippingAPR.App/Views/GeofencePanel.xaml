@@ -1,0 +1,75 @@
+<UserControl x:Class="ShippingAPR.App.Views.GeofencePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Geofence Zones"
+                   Style="{DynamicResource HeaderTextStyle}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Add Zone -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock Text="Zone Name" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassBorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">
+                <TextBox Text="{Binding NewZoneName, UpdateSourceTrigger=PropertyChanged}"
+                         Background="Transparent"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
+                         BorderThickness="0" Padding="8,5" FontSize="12"/>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox Content="Alert on Entry" IsChecked="{Binding AlertOnEntry}"
+                          Style="{DynamicResource GlassToggleStyle}" Margin="0,0,12,0"/>
+                <CheckBox Content="Alert on Exit" IsChecked="{Binding AlertOnExit}"
+                          Style="{DynamicResource GlassToggleStyle}"/>
+            </StackPanel>
+
+            <Button Content="Add from Current View"
+                    Command="{Binding AddFromViewportCommand}"
+                    Style="{DynamicResource AccentButtonStyle}"
+                    Padding="12,6" FontSize="12"
+                    HorizontalAlignment="Stretch"/>
+        </StackPanel>
+
+        <!-- Zone List -->
+        <ItemsControl Grid.Row="2" ItemsSource="{Binding Zones}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="{DynamicResource GlassFillBrush}"
+                            CornerRadius="8" Padding="10,8" Margin="0,0,0,6"
+                            BorderBrush="{DynamicResource GlassBorderBrush}"
+                            BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <TextBlock FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}">
+                                    <Run Text="Entry:"/><Run Text="{Binding AlertOnEntry, Mode=OneWay}"/>
+                                    <Run Text=" Exit:"/><Run Text="{Binding AlertOnExit, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="X"
+                                    Command="{Binding DataContext.RemoveZoneCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding Name}"
+                                    Style="{DynamicResource GhostButtonStyle}"
+                                    FontSize="11" Padding="6,2"
+                                    VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</UserControl>

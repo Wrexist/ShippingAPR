@@ -115,4 +115,50 @@ public class FallbackAisProviderTests
         _primaryMock.SetupGet(p => p.Status).Returns(ConnectionStatus.Connected);
         _provider.Status.Should().Be(ConnectionStatus.Connected);
     }
+
+    [Fact]
+    public async Task ConnectAsync_BothFail_ReportsFailedStatus()
+    {
+        var area = BoundingBox.GothenburgDefault;
+        _primaryMock.Setup(p => p.ConnectAsync(area, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Primary failed"));
+        _fallbackMock.Setup(p => p.ConnectAsync(area, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Fallback failed"));
+
+        ConnectionStatus? lastStatus = null;
+        _provider.ConnectionStatusChanged += (_, s) => lastStatus = s;
+
+        await _provider.ConnectAsync(area);
+
+        lastStatus.Should().Be(ConnectionStatus.Failed);
+    }
+
+    [Fact]
+    public async Task ConnectAsync_NullFallback_ThrowsOnPrimaryFailure()
+    {
+        var providerNoFallback = new FallbackAisProvider(
+            _primaryMock.Object,
+            fallback: null,
+            Mock.Of<ILogger<FallbackAisProvider>>());
+
+        var area = BoundingBox.GothenburgDefault;
+        _primaryMock.Setup(p => p.ConnectAsync(area, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("No key"));
+
+        var act = () => providerNoFallback.ConnectAsync(area);
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Dispose_DoesNotDoubleDispose_WhenPrimaryEqualsFallback()
+    {
+        var singleMock = new Mock<IAisDataProvider>();
+        var provider = new FallbackAisProvider(
+            singleMock.Object,
+            singleMock.Object,
+            Mock.Of<ILogger<FallbackAisProvider>>());
+
+        // Should not throw
+        provider.Dispose();
+    }
 }

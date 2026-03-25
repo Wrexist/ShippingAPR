@@ -14,9 +14,10 @@ public sealed class FallbackAisProvider : IAisDataProvider, IDisposable
     private readonly IAisDataProvider _primary;
     private readonly IAisDataProvider? _fallback;
     private readonly ILogger<FallbackAisProvider> _logger;
+    private readonly SemaphoreSlim _switchLock = new(1, 1);
     private IAisDataProvider _active;
     private BoundingBox? _lastArea;
-    private bool _usingFallback;
+    private volatile bool _usingFallback;
 
     public ConnectionStatus Status => _active.Status;
     public event EventHandler<ConnectionStatus>? ConnectionStatusChanged;
@@ -67,7 +68,7 @@ public sealed class FallbackAisProvider : IAisDataProvider, IDisposable
         if (status == ConnectionStatus.Failed && _fallback is not null && !_usingFallback && _lastArea is not null)
         {
             _logger.LogWarning("Primary provider failed, switching to fallback provider");
-            _ = SwitchToFallbackAsync(_lastArea, CancellationToken.None);
+            _ = SafeSwitchToFallbackAsync(_lastArea);
             return;
         }
 
@@ -77,6 +78,30 @@ public sealed class FallbackAisProvider : IAisDataProvider, IDisposable
     private void OnMessageReceived(object? sender, AisMessageEventArgs e)
     {
         MessageReceived?.Invoke(this, e);
+    }
+
+    /// <summary>
+    /// Wraps the fallback switch in error handling to prevent fire-and-forget crashes.
+    /// Uses a semaphore to prevent concurrent switch attempts.
+    /// </summary>
+    private async Task SafeSwitchToFallbackAsync(BoundingBox area)
+    {
+        if (!await _switchLock.WaitAsync(0))
+            return; // Another switch is already in progress
+
+        try
+        {
+            await SwitchToFallbackAsync(area, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled error during fallback switch");
+            ConnectionStatusChanged?.Invoke(this, ConnectionStatus.Failed);
+        }
+        finally
+        {
+            _switchLock.Release();
+        }
     }
 
     private async Task SwitchToFallbackAsync(BoundingBox area, CancellationToken ct)
@@ -118,6 +143,9 @@ public sealed class FallbackAisProvider : IAisDataProvider, IDisposable
     {
         UnsubscribeFrom(_active);
         (_primary as IDisposable)?.Dispose();
-        (_fallback as IDisposable)?.Dispose();
+        // Guard against double-dispose when primary and fallback are the same instance
+        if (_fallback is not null && !ReferenceEquals(_primary, _fallback))
+            (_fallback as IDisposable)?.Dispose();
+        _switchLock.Dispose();
     }
 }

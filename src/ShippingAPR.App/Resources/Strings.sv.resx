@@ -157,6 +157,27 @@
   <data name="NoVesselsFound"><value>Inga fartyg hittades</value></data>
   <data name="AdjustFiltersHint"><value>Justera filter eller zooma kartan för att spåra fartyg</value></data>
 
+  <!-- Settings & Providers -->
+  <data name="Settings"><value>Inställningar</value></data>
+  <data name="ActiveProvider"><value>Aktiv leverantör</value></data>
+  <data name="FallbackProvider"><value>Reservleverantör</value></data>
+  <data name="PollInterval"><value>Pollningsintervall</value></data>
+  <data name="SaveRestart"><value>Spara &amp; Starta om</value></data>
+  <data name="SettingsSaved"><value>Inställningar sparade. Starta om programmet för att ändringarna ska träda i kraft.</value></data>
+  <data name="SettingsSaveFailed"><value>Kunde inte spara inställningar till appsettings.json.</value></data>
+
+  <!-- Advanced Filters -->
+  <data name="AdvancedFilters"><value>AVANCERADE FILTER</value></data>
+  <data name="DestinationFilter"><value>Destination</value></data>
+  <data name="FlagFilter"><value>Flagga (landskod)</value></data>
+
+  <!-- Geofences -->
+  <data name="GeofenceZones"><value>Geofence-zoner</value></data>
+  <data name="ZoneName"><value>Zonnamn</value></data>
+  <data name="AlertOnEntry"><value>Larm vid inträde</value></data>
+  <data name="AlertOnExit"><value>Larm vid utträde</value></data>
+  <data name="AddFromView"><value>Lägg till från aktuell vy</value></data>
+
   <!-- Keyboard Shortcuts -->
   <data name="KeyboardShortcuts"><value>Tangentbordsgenvägar</value></data>
   <data name="ShortcutSearch"><value>Fokusera sökning</value></data>

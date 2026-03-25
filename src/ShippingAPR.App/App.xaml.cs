@@ -177,6 +177,7 @@ public partial class App : Application
                 services.AddSingleton<ShipmentViewModel>();
                 services.AddSingleton<MaritimeNewsViewModel>();
                 services.AddSingleton<VesselComparisonViewModel>();
+                services.AddSingleton<GeofenceViewModel>();
 
                 // Views
                 services.AddSingleton<MainWindow>();

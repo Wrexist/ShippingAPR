@@ -31,6 +31,8 @@ public sealed class UserPreferences
     public bool ShowTugPilot { get; set; } = true;
     public bool ShowOther { get; set; } = true;
     public double MaxSpeed { get; set; } = 50;
+    public string DestinationFilter { get; set; } = string.Empty;
+    public string FlagFilter { get; set; } = string.Empty;
     public List<MapBookmark> Bookmarks { get; set; } = [];
 
     public UserPreferences(ILogger<UserPreferences> logger)
@@ -64,6 +66,8 @@ public sealed class UserPreferences
             ShowTugPilot = data.ShowTugPilot;
             ShowOther = data.ShowOther;
             MaxSpeed = data.MaxSpeed > 0 ? data.MaxSpeed : 50;
+            DestinationFilter = data.DestinationFilter ?? string.Empty;
+            FlagFilter = data.FlagFilter ?? string.Empty;
             Bookmarks = data.Bookmarks ?? [];
 
             _logger.LogDebug("Loaded user preferences from {Path}", PreferencesPath);
@@ -96,6 +100,8 @@ public sealed class UserPreferences
                 ShowTugPilot = ShowTugPilot,
                 ShowOther = ShowOther,
                 MaxSpeed = MaxSpeed,
+                DestinationFilter = DestinationFilter,
+                FlagFilter = FlagFilter,
                 Bookmarks = Bookmarks
             };
 
@@ -123,6 +129,8 @@ public sealed class UserPreferences
         public bool ShowTugPilot { get; set; } = true;
         public bool ShowOther { get; set; } = true;
         public double MaxSpeed { get; set; } = 50;
+        public string? DestinationFilter { get; set; } = string.Empty;
+        public string? FlagFilter { get; set; } = string.Empty;
         public List<MapBookmark>? Bookmarks { get; set; } = [];
     }
 }

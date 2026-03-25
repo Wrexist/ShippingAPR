@@ -77,6 +77,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public SearchViewModel SearchViewModel { get; }
     public StatisticsViewModel StatisticsViewModel { get; }
     public NotificationCenterViewModel NotificationCenterViewModel { get; }
+    public GeofenceViewModel GeofenceViewModel { get; }
     public AchievementViewModel AchievementViewModel { get; }
     public PortDashboardViewModel PortDashboardViewModel { get; }
     public AlertRuleViewModel AlertRuleViewModel { get; }
@@ -113,7 +114,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         EncounterJournalViewModel encounterJournalViewModel,
         ShipmentViewModel shipmentViewModel,
         MaritimeNewsViewModel maritimeNewsViewModel,
-        VesselComparisonViewModel vesselComparisonViewModel)
+        VesselComparisonViewModel vesselComparisonViewModel,
+        GeofenceViewModel geofenceViewModel)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
@@ -123,8 +125,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _exportService = exportService;
         _connectionStatusColor = _uiOptions.StatusColorError;
 
-        // Check if API key is configured
-        HasApiKey = !string.IsNullOrEmpty(configuration["AisStream:ApiKey"]);
+        // Check if API key is configured for the active provider
+        var activeProvider = configuration["AisProvider:Active"] ?? "AisStream";
+        HasApiKey = activeProvider switch
+        {
+            "Datalastic" => !string.IsNullOrEmpty(configuration["Datalastic:ApiKey"]),
+            "DataDocked" => !string.IsNullOrEmpty(configuration["DataDocked:ApiKey"]),
+            _ => !string.IsNullOrEmpty(configuration["AisStream:ApiKey"])
+        };
 
         MapViewModel = mapViewModel;
         VesselListViewModel = vesselListViewModel;
@@ -141,6 +149,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ShipmentViewModel = shipmentViewModel;
         MaritimeNewsViewModel = maritimeNewsViewModel;
         VesselComparisonViewModel = vesselComparisonViewModel;
+        GeofenceViewModel = geofenceViewModel;
 
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
