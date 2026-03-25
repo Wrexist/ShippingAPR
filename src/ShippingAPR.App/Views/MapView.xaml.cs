@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Mapsui;
 using Mapsui.UI;
 using Mapsui.Projections;
 using ShippingAPR.App.ViewModels;
@@ -41,11 +42,11 @@ public partial class MapView : UserControl
 
             _infoHandler = (_, args) =>
             {
-                if (args.MapInfo?.WorldPosition is not null)
+                if (args.WorldPosition is not null)
                 {
                     var lonLat = SphericalMercator.ToLonLat(
-                        args.MapInfo.WorldPosition.X,
-                        args.MapInfo.WorldPosition.Y);
+                        args.WorldPosition.X,
+                        args.WorldPosition.Y);
 
                     // Route click to measurement tool if active
                     if (vm.IsMeasuring)
@@ -55,7 +56,8 @@ public partial class MapView : UserControl
                 }
 
                 // Delegate vessel click handling to ViewModel (no Window.GetWindow coupling)
-                if (args.MapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi)
+                var mapInfo = args.GetMapInfo(vm.Map.Layers);
+                if (mapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi)
                 {
                     vm.HandleVesselClick(mmsi);
                 }
