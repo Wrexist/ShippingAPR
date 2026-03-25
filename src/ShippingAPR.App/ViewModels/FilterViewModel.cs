@@ -73,16 +73,18 @@ public partial class FilterViewModel : ObservableObject
         if (!ShouldShow(type, speed))
             return false;
 
-        // Destination filter (case-insensitive partial match)
-        if (!string.IsNullOrEmpty(DestinationFilter) &&
+        // Destination filter (case-insensitive partial match, whitespace-trimmed)
+        var destFilter = DestinationFilter?.Trim();
+        if (!string.IsNullOrEmpty(destFilter) &&
             (vessel.StaticData?.Destination is null ||
-             !vessel.StaticData.Destination.Contains(DestinationFilter, StringComparison.OrdinalIgnoreCase)))
+             !vessel.StaticData.Destination.Contains(destFilter, StringComparison.OrdinalIgnoreCase)))
             return false;
 
-        // Flag/country filter (case-insensitive partial match)
-        if (!string.IsNullOrEmpty(FlagFilter) &&
+        // Flag/country filter (case-insensitive partial match, whitespace-trimmed)
+        var flagFilter = FlagFilter?.Trim();
+        if (!string.IsNullOrEmpty(flagFilter) &&
             (vessel.StaticData?.CountryCode is null ||
-             !vessel.StaticData.CountryCode.Contains(FlagFilter, StringComparison.OrdinalIgnoreCase)))
+             !vessel.StaticData.CountryCode.Contains(flagFilter, StringComparison.OrdinalIgnoreCase)))
             return false;
 
         // Navigational status filter

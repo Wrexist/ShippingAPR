@@ -2,7 +2,6 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
 using ShippingAPR.Core.Enums;
 
@@ -23,7 +22,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private int _datalasticPollInterval = 15;
     [ObservableProperty] private int _dataDockedPollInterval = 15;
 
-    public AisProviderType[] AvailableProviders { get; } = Enum.GetValues<AisProviderType>();
+    public AisProviderType[] AvailableProviders { get; } =
+        [AisProviderType.AisStream, AisProviderType.Datalastic, AisProviderType.DataDocked];
     public string[] FallbackOptions { get; } = ["", "AisStream", "Datalastic", "DataDocked"];
 
     public SettingsViewModel(IConfiguration configuration)
@@ -48,12 +48,6 @@ public partial class SettingsViewModel : ObservableObject
             DatalasticPollInterval = dPoll;
         if (int.TryParse(_configuration["DataDocked:PollIntervalSeconds"], out var ddPoll))
             DataDockedPollInterval = ddPoll;
-    }
-
-    [RelayCommand]
-    private void Save()
-    {
-        SaveToAppsettings();
     }
 
     internal bool SaveToAppsettings()

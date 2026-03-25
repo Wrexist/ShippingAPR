@@ -26,6 +26,9 @@ public sealed class AisProviderFactory
             AisProviderType.AisStream => _serviceProvider.GetRequiredService<AisStreamClient>(),
             AisProviderType.Datalastic => _serviceProvider.GetRequiredService<DatalasticClient>(),
             AisProviderType.DataDocked => _serviceProvider.GetRequiredService<DataDockedClient>(),
+            AisProviderType.VesselFinder => throw new NotSupportedException(
+                "VesselFinder is an enrichment-only provider and cannot be used as a primary AIS data source. " +
+                "Use AisStream, Datalastic, or DataDocked instead."),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Unsupported AIS provider type: {type}")
         };
     }

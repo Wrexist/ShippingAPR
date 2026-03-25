@@ -204,9 +204,8 @@ public class FilterViewModelTests
         _vm.DestinationFilter = "   ";
 
         var vessel = CreateVessel(destination: "SEGOT");
-        // Whitespace filter should not match (trimmed empty = no filter)
-        // Current behavior: non-empty string with spaces will try to match
-        _vm.ShouldShowVessel(vessel).Should().BeFalse();
+        // Whitespace-only filter is trimmed to empty, so it's treated as no filter
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
     }
 
     [Fact]
