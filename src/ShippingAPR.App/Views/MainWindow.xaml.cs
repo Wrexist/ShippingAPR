@@ -58,7 +58,11 @@ public partial class MainWindow : Window
                 Key.D9 => 8,
                 _ => -1
             };
-            if (panelIdx >= 0 && args.OriginalSource is not System.Windows.Controls.TextBox)
+            if (panelIdx >= 0 &&
+                args.OriginalSource is not System.Windows.Controls.TextBox &&
+                args.OriginalSource is not System.Windows.Controls.ComboBox &&
+                args.OriginalSource is not System.Windows.Controls.RichTextBox &&
+                args.OriginalSource is not System.Windows.Controls.PasswordBox)
             {
                 viewModel.ShowRightPanelCommand.Execute(panelIdx.ToString());
                 args.Handled = true;

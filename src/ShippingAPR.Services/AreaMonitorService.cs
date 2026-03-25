@@ -99,10 +99,14 @@ public sealed class AreaMonitorService : IDisposable
             if (!_geofenceStates.TryGetValue(name, out var states)) continue;
 
             var isInside = zone.Bounds.Contains(lat, lon);
-            var wasInside = false;
-            states.AddOrUpdate(vessel.Mmsi, isInside, (_, old) => { wasInside = old; return isInside; });
+            // Use a thread-safe pattern: capture previous state atomically via AddOrUpdate.
+            // The closure captures 'previouslyInside' by ref to extract the old value.
+            var previouslyInside = false;
+            states.AddOrUpdate(vessel.Mmsi,
+                _ => { previouslyInside = false; return isInside; },
+                (_, old) => { previouslyInside = old; return isInside; });
 
-            if (isInside && !wasInside && zone.AlertOnEntry)
+            if (isInside && !previouslyInside && zone.AlertOnEntry)
             {
                 var geoEvt = new VesselGeofenceEvent
                 {
@@ -125,7 +129,7 @@ public sealed class AreaMonitorService : IDisposable
                 VesselAreaChanged?.Invoke(this, areaEvt);
                 WeakReferenceMessenger.Default.Send(new VesselAreaNotification(areaEvt));
             }
-            else if (!isInside && wasInside && zone.AlertOnExit)
+            else if (!isInside && previouslyInside && zone.AlertOnExit)
             {
                 var geoEvt = new VesselGeofenceEvent
                 {
@@ -154,10 +158,12 @@ public sealed class AreaMonitorService : IDisposable
         ConcurrentDictionary<int, bool> state, string? zoneName)
     {
         var isInside = area.Contains(lat, lon);
-        var wasInside = false;
-        state.AddOrUpdate(vessel.Mmsi, isInside, (_, old) => { wasInside = old; return isInside; });
+        var previouslyInside = false;
+        state.AddOrUpdate(vessel.Mmsi,
+            _ => { previouslyInside = false; return isInside; },
+            (_, old) => { previouslyInside = old; return isInside; });
 
-        if (isInside && !wasInside)
+        if (isInside && !previouslyInside)
         {
             var evt = new VesselAreaEvent
             {
@@ -171,7 +177,7 @@ public sealed class AreaMonitorService : IDisposable
             VesselAreaChanged?.Invoke(this, evt);
             WeakReferenceMessenger.Default.Send(new VesselAreaNotification(evt));
         }
-        else if (!isInside && wasInside)
+        else if (!isInside && previouslyInside)
         {
             var evt = new VesselAreaEvent
             {

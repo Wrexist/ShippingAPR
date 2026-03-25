@@ -47,6 +47,9 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     {
         await DisconnectAsync();
 
+        if (string.IsNullOrEmpty(_options.ApiKey))
+            throw new InvalidOperationException("AisStream API key is not configured. Set it in appsettings.json under AisStream:ApiKey.");
+
         SetStatus(ConnectionStatus.Connecting);
 
         try
@@ -179,9 +182,10 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
 
                             if (messageBuffer.Length > _options.MaxMessageSizeBytes)
                             {
-                                _logger.LogWarning("Message exceeded max size ({Size} bytes), skipping",
+                                _logger.LogWarning("Message exceeded max size ({Size} bytes), reconnecting to reset stream state",
                                     messageBuffer.Length);
                                 messageBuffer.SetLength(0);
+                                needsReconnect = true;
                                 break;
                             }
                         } while (!result.EndOfMessage);
@@ -288,7 +292,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
         if (!ct.IsCancellationRequested)
         {
             _logger.LogError("All {Max} reconnection attempts exhausted — giving up", maxAttempts);
-            SetStatus(ConnectionStatus.Error);
+            SetStatus(ConnectionStatus.Failed);
         }
 
         return false;
@@ -335,8 +339,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
 
         if (_webSocket is null)
         {
-            _logger.LogWarning("Cannot send subscription — WebSocket is null");
-            return;
+            throw new InvalidOperationException("Cannot send subscription — WebSocket is not connected");
         }
 
         var json = JsonSerializer.Serialize(subscription);
@@ -358,10 +361,12 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     {
         _receiveCts?.Cancel();
 
-        // Wait briefly for the receive loop to exit gracefully
-        if (_receiveTask is not null)
+        // Wait briefly for the receive loop to exit gracefully.
+        // Store in local to avoid race with concurrent DisconnectAsync nulling the field.
+        var task = _receiveTask;
+        if (task is not null)
         {
-            try { _receiveTask.Wait(TimeSpan.FromSeconds(5)); }
+            try { task.Wait(TimeSpan.FromSeconds(5)); }
             catch (Exception ex) { _logger.LogDebug(ex, "Error waiting for receive task during disposal"); }
             _receiveTask = null;
         }

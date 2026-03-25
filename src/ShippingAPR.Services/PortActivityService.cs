@@ -20,6 +20,9 @@ public sealed class PortActivityService : IDisposable
     // Cache ports list to avoid re-fetching on every vessel update
     private IReadOnlyList<Port>? _cachedPorts;
 
+    // Spatial index: bucket ports by 1-degree grid cells for O(1) average lookup
+    private Dictionary<(int latBucket, int lonBucket), List<Port>>? _portGrid;
+
     private const double PortRadiusNm = 3.0; // nautical miles
     private const int MaxActivityRecords = 200;
 
@@ -42,13 +45,46 @@ public sealed class PortActivityService : IDisposable
         _vesselStore.VesselUpdated += OnVesselUpdate;
     }
 
+    private IEnumerable<Port> GetNearbyPorts(double lat, double lon)
+    {
+        if (_portGrid is null)
+        {
+            _cachedPorts ??= _portRepository.GetAll();
+            _portGrid = new Dictionary<(int, int), List<Port>>();
+            foreach (var p in _cachedPorts)
+            {
+                var key = ((int)Math.Floor(p.Latitude), (int)Math.Floor(p.Longitude));
+                if (!_portGrid.TryGetValue(key, out var list))
+                {
+                    list = [];
+                    _portGrid[key] = list;
+                }
+                list.Add(p);
+            }
+        }
+
+        var baseLat = (int)Math.Floor(lat);
+        var baseLon = (int)Math.Floor(lon);
+
+        // Check the vessel's cell and all 8 neighbors (ports near cell boundaries)
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                if (_portGrid.TryGetValue((baseLat + dy, baseLon + dx), out var ports))
+                {
+                    foreach (var port in ports)
+                        yield return port;
+                }
+            }
+        }
+    }
+
     private void OnVesselUpdate(object? sender, Vessel vessel)
     {
         if (vessel.CurrentPosition is not { } pos) return;
 
-        // Cache ports list to avoid O(n) allocation on every vessel update
-        _cachedPorts ??= _portRepository.GetAll();
-        foreach (var port in _cachedPorts)
+        foreach (var port in GetNearbyPorts(pos.Latitude, pos.Longitude))
         {
             var distNm = HaversineCalculator.DistanceInNauticalMiles(
                 pos.Latitude, pos.Longitude, port.Latitude, port.Longitude);

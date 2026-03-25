@@ -74,7 +74,10 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
                 // VesselFinder returns an array of vessel objects
                 if (doc.RootElement.ValueKind != JsonValueKind.Array ||
                     doc.RootElement.GetArrayLength() == 0)
+                {
+                    _logger.LogDebug("VesselFinder returned empty response for MMSI {Mmsi}", mmsi);
                     return null;
+                }
 
                 var vessel = doc.RootElement[0];
 

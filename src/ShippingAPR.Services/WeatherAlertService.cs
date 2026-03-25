@@ -47,9 +47,14 @@ public sealed class WeatherAlertService : IDisposable
             .Where(v => v.CurrentPosition is not null)
             .ToList();
 
-        // Sample up to 20 vessel positions to avoid API overload
+        // Sample up to 20 vessel positions to avoid API overload.
+        // Prioritize faster vessels (more likely in open water and at risk)
+        // and those not recently checked.
         var sampled = vessels.Count > 20
-            ? vessels.OrderBy(_ => Random.Shared.Next()).Take(20).ToList()
+            ? vessels
+                .OrderByDescending(v => !_alertedVessels.ContainsKey(v.Mmsi) ? 1 : 0) // unchecked first
+                .ThenByDescending(v => v.CurrentPosition!.SpeedOverGround) // faster vessels next
+                .Take(20).ToList()
             : vessels;
 
         foreach (var vessel in sampled)

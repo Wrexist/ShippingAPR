@@ -66,9 +66,9 @@ public sealed class EncounterJournalService : IDisposable
         EncounterAdded?.Invoke(this, encounter);
         _logger.LogDebug("New encounter: {Vessel} (MMSI {Mmsi})", vessel.DisplayName, vessel.Mmsi);
 
-        // Auto-save periodically (every 50 encounters)
+        // Auto-save periodically (every 50 encounters), non-blocking
         if (_encounters.Count % 50 == 0)
-            Save();
+            Task.Run(Save);
     }
 
     public IReadOnlyList<Encounter> GetAll()

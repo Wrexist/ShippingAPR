@@ -242,9 +242,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         var themeFile = IsDarkTheme ? "DarkTheme.xaml" : "LightTheme.xaml";
         var themeUri = new Uri($"pack://application:,,,/Assets/Themes/{themeFile}");
 
-        Application.Current.Resources.MergedDictionaries.Clear();
-        Application.Current.Resources.MergedDictionaries.Add(
-            new ResourceDictionary { Source = themeUri });
+        try
+        {
+            var newTheme = new ResourceDictionary { Source = themeUri };
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(newTheme);
+        }
+        catch (Exception ex)
+        {
+            // Revert toggle on failure so UI state stays consistent
+            IsDarkTheme = !IsDarkTheme;
+            _logger.LogError(ex, "Failed to load theme {Theme}", themeFile);
+        }
     }
 
     [RelayCommand]
@@ -441,6 +450,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 ConnectionStatus.Reconnecting => Strings.Reconnecting,
                 ConnectionStatus.Disconnected => Strings.Disconnected,
                 ConnectionStatus.Error => Strings.Error,
+                ConnectionStatus.Failed => Strings.Error + " (reconnection failed)",
                 _ => status.ToString()
             };
 
