@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using ShippingAPR.Core.Calculations;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
@@ -15,10 +16,11 @@ public sealed class PortActivityService : IDisposable
     // Track which vessels are "in port" (within radius) per port
     private readonly ConcurrentDictionary<string, HashSet<int>> _vesselsInPort = new();
     private readonly ConcurrentDictionary<string, List<PortActivityRecord>> _activityLog = new();
-    private readonly object _lock = new();
+
+    // Cache ports list to avoid re-fetching on every vessel update
+    private IReadOnlyList<Port>? _cachedPorts;
 
     private const double PortRadiusNm = 3.0; // nautical miles
-    private const double NmPerDegreeLat = 60.0;
     private const int MaxActivityRecords = 200;
 
     public string? SelectedPortName { get; set; }
@@ -44,11 +46,12 @@ public sealed class PortActivityService : IDisposable
     {
         if (vessel.CurrentPosition is not { } pos) return;
 
-        // Check against all tracked ports (selected port + any monitored ports)
-        var ports = _portRepository.GetAll();
-        foreach (var port in ports)
+        // Cache ports list to avoid O(n) allocation on every vessel update
+        _cachedPorts ??= _portRepository.GetAll();
+        foreach (var port in _cachedPorts)
         {
-            var distNm = DistanceNm(pos.Latitude, pos.Longitude, port.Latitude, port.Longitude);
+            var distNm = HaversineCalculator.DistanceInNauticalMiles(
+                pos.Latitude, pos.Longitude, port.Latitude, port.Longitude);
             if (distNm > PortRadiusNm * 3) continue; // Skip distant ports entirely
 
             var vesselSet = _vesselsInPort.GetOrAdd(port.Name, _ => new HashSet<int>());
@@ -165,13 +168,6 @@ public sealed class PortActivityService : IDisposable
             .Select(kvp => kvp.Key)
             .OrderBy(n => n)
             .ToList();
-    }
-
-    private static double DistanceNm(double lat1, double lon1, double lat2, double lon2)
-    {
-        var dLat = lat2 - lat1;
-        var dLon = (lon2 - lon1) * Math.Cos(lat1 * Math.PI / 180.0);
-        return Math.Sqrt(dLat * dLat + dLon * dLon) * NmPerDegreeLat;
     }
 
     public void Dispose()

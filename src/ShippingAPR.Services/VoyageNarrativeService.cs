@@ -29,6 +29,15 @@ public sealed class VoyageNarrativeService : IDisposable
 
         _vesselStore.VesselAdded += OnVesselAdded;
         _vesselStore.VesselUpdated += OnVesselUpdated;
+        _vesselStore.VesselRemoved += OnVesselRemoved;
+    }
+
+    private void OnVesselRemoved(object? sender, Vessel vessel)
+    {
+        // Clean up tracking data for removed vessels to prevent memory leaks
+        _vesselEvents.TryRemove(vessel.Mmsi, out _);
+        _lastSpeed.TryRemove(vessel.Mmsi, out _);
+        _lastStatus.TryRemove(vessel.Mmsi, out _);
     }
 
     private void OnVesselAdded(object? sender, Vessel vessel)
@@ -238,5 +247,6 @@ public sealed class VoyageNarrativeService : IDisposable
     {
         _vesselStore.VesselAdded -= OnVesselAdded;
         _vesselStore.VesselUpdated -= OnVesselUpdated;
+        _vesselStore.VesselRemoved -= OnVesselRemoved;
     }
 }
