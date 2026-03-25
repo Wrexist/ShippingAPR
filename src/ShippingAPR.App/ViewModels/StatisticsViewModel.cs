@@ -11,6 +11,7 @@ public partial class StatisticsViewModel : ObservableObject, IDisposable
 {
     private readonly StatisticsService _statisticsService;
     private readonly SpotlightService _spotlightService;
+    private readonly EmissionsEstimatorService _emissionsService;
     private readonly DispatcherTimer _refreshTimer;
 
     [ObservableProperty]
@@ -61,6 +62,37 @@ public partial class StatisticsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _topDestination5 = "";
 
+    // Fleet Emissions
+    [ObservableProperty]
+    private string _fleetCo2Text = "0.00 t/h";
+
+    [ObservableProperty]
+    private string _fleetFuelText = "0.00 t/h";
+
+    [ObservableProperty]
+    private int _emissionsVesselCount;
+
+    [ObservableProperty]
+    private string _highestEmitterText = "";
+
+    [ObservableProperty]
+    private string _cleanestVesselText = "";
+
+    [ObservableProperty]
+    private string _ciiACount = "0";
+
+    [ObservableProperty]
+    private string _ciiBCount = "0";
+
+    [ObservableProperty]
+    private string _ciiCCount = "0";
+
+    [ObservableProperty]
+    private string _ciiDCount = "0";
+
+    [ObservableProperty]
+    private string _ciiECount = "0";
+
     // Vessel of the Day Spotlight
     [ObservableProperty]
     private string _spotlightVesselName = "";
@@ -71,10 +103,11 @@ public partial class StatisticsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _hasSpotlight;
 
-    public StatisticsViewModel(StatisticsService statisticsService, SpotlightService spotlightService, IOptions<UiOptions> uiOptions)
+    public StatisticsViewModel(StatisticsService statisticsService, SpotlightService spotlightService, EmissionsEstimatorService emissionsService, IOptions<UiOptions> uiOptions)
     {
         _statisticsService = statisticsService;
         _spotlightService = spotlightService;
+        _emissionsService = emissionsService;
 
         _refreshTimer = new DispatcherTimer
         {
@@ -105,6 +138,19 @@ public partial class StatisticsViewModel : ObservableObject, IDisposable
         HasSpotlight = spotlightVessel is not null;
         SpotlightVesselName = spotlightVessel?.DisplayName ?? "";
         SpotlightReason = spotlightReason;
+
+        // Update fleet emissions
+        var emSummary = _emissionsService.GetFleetSummary();
+        FleetCo2Text = $"{emSummary.TotalCo2TonnesPerHour:F2} t/h";
+        FleetFuelText = $"{emSummary.TotalFuelTonnesPerHour:F2} t/h";
+        EmissionsVesselCount = emSummary.VesselsWithEstimates;
+        HighestEmitterText = emSummary.HighestEmitterName;
+        CleanestVesselText = emSummary.CleanestVesselName;
+        CiiACount = emSummary.CiiDistribution.GetValueOrDefault('A').ToString();
+        CiiBCount = emSummary.CiiDistribution.GetValueOrDefault('B').ToString();
+        CiiCCount = emSummary.CiiDistribution.GetValueOrDefault('C').ToString();
+        CiiDCount = emSummary.CiiDistribution.GetValueOrDefault('D').ToString();
+        CiiECount = emSummary.CiiDistribution.GetValueOrDefault('E').ToString();
 
         var dests = snap.TopDestinations;
         TopDestination1 = FormatDest(dests, 0);

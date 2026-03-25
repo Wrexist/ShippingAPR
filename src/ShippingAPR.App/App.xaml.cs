@@ -117,6 +117,11 @@ public partial class App : Application
                 services.AddSingleton<WeatherAlertService>();
                 services.AddSingleton<FleetService>();
                 services.AddSingleton<SpotlightService>();
+                services.AddSingleton<EmissionsEstimatorService>();
+                services.AddSingleton<ChokepointMonitorService>();
+                services.AddSingleton<EncounterJournalService>();
+                services.AddSingleton<ShipmentTrackingService>();
+                services.AddSingleton<MaritimeIncidentService>();
 
                 // User preferences (persisted between sessions)
                 services.AddSingleton<UserPreferences>();
@@ -133,6 +138,10 @@ public partial class App : Application
                 services.AddSingleton<AchievementViewModel>();
                 services.AddSingleton<PortDashboardViewModel>();
                 services.AddSingleton<AlertRuleViewModel>();
+                services.AddSingleton<ChokepointViewModel>();
+                services.AddSingleton<EncounterJournalViewModel>();
+                services.AddSingleton<ShipmentViewModel>();
+                services.AddSingleton<MaritimeNewsViewModel>();
 
                 // Views
                 services.AddSingleton<MainWindow>();
@@ -163,6 +172,10 @@ public partial class App : Application
         _host.Services.GetRequiredService<WeatherAlertService>();
         _host.Services.GetRequiredService<FleetService>();
         _host.Services.GetRequiredService<SpotlightService>();
+        _host.Services.GetRequiredService<ChokepointMonitorService>();
+        _host.Services.GetRequiredService<EncounterJournalService>();
+        _host.Services.GetRequiredService<ShipmentTrackingService>();
+        _host.Services.GetRequiredService<MaritimeIncidentService>();
 
         await _host.StartAsync();
 

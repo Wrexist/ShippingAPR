@@ -164,6 +164,85 @@
                 </StackPanel>
             </Border>
 
+            <!-- ═══ Fleet Emissions ═══ -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="3" Height="14" CornerRadius="2"
+                                Background="{DynamicResource SuccessBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="Fleet Emissions" Style="{DynamicResource SubTextStyle}"
+                                   FontWeight="Bold" FontSize="11"/>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Total CO2"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding FleetCo2Text}"
+                                   Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="14"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Fuel" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FleetFuelText}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Vessels Measured" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EmissionsVesselCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Highest Emitter" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HighestEmitterText}" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource ErrorBrush}" FontSize="11"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Cleanest Vessel" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CleanestVesselText}" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource SuccessBrush}" FontSize="11"/>
+                    </Grid>
+
+                    <!-- CII Distribution -->
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center">
+                        <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#3034D399">
+                            <TextBlock FontSize="11" Foreground="#34D399" FontWeight="Bold">
+                                <Run Text="A:"/><Run Text="{Binding CiiACount}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#3060A5FA">
+                            <TextBlock FontSize="11" Foreground="#60A5FA" FontWeight="Bold">
+                                <Run Text="B:"/><Run Text="{Binding CiiBCount}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#30FBBF24">
+                            <TextBlock FontSize="11" Foreground="#FBBF24" FontWeight="Bold">
+                                <Run Text="C:"/><Run Text="{Binding CiiCCount}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#30FB923C">
+                            <TextBlock FontSize="11" Foreground="#FB923C" FontWeight="Bold">
+                                <Run Text="D:"/><Run Text="{Binding CiiDCount}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#30EF4444">
+                            <TextBlock FontSize="11" Foreground="#EF4444" FontWeight="Bold">
+                                <Run Text="E:"/><Run Text="{Binding CiiECount}"/>
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- ═══ Vessel of the Day Spotlight ═══ -->
             <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8"
                     Visibility="{Binding HasSpotlight, Converter={StaticResource BoolToVis}}">
