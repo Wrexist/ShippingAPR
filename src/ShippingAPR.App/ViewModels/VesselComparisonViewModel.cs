@@ -89,8 +89,8 @@ public partial class VesselComparisonViewModel : ObservableObject
     {
         get
         {
-            var lenA = VesselA?.StaticData?.LengthOverAll ?? 0;
-            var lenB = VesselB?.StaticData?.LengthOverAll ?? 0;
+            var lenA = VesselA?.StaticData?.LengthOverall ?? 0;
+            var lenB = VesselB?.StaticData?.LengthOverall ?? 0;
             if (lenA == 0 || lenB == 0) return "";
             var diff = lenA - lenB;
             return diff switch
@@ -105,7 +105,7 @@ public partial class VesselComparisonViewModel : ObservableObject
     private static string FormatDimensions(Vessel? v)
     {
         if (v?.StaticData is null) return "—";
-        var len = v.StaticData.LengthOverAll;
+        var len = v.StaticData.LengthOverall;
         var beam = v.StaticData.Beam;
         return len > 0 && beam > 0 ? $"{len} × {beam} m" : "—";
     }
@@ -115,6 +115,6 @@ public partial class VesselComparisonViewModel : ObservableObject
         if (v is null) return "—";
         var estimate = _emissionsService.Estimate(v);
         if (estimate is null) return "—";
-        return $"{estimate.TonsPerHour:F2} t/hr (CII: {estimate.CiiRating})";
+        return $"{estimate.Co2TonnesPerHour:F2} t/hr (CII: {estimate.CiiRating})";
     }
 }
