@@ -7,7 +7,9 @@ public sealed class AisStreamOptions
     public string ApiKey { get; set; } = string.Empty;
     public string WebSocketUrl { get; set; } = "wss://stream.aisstream.io/v0/stream";
     public int ReconnectMaxDelaySeconds { get; set; } = 30;
+    public int ReconnectMaxAttempts { get; set; } = 50;
     public int ReceiveBufferSize { get; set; } = 8192;
+    public int MaxMessageSizeBytes { get; set; } = 1_048_576; // 1 MB
     public int KeepAliveIntervalSeconds { get; set; } = 30;
     public int DisconnectTimeoutSeconds { get; set; } = 10;
     public int ConnectTimeoutSeconds { get; set; } = 10;

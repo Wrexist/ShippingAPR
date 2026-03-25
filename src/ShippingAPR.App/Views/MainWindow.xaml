@@ -84,7 +84,7 @@
                                 Style="{DynamicResource IconButtonStyle}"
                                 ToolTip="Notifications"/>
                         <!-- Unread badge -->
-                        <Border Background="#F44336" CornerRadius="7"
+                        <Border Background="{DynamicResource ErrorBrush}" CornerRadius="7"
                                 MinWidth="14" Height="14"
                                 HorizontalAlignment="Right" VerticalAlignment="Top"
                                 Margin="0,-2,-2,0"
@@ -154,7 +154,7 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="CloseBorder" Property="Background" Value="#FFEF4444"/>
+                                        <Setter TargetName="CloseBorder" Property="Background" Value="{DynamicResource ErrorBrush}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
@@ -246,31 +246,31 @@
                     <Border Grid.Row="0" Background="{DynamicResource GlassFillBrush}"
                             Padding="4,4" Margin="4,4,4,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button Content="&#x26F5;" ToolTip="Vessel Details"
+                            <Button Content="&#x26F5;" ToolTip="Vessel Details — View selected vessel info (1)"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="0"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x1F4CA;" ToolTip="Dashboard"
+                            <Button Content="&#x1F4CA;" ToolTip="Dashboard — Live fleet statistics (2)"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="1"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x1F3C6;" ToolTip="Ship Spotter"
+                            <Button Content="&#x1F3C6;" ToolTip="Ship Spotter — Achievements and rare vessel types (3)"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="2"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x2693;" ToolTip="Port Activity"
+                            <Button Content="&#x2693;" ToolTip="Port Activity — Monitor arrivals and departures (4)"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="3"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x26A1;" ToolTip="Smart Alerts"
+                            <Button Content="&#x26A1;" ToolTip="Smart Alerts — Set up custom notifications (5)"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="4"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x1F30D;" ToolTip="Chokepoints"
+                            <Button Content="&#x1F30D;" ToolTip="Chokepoints — Track global shipping bottlenecks"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="5"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x1F4D3;" ToolTip="Journal"
+                            <Button Content="&#x1F4D3;" ToolTip="Journal — Your encounter logbook"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="6"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x1F4E6;" ToolTip="Shipments"
+                            <Button Content="&#x1F4E6;" ToolTip="Shipments — Track cargo movements"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="7"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
-                            <Button Content="&#x26A0;" ToolTip="Maritime News"
+                            <Button Content="&#x26A0;" ToolTip="Maritime News — Incidents and safety reports"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="8"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
                         </StackPanel>
@@ -420,8 +420,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Connection Status — Pulsing indicator -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,24,0">
+                <!-- Connection Status — Pulsing indicator with status icon for accessibility -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,24,0"
+                            ToolTip="Connection status — shows whether the AIS data stream is active">
                     <Ellipse Width="10" Height="10" Margin="0,0,8,0">
                         <Ellipse.Fill>
                             <SolidColorBrush Color="{Binding ConnectionStatusColor}"/>

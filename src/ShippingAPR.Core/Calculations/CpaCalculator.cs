@@ -1,3 +1,4 @@
+using ShippingAPR.Core.Constants;
 using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.Core.Calculations;
@@ -8,8 +9,6 @@ namespace ShippingAPR.Core.Calculations;
 /// </summary>
 public static class CpaCalculator
 {
-    private const double NauticalMilesPerDegree = 60.0;
-    private const double MinSpeedKnots = 0.5;
 
     /// <summary>
     /// Compute CPA and TCPA for two vessels based on their current positions, courses, and speeds.
@@ -20,7 +19,7 @@ public static class CpaCalculator
         int mmsi2, double lat2, double lon2, double cog2, double sog2)
     {
         // Skip stationary vessels
-        if (sog1 < MinSpeedKnots || sog2 < MinSpeedKnots)
+        if (sog1 < NavigationConstants.MinSpeedKnots || sog2 < NavigationConstants.MinSpeedKnots)
             return null;
 
         // Convert to planar coordinates (nautical miles from origin)
@@ -28,10 +27,10 @@ public static class CpaCalculator
         var midLat = (lat1 + lat2) / 2.0;
         var cosLat = Math.Cos(midLat * Math.PI / 180.0);
 
-        var x1 = lon1 * cosLat * NauticalMilesPerDegree;
-        var y1 = lat1 * NauticalMilesPerDegree;
-        var x2 = lon2 * cosLat * NauticalMilesPerDegree;
-        var y2 = lat2 * NauticalMilesPerDegree;
+        var x1 = lon1 * cosLat * NavigationConstants.NauticalMilesPerDegree;
+        var y1 = lat1 * NavigationConstants.NauticalMilesPerDegree;
+        var x2 = lon2 * cosLat * NavigationConstants.NauticalMilesPerDegree;
+        var y2 = lat2 * NavigationConstants.NauticalMilesPerDegree;
 
         // Convert COG/SOG to velocity components (knots)
         var cog1Rad = cog1 * Math.PI / 180.0;

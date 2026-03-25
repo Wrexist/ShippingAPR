@@ -64,8 +64,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _hasApiKey;
 
     public string StartTrackingTooltip => HasApiKey
-        ? "Connect to AIS stream and start tracking vessels"
-        : "Add an API key first to enable tracking";
+        ? Strings.ResourceManager.GetString("StartTrackingTooltipReady", null) ?? "Connect to AIS stream and start tracking vessels"
+        : Strings.ResourceManager.GetString("StartTrackingTooltipNoKey", null) ?? "Add an API key first to enable tracking";
 
     [ObservableProperty]
     private bool _isDashboardVisible;
@@ -199,8 +199,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            ConnectionStatusText = "Failed to auto-connect";
+            ConnectionStatusText = Strings.Error;
             ConnectionStatusColor = _uiOptions.StatusColorError;
+            ShowToast($"{Strings.Error}: Auto-connect failed — click Start Tracking to retry");
             // Non-fatal — user can click Start Tracking manually
             _logger.LogWarning(ex, "Auto-start tracking failed");
         }
@@ -266,6 +267,32 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void ShowKeyboardShortcuts()
+    {
+        var version = System.Reflection.Assembly.GetExecutingAssembly()
+            .GetName().Version?.ToString(3) ?? "1.0.0";
+
+        var shortcuts = new System.Text.StringBuilder();
+        shortcuts.AppendLine($"ShippingAPR v{version}");
+        shortcuts.AppendLine();
+        shortcuts.AppendLine("Keyboard Shortcuts:");
+        shortcuts.AppendLine();
+        shortcuts.AppendLine("Ctrl+F\t\tSearch vessels");
+        shortcuts.AppendLine("Ctrl+E\t\tExport to CSV");
+        shortcuts.AppendLine("Ctrl+N\t\tToggle notifications");
+        shortcuts.AppendLine("Ctrl+M\t\tToggle measurement tool");
+        shortcuts.AppendLine("Ctrl+W\t\tToggle weather overlay");
+        shortcuts.AppendLine("+/-\t\tZoom in/out");
+        shortcuts.AppendLine("1-9\t\tSwitch right panel tabs");
+        shortcuts.AppendLine("F11\t\tToggle fullscreen");
+        shortcuts.AppendLine("F1\t\tThis help dialog");
+        shortcuts.AppendLine("Esc\t\tDismiss notifications");
+
+        MessageBox.Show(shortcuts.ToString(), $"{Strings.KeyboardShortcuts} — ShippingAPR",
+            MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    [RelayCommand]
     private void OpenApiKeyDialog()
     {
         var dialog = new WelcomeDialog();
@@ -285,7 +312,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StartTrackingTooltip));
     }
 
-    internal static void SaveApiKey(string apiKey)
+    internal static bool SaveApiKey(string apiKey)
     {
         try
         {
@@ -295,7 +322,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 : AppContext.BaseDirectory;
             var path = Path.Combine(baseDir ?? AppContext.BaseDirectory, "appsettings.json");
 
-            if (!File.Exists(path)) return;
+            if (!File.Exists(path)) return false;
 
             // Use proper JSON parsing to avoid injection via malformed keys
             var json = File.ReadAllText(path);
@@ -310,10 +337,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             File.WriteAllText(path, root.ToJsonString(
                 new JsonSerializerOptions { WriteIndented = true }));
+            return true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Don't crash if we can't save the API key — non-critical
+            // Non-critical — user can manually edit appsettings.json
+            System.Diagnostics.Debug.WriteLine($"Failed to save API key: {ex.Message}");
+            return false;
         }
     }
 
@@ -374,14 +404,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ShowExportNotification(int count, string filePath)
     {
         var fileName = Path.GetFileName(filePath);
-        NotificationText = $"{Strings.Export}: {count} {Strings.Ships.ToLowerInvariant()} → {fileName}";
-        ShowNotification = true;
-        AutoHideNotification();
+        ShowToast($"{Strings.Export}: {count} {Strings.Ships.ToLowerInvariant()} → {fileName}");
     }
 
     private void ShowErrorNotification(string title, string message)
     {
-        NotificationText = $"{Strings.Error}: {message}";
+        ShowToast($"{Strings.Error}: {message}");
+    }
+
+    private void ShowToast(string text)
+    {
+        NotificationText = text;
         ShowNotification = true;
         AutoHideNotification();
     }

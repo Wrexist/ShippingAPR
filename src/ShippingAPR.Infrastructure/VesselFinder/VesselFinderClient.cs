@@ -28,7 +28,10 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
         int mmsi, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(_options.ApiKey))
+        {
+            _logger.LogDebug("VesselFinder API key not configured — skipping enrichment for MMSI {Mmsi}", mmsi);
             return null;
+        }
 
         var timeout = TimeSpan.FromSeconds(_options.RequestTimeoutSeconds);
 
@@ -39,10 +42,11 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
                 using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 timeoutCts.CancelAfter(timeout);
 
-                // VesselFinder API requires the key as a query parameter (no header auth supported)
-                var response = await _httpClient.GetAsync(
-                    $"/vessels?userkey={_options.ApiKey}&mmsi={mmsi}&format=json",
-                    timeoutCts.Token);
+                // Use custom header for API key to avoid logging sensitive data in URLs
+                using var request = new HttpRequestMessage(HttpMethod.Get,
+                    $"/vessels?mmsi={mmsi}&format=json");
+                request.Headers.Add("X-Api-Key", _options.ApiKey);
+                var response = await _httpClient.SendAsync(request, timeoutCts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {

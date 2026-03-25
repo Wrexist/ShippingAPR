@@ -39,6 +39,7 @@ public partial class MainWindow : Window
         InputBindings.Add(new KeyBinding(viewModel.MapViewModel.ToggleWeatherOverlayCommand, Key.W, ModifierKeys.Control));
         InputBindings.Add(new KeyBinding(viewModel.ToggleNotificationCenterCommand, Key.N, ModifierKeys.Control));
         InputBindings.Add(new KeyBinding(viewModel.ExportCsvCommand, Key.E, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(viewModel.ShowKeyboardShortcutsCommand, Key.F1, ModifierKeys.None));
 
         // Tab shortcuts: 1-5 for right panels
         PreviewKeyDown += (_, args) =>
@@ -51,6 +52,10 @@ public partial class MainWindow : Window
                 Key.D3 => 2,
                 Key.D4 => 3,
                 Key.D5 => 4,
+                Key.D6 => 5,
+                Key.D7 => 6,
+                Key.D8 => 7,
+                Key.D9 => 8,
                 _ => -1
             };
             if (panelIdx >= 0 && args.OriginalSource is not System.Windows.Controls.TextBox)

@@ -221,6 +221,20 @@ public partial class App : Application
         if (portCacheMaxSize < 0)
             throw new InvalidOperationException("Tracking:PortCacheMaxSize must be non-negative");
 
+        // Validate UI settings
+        var uiSection = config.GetSection(UiOptions.SectionName);
+        var mapBatchMs = uiSection.GetValue<int>("MapBatchUpdateMs");
+        if (mapBatchMs < 0)
+            throw new InvalidOperationException("Ui:MapBatchUpdateMs must be non-negative");
+        var vesselListMs = uiSection.GetValue<int>("VesselListRefreshMs");
+        if (vesselListMs < 0)
+            throw new InvalidOperationException("Ui:VesselListRefreshMs must be non-negative");
+
+        // Validate AisStream reconnection settings
+        var maxReconnectAttempts = aisSection.GetValue<int>("ReconnectMaxAttempts");
+        if (maxReconnectAttempts < 0)
+            throw new InvalidOperationException("AisStream:ReconnectMaxAttempts must be non-negative");
+
         // Warn about missing optional keys
         var vesselFinderKey = config[$"{VesselFinderOptions.SectionName}:ApiKey"];
         if (string.IsNullOrEmpty(vesselFinderKey))
@@ -231,8 +245,19 @@ public partial class App : Application
     {
         var message = $"ShippingAPR failed to start.\n\n{ex.GetType().Name}: {ex.Message}";
         if (ex.InnerException is not null)
-            message += $"\n\nInner: {ex.InnerException.Message}";
+            message += $"\n\nCause: {ex.InnerException.Message}";
+
+        // Add actionable guidance based on error type
+        message += ex switch
+        {
+            InvalidOperationException => "\n\nTip: Check your appsettings.json for invalid configuration values.",
+            System.IO.FileNotFoundException => "\n\nTip: Ensure appsettings.json is in the same directory as the executable.",
+            _ => "\n\nTip: Try deleting user preferences at %APPDATA%/ShippingAPR and restarting."
+        };
+
+#if DEBUG
         message += $"\n\nStack trace:\n{ex.StackTrace}";
+#endif
 
         MessageBox.Show(message, "ShippingAPR - Startup Error",
             MessageBoxButton.OK, MessageBoxImage.Error);

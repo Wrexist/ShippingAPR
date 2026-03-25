@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -35,7 +36,7 @@ public sealed class TideDataClient : ITideDataClient
         CancellationToken ct = default)
     {
         if (_cache.TryGetValue(portLocode, out var cached) &&
-            DateTime.UtcNow - cached.CachedAt < TimeSpan.FromMinutes(15))
+            DateTime.UtcNow - cached.CachedAt < TimeSpan.FromMinutes(_options.CacheTtlMinutes))
         {
             return cached.Data;
         }
@@ -55,7 +56,9 @@ public sealed class TideDataClient : ITideDataClient
             var doc = JsonDocument.Parse(json);
 
             var hourly = doc.RootElement.GetProperty("hourly");
-            var times = hourly.GetProperty("time").EnumerateArray().Select(t => DateTime.Parse(t.GetString()!)).ToList();
+            var times = hourly.GetProperty("time").EnumerateArray()
+                .Select(t => DateTime.Parse(t.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind))
+                .ToList();
             var waveHeights = hourly.GetProperty("wave_height").EnumerateArray()
                 .Select(v => v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0.0).ToList();
 

@@ -1,14 +1,10 @@
+using ShippingAPR.Core.Constants;
 using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.Core.Calculations;
 
 public static class EtaCalculator
 {
-    private const double MinSpeedKnots = 0.5;
-    private const double StationaryThreshold = 0.3;
-    private const double MaxPlausibleSpeedKnots = 50.0;
-    private const double MinDistanceNm = 0.1;
-    private const double CosineDeviationFloor = 0.1;
 
     /// <summary>
     /// Calculates ETA using course-corrected speed projection.
@@ -24,15 +20,15 @@ public static class EtaCalculator
     /// </summary>
     public static EtaResult? Calculate(VesselPosition position, Port destination)
     {
-        if (position.SpeedOverGround < StationaryThreshold ||
-            position.SpeedOverGround > MaxPlausibleSpeedKnots)
+        if (position.SpeedOverGround < NavigationConstants.StationaryThresholdKnots ||
+            position.SpeedOverGround > NavigationConstants.MaxPlausibleSpeedKnots)
             return null;
 
         var distance = HaversineCalculator.DistanceInNauticalMiles(
             position.Latitude, position.Longitude,
             destination.Latitude, destination.Longitude);
 
-        if (distance < MinDistanceNm)
+        if (distance < NavigationConstants.MinDistanceNm)
             return new EtaResult(0, TimeSpan.Zero, DateTime.UtcNow, 0, 0);
 
         var bearing = BearingCalculator.InitialBearing(
@@ -47,8 +43,8 @@ public static class EtaCalculator
         // to still provide an estimate (though it will be very large).
         var cosDeviation = Math.Cos(courseDeviation * Math.PI / 180.0);
         var effectiveSpeed = Math.Max(
-            position.SpeedOverGround * Math.Max(cosDeviation, CosineDeviationFloor),
-            MinSpeedKnots);
+            position.SpeedOverGround * Math.Max(cosDeviation, NavigationConstants.CosineDeviationFloor),
+            NavigationConstants.MinSpeedKnots);
 
         var hoursToArrival = distance / effectiveSpeed;
         var timeToArrival = TimeSpan.FromHours(hoursToArrival);

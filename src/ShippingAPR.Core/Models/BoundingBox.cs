@@ -13,6 +13,10 @@ public sealed record BoundingBox
             throw new ArgumentException($"MinLatitude ({MinLatitude}) must be <= MaxLatitude ({MaxLatitude})");
         if (MinLongitude > MaxLongitude)
             throw new ArgumentException($"MinLongitude ({MinLongitude}) must be <= MaxLongitude ({MaxLongitude})");
+        if (MinLatitude is < -90 or > 90 || MaxLatitude is < -90 or > 90)
+            throw new ArgumentOutOfRangeException(nameof(MinLatitude), "Latitude must be between -90 and 90");
+        if (MinLongitude is < -180 or > 180 || MaxLongitude is < -180 or > 180)
+            throw new ArgumentOutOfRangeException(nameof(MinLongitude), "Longitude must be between -180 and 180");
 
         this.MinLatitude = MinLatitude;
         this.MinLongitude = MinLongitude;
