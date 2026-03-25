@@ -1,19 +1,33 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.App.ViewModels;
 
 public partial class VesselDetailViewModel : ObservableObject
 {
+    private readonly IWatchlistService _watchlistService;
+
     [ObservableProperty]
     private Vessel? _vessel;
 
     [ObservableProperty]
     private bool _hasVessel;
 
+    [ObservableProperty]
+    private bool _isWatched;
+
+    public VesselDetailViewModel(IWatchlistService watchlistService)
+    {
+        _watchlistService = watchlistService;
+        _watchlistService.WatchlistChanged += (_, _) => UpdateIsWatched();
+    }
+
     partial void OnVesselChanged(Vessel? value)
     {
         HasVessel = value is not null;
+        UpdateIsWatched();
         OnPropertyChanged(nameof(DisplayName));
         OnPropertyChanged(nameof(MmsiText));
         OnPropertyChanged(nameof(ImoText));
@@ -36,6 +50,18 @@ public partial class VesselDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(PositionText));
         OnPropertyChanged(nameof(LastUpdateText));
         OnPropertyChanged(nameof(TrackPointCount));
+    }
+
+    [RelayCommand]
+    private void ToggleWatch()
+    {
+        if (Vessel is null) return;
+        _watchlistService.Toggle(Vessel.Mmsi);
+    }
+
+    private void UpdateIsWatched()
+    {
+        IsWatched = Vessel is not null && _watchlistService.IsWatched(Vessel.Mmsi);
     }
 
     public string DisplayName => Vessel?.DisplayName ?? "--";

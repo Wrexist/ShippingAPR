@@ -37,10 +37,39 @@
 
                 <!-- ═══ Vessel Name Header ═══ -->
                 <StackPanel Margin="4,4,4,16">
-                    <TextBlock Text="{Binding DisplayName}"
-                               FontSize="22" FontWeight="Bold"
-                               Foreground="{DynamicResource PrimaryTextBrush}"
-                               Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding DisplayName}"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Margin="0,0,0,6"/>
+                        <!-- Watch/Unwatch button -->
+                        <Button Grid.Column="1" Command="{Binding ToggleWatchCommand}"
+                                Style="{DynamicResource IconButtonStyle}"
+                                ToolTip="Toggle watchlist"
+                                FontSize="18" Padding="4"
+                                VerticalAlignment="Top">
+                            <Button.Content>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="&#x2606;"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWatched}" Value="True">
+                                                    <Setter Property="Text" Value="&#x2605;"/>
+                                                    <Setter Property="Foreground" Value="#FFD700"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button.Content>
+                        </Button>
+                    </Grid>
 
                     <!-- Type as a pill badge -->
                     <Border Background="{DynamicResource AccentGlowBrush}"

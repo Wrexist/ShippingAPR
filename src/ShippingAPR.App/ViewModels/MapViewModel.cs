@@ -14,6 +14,7 @@ using ShippingAPR.App.Configuration;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
 
@@ -24,6 +25,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
     private readonly IVesselStore _vesselStore;
     private readonly IVesselTrackingService _trackingService;
+    private readonly IWatchlistService _watchlistService;
+    private readonly AreaMonitorService _areaMonitorService;
     private readonly UiOptions _uiOptions;
     private readonly DispatcherTimer _updateTimer;
     private readonly DispatcherTimer _viewportDebounceTimer;
@@ -35,6 +38,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private MemoryLayer? _trailLayer;
     private MemoryLayer? _selectionLayer;
     private MemoryLayer? _clusterLayer;
+    private MemoryLayer? _geofenceLayer;
     private Vessel? _highlightedVessel;
     private bool _viewportTrackingEnabled = true;
     private bool _isTracking;
@@ -68,10 +72,14 @@ public partial class MapViewModel : ObservableObject, IDisposable
     public MapViewModel(
         IVesselStore vesselStore,
         IVesselTrackingService trackingService,
+        IWatchlistService watchlistService,
+        AreaMonitorService areaMonitorService,
         IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
+        _watchlistService = watchlistService;
+        _areaMonitorService = areaMonitorService;
         _uiOptions = uiOptions.Value;
 
         _onVesselChanged = (_, v) => OnVesselChanged(null, v);
@@ -82,6 +90,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _vesselStore.VesselAdded += _onVesselChanged;
         _vesselStore.VesselUpdated += _onVesselChanged;
         _vesselStore.StoreCleared += _onStoreCleared;
+        _areaMonitorService.GeofencesChanged += (_, _) =>
+            Application.Current?.Dispatcher.Invoke(RenderGeofences);
 
         // Batch UI updates for performance
         _updateTimer = new DispatcherTimer
@@ -136,6 +146,13 @@ public partial class MapViewModel : ObservableObject, IDisposable
             }
         };
         Map.Layers.Add(_selectionLayer);
+
+        // Geofence layer (named zones)
+        _geofenceLayer = new MemoryLayer
+        {
+            Name = "Geofences"
+        };
+        Map.Layers.Add(_geofenceLayer);
 
         // Cluster layer (for low zoom levels)
         _clusterLayer = new MemoryLayer
@@ -262,6 +279,18 @@ public partial class MapViewModel : ObservableObject, IDisposable
     public void HandleVesselClick(int mmsi) =>
         VesselFeatureClicked?.Invoke(this, mmsi);
 
+    public (string Name, string Type, string Speed, string Destination)? GetVesselSummary(int mmsi)
+    {
+        var vessel = _vesselStore.GetByMmsi(mmsi);
+        if (vessel is null) return null;
+        return (
+            vessel.DisplayName,
+            vessel.Type.ToString(),
+            vessel.CurrentPosition is not null ? $"{vessel.CurrentPosition.SpeedOverGround:F1} kn" : "--",
+            vessel.StaticData?.Destination ?? "Unknown"
+        );
+    }
+
     public void HandleMapClick(double longitude, double latitude)
     {
         if (!IsSelectingArea) return;
@@ -350,7 +379,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Draws the track history of the highlighted vessel as a polyline on the map.
+    /// Draws the track history of the highlighted vessel as speed-gradient colored segments.
+    /// Blue (0-5 kn) -> Green (5-12 kn) -> Yellow (12-18 kn) -> Red (18+ kn)
     /// </summary>
     private void UpdateTrackVisualization(Vessel? vessel)
     {
@@ -363,32 +393,47 @@ public partial class MapViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var (r, g, b) = Core.VesselTypeColors.GetRgb(vessel.Type);
+        var track = vessel.Track;
+        var features = new List<IFeature>();
 
-        var coordinates = vessel.Track
-            .Select(tp =>
-            {
-                var p = SphericalMercator.FromLonLat(tp.Longitude, tp.Latitude);
-                return new Coordinate(p.x, p.y);
-            })
-            .ToArray();
-
-        if (coordinates.Length < 2)
+        for (int i = 0; i < track.Count - 1; i++)
         {
-            _trailLayer.Features = [];
-            _trailLayer.DataHasChanged();
-            return;
+            var tp1 = track[i];
+            var tp2 = track[i + 1];
+
+            var p1 = SphericalMercator.FromLonLat(tp1.Longitude, tp1.Latitude);
+            var p2 = SphericalMercator.FromLonLat(tp2.Longitude, tp2.Latitude);
+
+            var coords = new[] { new Coordinate(p1.x, p1.y), new Coordinate(p2.x, p2.y) };
+            var segment = new LineString(coords);
+            var feature = new GeometryFeature(segment);
+
+            var color = GetSpeedColor(tp1.SpeedOverGround);
+            feature.Styles.Add(new VectorStyle
+            {
+                Line = new Pen(color, 3)
+            });
+
+            features.Add(feature);
         }
 
-        var lineString = new LineString(coordinates);
-        var feature = new GeometryFeature(lineString);
-        feature.Styles.Add(new VectorStyle
-        {
-            Line = new Pen(new Mapsui.Styles.Color(r, g, b, 180), 3)
-        });
-
-        _trailLayer.Features = [feature];
+        _trailLayer.Features = features;
         _trailLayer.DataHasChanged();
+    }
+
+    private static Mapsui.Styles.Color GetSpeedColor(double speedKnots)
+    {
+        // Blue (0-5 kn) -> Green (5-12 kn) -> Yellow (12-18 kn) -> Red (18+ kn)
+        return speedKnots switch
+        {
+            < 2 => new Mapsui.Styles.Color(33, 150, 243, 180),    // Blue
+            < 5 => new Mapsui.Styles.Color(0, 188, 212, 180),     // Cyan
+            < 8 => new Mapsui.Styles.Color(76, 175, 80, 180),     // Green
+            < 12 => new Mapsui.Styles.Color(139, 195, 74, 180),   // Light Green
+            < 15 => new Mapsui.Styles.Color(255, 235, 59, 180),   // Yellow
+            < 18 => new Mapsui.Styles.Color(255, 152, 0, 180),    // Orange
+            _ => new Mapsui.Styles.Color(244, 67, 54, 180)        // Red
+        };
     }
 
     public void CenterOnVessel(Vessel? vessel)
@@ -543,16 +588,27 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private SymbolStyle CreateVesselStyle(Vessel vessel)
     {
         var isHighlighted = _highlightedVessel?.Mmsi == vessel.Mmsi;
+        var isWatched = _watchlistService.IsWatched(vessel.Mmsi);
         var color = GetVesselColor(vessel.Type);
+
+        Pen outline;
+        if (isHighlighted)
+            outline = new Pen(Mapsui.Styles.Color.White, 3);
+        else if (isWatched)
+            outline = new Pen(new Mapsui.Styles.Color(255, 215, 0), 2); // Gold outline for watched
+        else
+            outline = new Pen(Mapsui.Styles.Color.FromArgb(180, 0, 0, 0), 1);
+
+        var scale = isHighlighted ? _uiOptions.VesselScaleHighlighted
+            : isWatched ? _uiOptions.VesselScaleNormal * 1.15
+            : _uiOptions.VesselScaleNormal;
 
         return new SymbolStyle
         {
-            SymbolScale = isHighlighted ? _uiOptions.VesselScaleHighlighted : _uiOptions.VesselScaleNormal,
+            SymbolScale = scale,
             SymbolRotation = vessel.CurrentPosition?.TrueHeading ?? 0,
             Fill = new Brush(color),
-            Outline = isHighlighted
-                ? new Pen(Mapsui.Styles.Color.White, 3)
-                : new Pen(Mapsui.Styles.Color.FromArgb(180, 0, 0, 0), 1),
+            Outline = outline,
             SymbolType = SymbolType.Triangle
         };
     }
@@ -584,6 +640,83 @@ public partial class MapViewModel : ObservableObject, IDisposable
             _selectionLayer.Features = [feature];
             _selectionLayer.DataHasChanged();
         }
+    }
+
+    [RelayCommand]
+    private void AddGeofenceFromSelection(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        var zone = new GeofenceZone
+        {
+            Name = name,
+            Bounds = SelectedArea
+        };
+        _areaMonitorService.AddGeofence(zone);
+    }
+
+    [RelayCommand]
+    private void RemoveGeofence(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        _areaMonitorService.RemoveGeofence(name);
+    }
+
+    private void RenderGeofences()
+    {
+        if (_geofenceLayer is null) return;
+
+        var features = new List<IFeature>();
+        foreach (var zone in _areaMonitorService.Geofences)
+        {
+            var area = zone.Bounds;
+            var min = SphericalMercator.FromLonLat(area.MinLongitude, area.MinLatitude);
+            var max = SphericalMercator.FromLonLat(area.MaxLongitude, area.MaxLatitude);
+
+            var ring = new LinearRing([
+                new Coordinate(min.x, min.y),
+                new Coordinate(max.x, min.y),
+                new Coordinate(max.x, max.y),
+                new Coordinate(min.x, max.y),
+                new Coordinate(min.x, min.y)
+            ]);
+
+            var polygon = new Polygon(ring);
+            var feature = new GeometryFeature(polygon);
+
+            // Parse zone color
+            byte r = 108, g = 99, b = 255;
+            if (zone.Color.Length == 7 && zone.Color.StartsWith('#'))
+            {
+                r = Convert.ToByte(zone.Color.Substring(1, 2), 16);
+                g = Convert.ToByte(zone.Color.Substring(3, 2), 16);
+                b = Convert.ToByte(zone.Color.Substring(5, 2), 16);
+            }
+
+            feature.Styles.Add(new VectorStyle
+            {
+                Fill = new Brush(Mapsui.Styles.Color.FromArgb(30, r, g, b)),
+                Line = new Pen(new Mapsui.Styles.Color(r, g, b, 180), 2)
+                {
+                    PenStyle = PenStyle.Dash
+                }
+            });
+
+            // Zone label
+            feature.Styles.Add(new LabelStyle
+            {
+                Text = zone.Name,
+                ForeColor = new Mapsui.Styles.Color(r, g, b),
+                BackColor = null,
+                Font = new Font { Size = 11, Bold = true },
+                HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
+                VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center
+            });
+
+            features.Add(feature);
+        }
+
+        _geofenceLayer.Features = features;
+        _geofenceLayer.DataHasChanged();
     }
 
     private void ClearVessels()
