@@ -82,8 +82,8 @@ jobs:
       - name: Create and push tag (manual run only)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          git tag "${{ env.RELEASE_VERSION }}"
-          git push origin "${{ env.RELEASE_VERSION }}"
+          git tag -f "${{ env.RELEASE_VERSION }}"
+          git push origin "${{ env.RELEASE_VERSION }}" --force
         shell: pwsh
 
       - name: Create GitHub Release
