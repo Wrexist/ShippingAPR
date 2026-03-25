@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="ShippingAPR.Services.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ShippingAPR.Core\ShippingAPR.Core.csproj" />
     <ProjectReference Include="..\ShippingAPR.Infrastructure\ShippingAPR.Infrastructure.csproj" />
   </ItemGroup>

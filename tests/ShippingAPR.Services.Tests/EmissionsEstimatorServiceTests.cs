@@ -29,7 +29,7 @@ public class EmissionsEstimatorServiceTests
         double draught = 10.0)
     {
         var vessel = new Vessel(mmsi);
-        vessel.Update(
+        vessel.UpdatePosition(
             new VesselPosition
             {
                 Latitude = 57.0,
@@ -39,7 +39,8 @@ public class EmissionsEstimatorServiceTests
                 TrueHeading = 180.0,
                 Status = NavigationalStatus.UnderWayUsingEngine,
                 Timestamp = DateTime.UtcNow
-            },
+            });
+        vessel.UpdateStaticData(
             new VesselStaticData
             {
                 Name = "Test Vessel",
@@ -249,13 +250,14 @@ public class EmissionsEstimatorServiceTests
     public void EstimateFuelConsumption_NoDimensions_UsesSizeFactorOne()
     {
         var vessel = new Vessel(123456789);
-        vessel.Update(
+        vessel.UpdatePosition(
             new VesselPosition
             {
+                Latitude = 0,
+                Longitude = 0,
                 SpeedOverGround = 14.0,
                 Timestamp = DateTime.UtcNow
-            },
-            null);
+            });
         var profile = new EmissionProfile(VesselType.Cargo, 1.8, 14.0, 200.0);
 
         var result = EmissionsEstimatorService.EstimateFuelConsumption(vessel, 14.0, profile);

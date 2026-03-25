@@ -166,12 +166,13 @@ public class MaritimeIncidentServiceTests : IDisposable
 
         // Simulate vessel update near the incident
         var vessel = new Vessel(123456789);
-        vessel.Update(
+        vessel.UpdatePosition(
             new VesselPosition
             {
                 Latitude = 57.05, Longitude = 12.05,
                 SpeedOverGround = 14.0, Timestamp = DateTime.UtcNow
-            },
+            });
+        vessel.UpdateStaticData(
             new VesselStaticData { Name = "Near Vessel" });
 
         _storeMock.Raise(s => s.VesselUpdated += null!, null!, vessel);
