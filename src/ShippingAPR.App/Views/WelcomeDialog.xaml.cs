@@ -46,7 +46,7 @@ public partial class WelcomeDialog : Window
 
         if (string.IsNullOrEmpty(key))
         {
-            TestResultText.Text = Resources.Strings.ConnectionFailed;
+            TestResultText.Text = Strings.ConnectionFailed;
             TestResultText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
             TestResultText.Visibility = Visibility.Visible;
             return;
