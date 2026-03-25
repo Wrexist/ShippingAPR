@@ -249,6 +249,14 @@ public partial class MapViewModel : ObservableObject, IDisposable
         // Start with default view (Northern Europe by default — busy shipping area)
         var center = SphericalMercator.FromLonLat(_uiOptions.DefaultCenterLon, _uiOptions.DefaultCenterLat);
         Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), _uiOptions.DefaultResolution);
+
+        // Initialize cluster/vessel layer visibility based on default zoom level.
+        // At the default resolution, determine whether to show individual vessels
+        // or clusters, so layers are in the correct state before data arrives.
+        var shouldCluster = _uiOptions.DefaultResolution > _uiOptions.ClusterResolutionThreshold;
+        ShowClusters = shouldCluster;
+        _vesselLayer!.Enabled = !shouldCluster;
+        _clusterLayer!.Enabled = shouldCluster;
     }
 
     /// <summary>Called by MapView when the viewport changes (pan/zoom).</summary>
@@ -414,6 +422,10 @@ public partial class MapViewModel : ObservableObject, IDisposable
         var area = GetViewportBoundingBox() ?? SelectedArea;
         SelectedArea = area;
         AreaStatusText = FormatAreaName(area);
+
+        // Ensure vessel/cluster layer visibility matches current zoom level
+        // before data starts arriving from the WebSocket.
+        UpdateClusterVisibility();
 
         await _trackingService.StartTrackingAsync(area);
     }
