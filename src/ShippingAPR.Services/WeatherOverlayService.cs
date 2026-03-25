@@ -13,7 +13,6 @@ public sealed class WeatherOverlayService : IDisposable
     private readonly IMarineWeatherClient _weatherClient;
     private readonly ILogger<WeatherOverlayService> _logger;
     private MarineWeatherGrid? _currentGrid;
-    private CancellationTokenSource? _pollCts;
 
     public bool IsEnabled { get; set; }
     public MarineWeatherGrid? CurrentGrid => _currentGrid;
@@ -56,7 +55,5 @@ public sealed class WeatherOverlayService : IDisposable
 
     public void Dispose()
     {
-        _pollCts?.Cancel();
-        _pollCts?.Dispose();
     }
 }
