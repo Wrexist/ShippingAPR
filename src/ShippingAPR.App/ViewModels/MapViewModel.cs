@@ -249,6 +249,14 @@ public partial class MapViewModel : ObservableObject, IDisposable
         // Start with default view (Northern Europe by default — busy shipping area)
         var center = SphericalMercator.FromLonLat(_uiOptions.DefaultCenterLon, _uiOptions.DefaultCenterLat);
         Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), _uiOptions.DefaultResolution);
+
+        // Initialize cluster/vessel layer visibility based on default zoom level.
+        // At the default resolution, determine whether to show individual vessels
+        // or clusters, so layers are in the correct state before data arrives.
+        var shouldCluster = _uiOptions.DefaultResolution > _uiOptions.ClusterResolutionThreshold;
+        ShowClusters = shouldCluster;
+        _vesselLayer!.Enabled = !shouldCluster;
+        _clusterLayer!.Enabled = shouldCluster;
     }
 
     /// <summary>Called by MapView when the viewport changes (pan/zoom).</summary>
@@ -264,25 +272,30 @@ public partial class MapViewModel : ObservableObject, IDisposable
         UpdateClusterVisibility();
     }
 
-    private void OnViewportDebounceElapsed(object? sender, EventArgs e)
+    /// <summary>Computes the current map viewport as a lat/lon BoundingBox, or null if viewport is not ready.</summary>
+    private BoundingBox? GetViewportBoundingBox()
     {
-        _viewportDebounceTimer.Stop();
-
         var viewport = Map.Navigator.Viewport;
-        if (viewport.Width == 0 || viewport.Height == 0) return;
+        if (viewport.Width == 0 || viewport.Height == 0) return null;
 
-        // Convert viewport corners to lat/lon
         var extent = viewport.ToExtent();
         var min = SphericalMercator.ToLonLat(extent.MinX, extent.MinY);
         var max = SphericalMercator.ToLonLat(extent.MaxX, extent.MaxY);
 
-        // Clamp to valid ranges
         var minLat = Math.Max(-85, Math.Min(min.lat, max.lat));
         var maxLat = Math.Min(85, Math.Max(min.lat, max.lat));
         var minLon = Math.Max(-180, Math.Min(min.lon, max.lon));
         var maxLon = Math.Min(180, Math.Max(min.lon, max.lon));
 
-        var viewportArea = new BoundingBox(minLat, minLon, maxLat, maxLon);
+        return new BoundingBox(minLat, minLon, maxLat, maxLon);
+    }
+
+    private void OnViewportDebounceElapsed(object? sender, EventArgs e)
+    {
+        _viewportDebounceTimer.Stop();
+
+        var viewportArea = GetViewportBoundingBox();
+        if (viewportArea is null) return;
 
         // Only update if area changed significantly
         if (SelectedArea is not null && !HasAreaChangedSignificantly(SelectedArea, viewportArea, _uiOptions.AreaChangeThreshold))
@@ -403,7 +416,18 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private async Task StartTracking()
     {
         _isTracking = true;
-        await _trackingService.StartTrackingAsync(SelectedArea);
+
+        // Derive the initial tracking area from the current map viewport
+        // so the subscription matches exactly what the user sees.
+        var area = GetViewportBoundingBox() ?? SelectedArea;
+        SelectedArea = area;
+        AreaStatusText = FormatAreaName(area);
+
+        // Ensure vessel/cluster layer visibility matches current zoom level
+        // before data starts arriving from the WebSocket.
+        UpdateClusterVisibility();
+
+        await _trackingService.StartTrackingAsync(area);
     }
 
     /// <summary>Navigate to a preset region.</summary>

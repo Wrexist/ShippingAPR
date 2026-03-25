@@ -8,8 +8,14 @@
         Width="1400" Height="900"
         MinWidth="1000" MinHeight="600"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
         Icon="pack://application:,,,/Assets/Icons/app.ico"
         Background="{DynamicResource PrimaryBackgroundBrush}">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -26,7 +32,7 @@
         <!-- ═══════════════════════════════════════════════════════
              TOP BAR — Floating Glass Header
              ═══════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0"
+        <Border Grid.Row="0" x:Name="TopBar"
                 Background="{DynamicResource GlassFillBrush}"
                 BorderBrush="{DynamicResource GlassEdgeBrush}"
                 BorderThickness="1"
@@ -109,7 +115,52 @@
                     <Button Content="&#x263C;"
                             Command="{Binding ToggleThemeCommand}"
                             Style="{DynamicResource IconButtonStyle}"
-                            ToolTip="{x:Static res:Strings.ToggleThemeTooltip}"/>
+                            ToolTip="{x:Static res:Strings.ToggleThemeTooltip}"
+                            Margin="0,0,12,0"/>
+
+                    <!-- Window control buttons -->
+                    <Button x:Name="MinimizeBtn" Content="&#x2015;"
+                            Click="MinimizeClick"
+                            Style="{DynamicResource IconButtonStyle}"
+                            ToolTip="Minimize"
+                            Width="32" Height="32" FontSize="12"
+                            Margin="0,0,4,0"/>
+                    <Button x:Name="MaximizeBtn" Content="&#x25A1;"
+                            Click="MaximizeClick"
+                            Style="{DynamicResource IconButtonStyle}"
+                            ToolTip="Maximize"
+                            Width="32" Height="32" FontSize="13"
+                            Margin="0,0,4,0"/>
+                    <Button x:Name="CloseBtn" Content="&#x2715;"
+                            Click="CloseClick"
+                            ToolTip="Close"
+                            Width="32" Height="32" FontSize="12"
+                            Cursor="Hand"
+                            Foreground="{DynamicResource PrimaryTextBrush}"
+                            Background="{DynamicResource GlassFillBrush}"
+                            BorderBrush="{DynamicResource GlassBorderBrush}"
+                            BorderThickness="1"
+                            Padding="0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="CloseBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="16"
+                                        Width="{TemplateBinding Width}"
+                                        Height="{TemplateBinding Height}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="CloseBorder" Property="Background" Value="#FFEF4444"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
