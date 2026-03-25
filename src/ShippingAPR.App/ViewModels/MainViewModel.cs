@@ -254,6 +254,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var newTheme = new ResourceDictionary { Source = themeUri };
             Application.Current.Resources.MergedDictionaries.Clear();
             Application.Current.Resources.MergedDictionaries.Add(newTheme);
+
+            // Sync map tiles with theme
+            MapViewModel.SwitchMapLayerCommand.Execute(IsDarkTheme ? "Dark" : "Standard");
         }
         catch (Exception ex)
         {
@@ -562,5 +565,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         AchievementViewModel.Dispose();
         PortDashboardViewModel.Dispose();
         AlertRuleViewModel.Dispose();
+        NotificationCenterViewModel.Dispose();
     }
 }

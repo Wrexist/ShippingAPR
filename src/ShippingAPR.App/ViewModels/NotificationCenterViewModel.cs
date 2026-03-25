@@ -6,7 +6,7 @@ using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
 
-public partial class NotificationCenterViewModel : ObservableObject
+public partial class NotificationCenterViewModel : ObservableObject, IDisposable
 {
     private readonly NotificationService _notificationService;
 
@@ -47,5 +47,10 @@ public partial class NotificationCenterViewModel : ObservableObject
     private void MarkAllRead()
     {
         UnreadCount = 0;
+    }
+
+    public void Dispose()
+    {
+        WeakReferenceMessenger.Default.UnregisterAll(this);
     }
 }

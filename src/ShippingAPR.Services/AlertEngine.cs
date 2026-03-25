@@ -92,8 +92,8 @@ public sealed class AlertEngine : IDisposable
             _logger.LogInformation("Alert fired: {Rule} for {Vessel}", rule.Name, vessel.DisplayName);
         }
 
-        // Cleanup expired cooldowns deterministically every 50 evaluations or when count exceeds 200
-        if (_firedRecently.Count > 200 || _firedRecently.Count > 0 && _firedRecently.Count % 50 == 0)
+        // Cleanup expired cooldowns when dictionary exceeds a reasonable size
+        if (_firedRecently.Count > 100)
         {
             var cutoff = DateTime.UtcNow - CooldownPeriod;
             var expired = _firedRecently

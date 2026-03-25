@@ -48,10 +48,10 @@ public sealed class AchievementService : IDisposable
         _progress.ToDictionary(k => k.Key, v => v.Value);
 
     public int TotalUnlocked => _progress.Values.Count(p => p.IsUnlocked);
-    public int UniqueVesselsSpotted => _uniqueMmsis.Count;
-    public int TypesDiscovered => _typesDiscovered.Count;
-    public int CountriesTracked => _countriesTracked.Count;
-    public double FastestSpeedSeen => _fastestSpeedSeen;
+    public int UniqueVesselsSpotted { get { lock (_lock) return _uniqueMmsis.Count; } }
+    public int TypesDiscovered { get { lock (_lock) return _typesDiscovered.Count; } }
+    public int CountriesTracked { get { lock (_lock) return _countriesTracked.Count; } }
+    public double FastestSpeedSeen { get { lock (_lock) return _fastestSpeedSeen; } }
 
     public AchievementService(
         IVesselStore vesselStore,

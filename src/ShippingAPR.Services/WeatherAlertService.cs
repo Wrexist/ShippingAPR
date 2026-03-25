@@ -118,7 +118,8 @@ public sealed class WeatherAlertService : IDisposable
                     Description = $"Visibility {weather.VisibilityKm:F1}km",
                     AffectedArea = new BoundingBox(
                         pos.Latitude - 0.2, pos.Longitude - 0.2,
-                        pos.Latitude + 0.2, pos.Longitude + 0.2)
+                        pos.Latitude + 0.2, pos.Longitude + 0.2),
+                    ExpiresAt = DateTime.UtcNow.AddHours(2)
                 };
 
                 _activeAlerts[alert.Id] = alert;

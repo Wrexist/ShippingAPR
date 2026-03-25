@@ -62,10 +62,10 @@
                 Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <TextBlock Text="&#x1F6A2;" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                <TextBlock Text="No vessels found"
+                <TextBlock Text="{x:Static res:Strings.NoVesselsFound}"
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="13" HorizontalAlignment="Center"/>
-                <TextBlock Text="Adjust filters or zoom the map to track ships"
+                <TextBlock Text="{x:Static res:Strings.AdjustFiltersHint}"
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="11" Opacity="0.7"
                            HorizontalAlignment="Center" Margin="0,4,0,0"/>
