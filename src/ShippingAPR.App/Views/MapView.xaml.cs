@@ -13,7 +13,7 @@ public partial class MapView : UserControl
 {
     private MapViewModel? _currentViewModel;
     private EventHandler<MapInfoEventArgs>? _infoHandler;
-    private System.ComponentModel.PropertyChangedEventHandler? _navigatedHandler;
+    private Navigator.ViewportChangedEventHandler? _navigatedHandler;
     private int _lastHoveredMmsi;
 
     public MapView()
