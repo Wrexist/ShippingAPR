@@ -9,6 +9,7 @@ using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling;
+using Mapsui.Tiling.Layers;
 using BruTile.Predefined;
 using BruTile.Web;
 using Microsoft.Extensions.Options;
