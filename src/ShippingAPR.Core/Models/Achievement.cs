@@ -26,7 +26,9 @@ public enum AchievementCategory
     CountriesTracked,
     SpeedRecords,
     RareFinds,
-    Milestones
+    Milestones,
+    WeatherEvents,
+    TimeTracking
 }
 
 public enum AchievementTier
@@ -34,5 +36,6 @@ public enum AchievementTier
     Bronze,
     Silver,
     Gold,
-    Platinum
+    Platinum,
+    Legendary
 }

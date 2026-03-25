@@ -1,6 +1,9 @@
 <UserControl x:Class="ShippingAPR.App.Views.DashboardPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
         <StackPanel Margin="8">
 
@@ -158,6 +161,23 @@
                         <TextBlock Text="{Binding TopDestination5}" Style="{DynamicResource SubTextStyle}"
                                    FontSize="11"/>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ Vessel of the Day Spotlight ═══ -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8"
+                    Visibility="{Binding HasSpotlight, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="3" Height="14" CornerRadius="2"
+                                Background="#FFD700" Margin="0,0,8,0"/>
+                        <TextBlock Text="Vessel Spotlight" Style="{DynamicResource SubTextStyle}"
+                                   FontWeight="Bold" FontSize="11"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding SpotlightVesselName}" FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding SpotlightReason}" Style="{DynamicResource SubTextStyle}"
+                               FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 

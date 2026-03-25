@@ -12,6 +12,7 @@ public partial class PortDashboardViewModel : ObservableObject, IDisposable
 {
     private readonly PortActivityService _portActivityService;
     private readonly IPortRepository _portRepository;
+    private readonly ITideDataClient _tideDataClient;
     private readonly DispatcherTimer _refreshTimer;
 
     [ObservableProperty]
@@ -35,15 +36,36 @@ public partial class PortDashboardViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private double _congestionPercent;
 
+    // Tide data
+    [ObservableProperty]
+    private string _tideStateText = "---";
+
+    [ObservableProperty]
+    private string _tideStateIcon = "";
+
+    [ObservableProperty]
+    private string _currentTideLevelText = "---";
+
+    [ObservableProperty]
+    private string _nextHighTideText = "---";
+
+    [ObservableProperty]
+    private string _nextLowTideText = "---";
+
+    [ObservableProperty]
+    private string _tideColor = "#808080";
+
     public ObservableCollection<string> AvailablePorts { get; } = [];
     public ObservableCollection<PortActivityItemViewModel> RecentActivity { get; } = [];
 
     public PortDashboardViewModel(
         PortActivityService portActivityService,
-        IPortRepository portRepository)
+        IPortRepository portRepository,
+        ITideDataClient tideDataClient)
     {
         _portActivityService = portActivityService;
         _portRepository = portRepository;
+        _tideDataClient = tideDataClient;
 
         // Pre-populate port list
         foreach (var port in _portRepository.GetAll().OrderBy(p => p.Name))
@@ -61,6 +83,7 @@ public partial class PortDashboardViewModel : ObservableObject, IDisposable
     {
         _portActivityService.SelectedPortName = value;
         Refresh();
+        _ = RefreshTideAsync();
     }
 
     [RelayCommand]
@@ -100,6 +123,44 @@ public partial class PortDashboardViewModel : ObservableObject, IDisposable
                 IsArrival = record.ActivityType == PortActivityType.Arrival
             });
         }
+    }
+
+    private async Task RefreshTideAsync()
+    {
+        if (string.IsNullOrEmpty(SelectedPort)) return;
+
+        var port = _portRepository.GetAll().FirstOrDefault(p => p.Name == SelectedPort);
+        if (port is null) return;
+
+        var tide = await _tideDataClient.GetTideDataAsync(port.Locode, port.Name, port.Latitude, port.Longitude);
+        if (tide is null)
+        {
+            TideStateText = "---";
+            TideStateIcon = "";
+            CurrentTideLevelText = "---";
+            NextHighTideText = "---";
+            NextLowTideText = "---";
+            return;
+        }
+
+        TideStateText = tide.State.ToString();
+        TideStateIcon = tide.State switch
+        {
+            TideState.Rising => "\u2191",
+            TideState.Falling => "\u2193",
+            TideState.Slack => "\u2194",
+            _ => ""
+        };
+        TideColor = tide.State switch
+        {
+            TideState.Rising => "#4CAF50",
+            TideState.Falling => "#F44336",
+            TideState.Slack => "#FFC107",
+            _ => "#808080"
+        };
+        CurrentTideLevelText = $"{tide.CurrentLevelMeters:F1}m";
+        NextHighTideText = tide.NextHighTide?.ToString("HH:mm") ?? "---";
+        NextLowTideText = tide.NextLowTide?.ToString("HH:mm") ?? "---";
     }
 
     public void Dispose()

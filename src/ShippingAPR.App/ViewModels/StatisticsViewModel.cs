@@ -10,6 +10,7 @@ namespace ShippingAPR.App.ViewModels;
 public partial class StatisticsViewModel : ObservableObject, IDisposable
 {
     private readonly StatisticsService _statisticsService;
+    private readonly SpotlightService _spotlightService;
     private readonly DispatcherTimer _refreshTimer;
 
     [ObservableProperty]
@@ -60,9 +61,20 @@ public partial class StatisticsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _topDestination5 = "";
 
-    public StatisticsViewModel(StatisticsService statisticsService, IOptions<UiOptions> uiOptions)
+    // Vessel of the Day Spotlight
+    [ObservableProperty]
+    private string _spotlightVesselName = "";
+
+    [ObservableProperty]
+    private string _spotlightReason = "";
+
+    [ObservableProperty]
+    private bool _hasSpotlight;
+
+    public StatisticsViewModel(StatisticsService statisticsService, SpotlightService spotlightService, IOptions<UiOptions> uiOptions)
     {
         _statisticsService = statisticsService;
+        _spotlightService = spotlightService;
 
         _refreshTimer = new DispatcherTimer
         {
@@ -87,6 +99,12 @@ public partial class StatisticsViewModel : ObservableObject, IDisposable
         AtAnchorCount = snap.VesselsAtAnchor;
         MooredCount = snap.VesselsMoored;
         WatchedCount = snap.WatchedVesselCount;
+
+        // Update spotlight
+        var (spotlightVessel, spotlightReason) = _spotlightService.GetSpotlight();
+        HasSpotlight = spotlightVessel is not null;
+        SpotlightVesselName = spotlightVessel?.DisplayName ?? "";
+        SpotlightReason = spotlightReason;
 
         var dests = snap.TopDestinations;
         TopDestination1 = FormatDest(dests, 0);

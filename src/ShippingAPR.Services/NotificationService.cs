@@ -21,7 +21,8 @@ public enum NotificationType
     ConnectionChanged,
     Warning,
     WatchlistAlert,
-    CollisionRisk
+    CollisionRisk,
+    WeatherWarning
 }
 
 public sealed class NotificationPublished : ValueChangedMessage<NotificationMessage>

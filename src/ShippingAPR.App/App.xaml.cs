@@ -12,6 +12,7 @@ using ShippingAPR.Infrastructure.AisStream;
 using ShippingAPR.Infrastructure.Mapping;
 using ShippingAPR.Infrastructure.Ports;
 using ShippingAPR.Infrastructure.VesselFinder;
+using ShippingAPR.Infrastructure.Weather;
 using ShippingAPR.Services;
 
 namespace ShippingAPR.App;
@@ -80,6 +81,8 @@ public partial class App : Application
                     ctx.Configuration.GetSection(TrackingOptions.SectionName));
                 services.Configure<UiOptions>(
                     ctx.Configuration.GetSection(UiOptions.SectionName));
+                services.Configure<MarineWeatherOptions>(
+                    ctx.Configuration.GetSection(MarineWeatherOptions.SectionName));
 
                 // Core infrastructure
                 services.AddSingleton<AisMessageMapper>();
@@ -87,6 +90,10 @@ public partial class App : Application
                 services.AddSingleton<IPortRepository>(sp => sp.GetRequiredService<PortRepository>());
                 services.AddSingleton<IAisStreamClient, AisStreamClient>();
                 services.AddHttpClient<IVesselEnrichmentClient, VesselFinderClient>();
+
+                // Weather & ocean data clients
+                services.AddHttpClient<IMarineWeatherClient, OpenMeteoMarineClient>();
+                services.AddHttpClient<ITideDataClient, TideDataClient>();
 
                 // Services
                 services.AddSingleton<VesselStore>();
@@ -106,6 +113,10 @@ public partial class App : Application
                 services.AddSingleton<HeatmapService>();
                 services.AddSingleton<PortActivityService>();
                 services.AddSingleton<AlertEngine>();
+                services.AddSingleton<WeatherOverlayService>();
+                services.AddSingleton<WeatherAlertService>();
+                services.AddSingleton<FleetService>();
+                services.AddSingleton<SpotlightService>();
 
                 // User preferences (persisted between sessions)
                 services.AddSingleton<UserPreferences>();
@@ -148,6 +159,10 @@ public partial class App : Application
         _host.Services.GetRequiredService<HeatmapService>();
         _host.Services.GetRequiredService<PortActivityService>();
         _host.Services.GetRequiredService<AlertEngine>();
+        _host.Services.GetRequiredService<WeatherOverlayService>();
+        _host.Services.GetRequiredService<WeatherAlertService>();
+        _host.Services.GetRequiredService<FleetService>();
+        _host.Services.GetRequiredService<SpotlightService>();
 
         await _host.StartAsync();
 

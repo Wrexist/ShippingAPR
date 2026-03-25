@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.App.Configuration;
 
@@ -30,6 +31,7 @@ public sealed class UserPreferences
     public bool ShowTugPilot { get; set; } = true;
     public bool ShowOther { get; set; } = true;
     public double MaxSpeed { get; set; } = 50;
+    public List<MapBookmark> Bookmarks { get; set; } = [];
 
     public UserPreferences(ILogger<UserPreferences> logger)
     {
@@ -62,6 +64,7 @@ public sealed class UserPreferences
             ShowTugPilot = data.ShowTugPilot;
             ShowOther = data.ShowOther;
             MaxSpeed = data.MaxSpeed > 0 ? data.MaxSpeed : 50;
+            Bookmarks = data.Bookmarks ?? [];
 
             _logger.LogDebug("Loaded user preferences from {Path}", PreferencesPath);
         }
@@ -92,7 +95,8 @@ public sealed class UserPreferences
                 ShowFishing = ShowFishing,
                 ShowTugPilot = ShowTugPilot,
                 ShowOther = ShowOther,
-                MaxSpeed = MaxSpeed
+                MaxSpeed = MaxSpeed,
+                Bookmarks = Bookmarks
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -119,5 +123,6 @@ public sealed class UserPreferences
         public bool ShowTugPilot { get; set; } = true;
         public bool ShowOther { get; set; } = true;
         public double MaxSpeed { get; set; } = 50;
+        public List<MapBookmark>? Bookmarks { get; set; } = [];
     }
 }
