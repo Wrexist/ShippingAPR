@@ -81,16 +81,19 @@ public class NotificationServiceTests
     {
         _areaMonitor.SetMonitoredArea(new BoundingBox(57.65, 11.80, 57.75, 12.05));
 
-        // Start inside
-        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95),
+        // First update: outside area (establishes baseline)
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.5, 11.9),
             new VesselStaticData { Name = "TEST SHIP" });
 
-        // Move outside
+        // Second update: inside area (triggers entry)
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null);
+
+        // Third update: outside area (triggers leave)
         _vesselStore.AddOrUpdate(100000001, CreatePosition(57.5, 11.9), null);
 
-        _service.History.Should().HaveCount(1);
-        _service.History[0].Type.Should().Be(NotificationType.VesselLeft);
-        _service.History[0].Title.Should().Contain("Left");
+        _service.History.Should().HaveCount(2);
+        _service.History[1].Type.Should().Be(NotificationType.VesselLeft);
+        _service.History[1].Title.Should().Contain("Left");
     }
 
     private static VesselPosition CreatePosition(double lat, double lon) =>

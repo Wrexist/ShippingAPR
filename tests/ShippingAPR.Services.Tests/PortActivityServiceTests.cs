@@ -45,7 +45,7 @@ public class PortActivityServiceTests : IDisposable
         _sut.ActivityRecorded += (_, r) => recorded = r;
 
         // Add vessel very close to Gothenburg port
-        _store.AddOrUpdate(123,
+        _store.AddOrUpdate(100000123,
             new VesselPosition
             {
                 Latitude = 57.709,
@@ -68,7 +68,7 @@ public class PortActivityServiceTests : IDisposable
         _sut.ActivityRecorded += (_, r) => recorded = r;
 
         // Add vessel far from Gothenburg
-        _store.AddOrUpdate(123,
+        _store.AddOrUpdate(100000123,
             new VesselPosition
             {
                 Latitude = 55.0,
@@ -86,7 +86,7 @@ public class PortActivityServiceTests : IDisposable
     public void GetCongestion_ReturnsSnapshot()
     {
         // Add a vessel in port
-        _store.AddOrUpdate(123,
+        _store.AddOrUpdate(100000123,
             new VesselPosition
             {
                 Latitude = 57.709,
@@ -107,7 +107,7 @@ public class PortActivityServiceTests : IDisposable
     [Fact]
     public void GetActivePortNames_ReturnsPortsWithVessels()
     {
-        _store.AddOrUpdate(123,
+        _store.AddOrUpdate(100000123,
             new VesselPosition
             {
                 Latitude = 57.709,

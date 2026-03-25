@@ -40,9 +40,9 @@ public class AchievementServiceTests : IDisposable
     [Fact]
     public void SpottingVessels_IncrementsUniqueCount()
     {
-        AddVessel(1, VesselType.Cargo, "SE");
-        AddVessel(2, VesselType.Tanker, "NO");
-        AddVessel(3, VesselType.Fishing, "DK");
+        AddVessel(100000001, VesselType.Cargo, "SE");
+        AddVessel(100000002, VesselType.Tanker, "NO");
+        AddVessel(100000003, VesselType.Fishing, "DK");
 
         _sut.UniqueVesselsSpotted.Should().Be(3);
         _sut.TypesDiscovered.Should().Be(3);
@@ -52,8 +52,8 @@ public class AchievementServiceTests : IDisposable
     [Fact]
     public void SameVessel_NotCountedTwice()
     {
-        AddVessel(1, VesselType.Cargo, "SE");
-        _store.AddOrUpdate(1, CreatePosition(58.0, 12.0, 10), null);
+        AddVessel(100000001, VesselType.Cargo, "SE");
+        _store.AddOrUpdate(100000001, CreatePosition(58.0, 12.0, 10), null);
 
         _sut.UniqueVesselsSpotted.Should().Be(1);
     }
@@ -61,7 +61,7 @@ public class AchievementServiceTests : IDisposable
     [Fact]
     public void SpottingTenVessels_UnlocksDeckCadet()
     {
-        for (int i = 1; i <= 10; i++)
+        for (int i = 100000001; i <= 100000010; i++)
             AddVessel(i, VesselType.Cargo, "SE");
 
         var progress = _sut.Progress;
@@ -73,7 +73,7 @@ public class AchievementServiceTests : IDisposable
     [Fact]
     public void FastVessel_UnlocksSpeedAchievement()
     {
-        _store.AddOrUpdate(1, CreatePosition(57.7, 11.9, 25), null);
+        _store.AddOrUpdate(100000001, CreatePosition(57.7, 11.9, 25), null);
 
         var progress = _sut.Progress;
         progress.Should().ContainKey("speed_20");
@@ -83,7 +83,7 @@ public class AchievementServiceTests : IDisposable
     [Fact]
     public void RareType_UnlocksRareCatch()
     {
-        _store.AddOrUpdate(1, CreatePosition(57.7, 11.9),
+        _store.AddOrUpdate(100000001, CreatePosition(57.7, 11.9),
             new VesselStaticData { ShipType = VesselType.Military, CountryCode = "US" });
 
         var progress = _sut.Progress;
@@ -93,7 +93,7 @@ public class AchievementServiceTests : IDisposable
 
     private void AddVessel(int mmsi, VesselType type, string country)
     {
-        _store.AddOrUpdate(mmsi, CreatePosition(57.7 + mmsi * 0.01, 11.9),
+        _store.AddOrUpdate(mmsi, CreatePosition(57.7 + (mmsi - 100000000) * 0.01, 11.9),
             new VesselStaticData { ShipType = type, CountryCode = country });
     }
 

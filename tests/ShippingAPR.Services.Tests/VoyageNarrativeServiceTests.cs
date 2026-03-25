@@ -37,13 +37,13 @@ public class VoyageNarrativeServiceTests : IDisposable
             Status = NavigationalStatus.UnderWayUsingEngine
         };
 
-        _store.AddOrUpdate(123, pos, new VesselStaticData
+        _store.AddOrUpdate(100000123, pos, new VesselStaticData
         {
             Name = "MV TestShip",
             ShipType = VesselType.Cargo
         });
 
-        var events = _sut.GetEvents(123);
+        var events = _sut.GetEvents(100000123);
         events.Should().HaveCount(1);
         events[0].Type.Should().Be(VoyageEventType.FirstSeen);
         events[0].Description.Should().Contain("First detected");
@@ -52,7 +52,7 @@ public class VoyageNarrativeServiceTests : IDisposable
     [Fact]
     public void Narrative_IncludesVesselName()
     {
-        _store.AddOrUpdate(123,
+        _store.AddOrUpdate(100000123,
             new VesselPosition
             {
                 Latitude = 57.7, Longitude = 11.9,
@@ -61,7 +61,7 @@ public class VoyageNarrativeServiceTests : IDisposable
             },
             new VesselStaticData { Name = "MV TestShip", ShipType = VesselType.Cargo });
 
-        var narrative = _sut.GenerateNarrative(123);
+        var narrative = _sut.GenerateNarrative(100000123);
         narrative.Should().Contain("MV TestShip");
         narrative.Should().Contain("cargo vessel");
     }
@@ -75,7 +75,7 @@ public class VoyageNarrativeServiceTests : IDisposable
             SpeedOverGround = 5, CourseOverGround = 180,
             TrueHeading = 180, Status = NavigationalStatus.UnderWayUsingEngine
         };
-        _store.AddOrUpdate(123, pos1, null);
+        _store.AddOrUpdate(100000123, pos1, null);
 
         var pos2 = new VesselPosition
         {
@@ -83,9 +83,9 @@ public class VoyageNarrativeServiceTests : IDisposable
             SpeedOverGround = 15, CourseOverGround = 180,
             TrueHeading = 180, Status = NavigationalStatus.UnderWayUsingEngine
         };
-        _store.AddOrUpdate(123, pos2, null);
+        _store.AddOrUpdate(100000123, pos2, null);
 
-        var events = _sut.GetEvents(123);
+        var events = _sut.GetEvents(100000123);
         events.Should().Contain(e => e.Type == VoyageEventType.SpeedChange);
     }
 
@@ -98,7 +98,7 @@ public class VoyageNarrativeServiceTests : IDisposable
             SpeedOverGround = 5, CourseOverGround = 180,
             TrueHeading = 180, Status = NavigationalStatus.UnderWayUsingEngine
         };
-        _store.AddOrUpdate(123, pos1, null);
+        _store.AddOrUpdate(100000123, pos1, null);
 
         var pos2 = new VesselPosition
         {
@@ -106,16 +106,16 @@ public class VoyageNarrativeServiceTests : IDisposable
             SpeedOverGround = 0, CourseOverGround = 180,
             TrueHeading = 180, Status = NavigationalStatus.AtAnchor
         };
-        _store.AddOrUpdate(123, pos2, null);
+        _store.AddOrUpdate(100000123, pos2, null);
 
-        var events = _sut.GetEvents(123);
+        var events = _sut.GetEvents(100000123);
         events.Should().Contain(e => e.Type == VoyageEventType.Anchored);
     }
 
     [Fact]
     public void NonExistentVessel_ReturnsNotFound()
     {
-        var narrative = _sut.GenerateNarrative(999);
+        var narrative = _sut.GenerateNarrative(100000999);
         narrative.Should().Be("Vessel not found.");
     }
 

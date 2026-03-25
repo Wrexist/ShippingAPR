@@ -30,31 +30,31 @@ public sealed class ChokepointMonitorService : IDisposable
     public static IReadOnlyList<Chokepoint> Chokepoints { get; } = new List<Chokepoint>
     {
         new("Suez Canal",
-            new BoundingBox(29.8, 31.3, 32.2, 32.6),
+            new BoundingBox(29.8, 32.2, 31.3, 32.6),
             30.58, 32.35, 720),
 
         new("Panama Canal",
-            new BoundingBox(8.8, 9.4, -79.95, -79.5),
+            new BoundingBox(8.8, -79.95, 9.4, -79.5),
             9.1, -79.7, 600),
 
         new("Strait of Malacca",
-            new BoundingBox(1.0, 4.5, 99.5, 104.5),
+            new BoundingBox(1.0, 99.5, 4.5, 104.5),
             2.5, 101.5, 720),
 
         new("Strait of Hormuz",
-            new BoundingBox(25.5, 27.0, 55.5, 57.0),
+            new BoundingBox(25.5, 55.5, 27.0, 57.0),
             26.5, 56.3, 120),
 
         new("Bosphorus",
-            new BoundingBox(40.95, 41.25, 28.95, 29.15),
+            new BoundingBox(40.95, 28.95, 41.25, 29.15),
             41.1, 29.05, 90),
 
         new("Strait of Dover",
-            new BoundingBox(50.8, 51.2, 1.0, 1.9),
+            new BoundingBox(50.8, 1.0, 51.2, 1.9),
             51.0, 1.4, 60),
 
         new("Strait of Gibraltar",
-            new BoundingBox(35.8, 36.2, -5.6, -5.3),
+            new BoundingBox(35.8, -5.6, 36.2, -5.3),
             36.0, -5.45, 60)
     };
 
