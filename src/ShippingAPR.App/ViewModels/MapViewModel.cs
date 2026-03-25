@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mapsui;
+using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Nts;
 using Mapsui.Projections;
@@ -271,8 +272,9 @@ public partial class MapViewModel : ObservableObject, IDisposable
         if (viewport.Width == 0 || viewport.Height == 0) return;
 
         // Convert viewport corners to lat/lon
-        var min = SphericalMercator.ToLonLat(viewport.Extent.MinX, viewport.Extent.MinY);
-        var max = SphericalMercator.ToLonLat(viewport.Extent.MaxX, viewport.Extent.MaxY);
+        var extent = viewport.ToExtent();
+        var min = SphericalMercator.ToLonLat(extent.MinX, extent.MinY);
+        var max = SphericalMercator.ToLonLat(extent.MaxX, extent.MaxY);
 
         // Clamp to valid ranges
         var minLat = Math.Max(-85, Math.Min(min.lat, max.lat));
@@ -1079,7 +1081,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         // Remove the current base tile layer (always index 0)
         if (Map.Layers.Count > 0)
-            Map.Layers.RemoveAt(0);
+            Map.Layers.Remove(Map.Layers.First());
 
         // All modes start with OpenStreetMap as base
         // (Satellite/SeaMap would require additional tile packages —

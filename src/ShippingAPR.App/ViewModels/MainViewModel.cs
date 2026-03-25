@@ -311,10 +311,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             File.WriteAllText(path, root.ToJsonString(
                 new JsonSerializerOptions { WriteIndented = true }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Don't crash if we can't save the API key — non-critical
-            // Logged at Trace since there's no static logger; callers can catch if needed
         }
     }
 

@@ -7,6 +7,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+#nullable enable
+
 namespace ShippingAPR.App.Resources;
 
 using System.Globalization;

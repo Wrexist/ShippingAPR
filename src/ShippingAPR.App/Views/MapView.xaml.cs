@@ -13,7 +13,7 @@ public partial class MapView : UserControl
 {
     private MapViewModel? _currentViewModel;
     private EventHandler<MapInfoEventArgs>? _infoHandler;
-    private EventHandler? _navigatedHandler;
+    private System.ComponentModel.PropertyChangedEventHandler? _navigatedHandler;
     private int _lastHoveredMmsi;
 
     public MapView()
@@ -30,7 +30,7 @@ public partial class MapView : UserControl
             if (_infoHandler is not null)
                 MapControl.Info -= _infoHandler;
             if (_navigatedHandler is not null)
-                _currentViewModel.Map.Navigator.Navigated -= _navigatedHandler;
+                _currentViewModel.Map.Navigator.ViewportChanged -= _navigatedHandler;
             MapControl.MouseMove -= OnMapMouseMove;
             MapControl.MouseLeave -= OnMapMouseLeave;
         }
@@ -42,11 +42,11 @@ public partial class MapView : UserControl
 
             _infoHandler = (_, args) =>
             {
-                if (args.WorldPosition is not null)
+                if (args.MapInfo?.WorldPosition is not null)
                 {
                     var lonLat = SphericalMercator.ToLonLat(
-                        args.WorldPosition.X,
-                        args.WorldPosition.Y);
+                        args.MapInfo.WorldPosition.X,
+                        args.MapInfo.WorldPosition.Y);
 
                     // Route click to measurement tool if active
                     if (vm.IsMeasuring)
@@ -56,8 +56,7 @@ public partial class MapView : UserControl
                 }
 
                 // Delegate vessel click handling to ViewModel (no Window.GetWindow coupling)
-                var mapInfo = args.GetMapInfo(vm.Map.Layers);
-                if (mapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi)
+                if (args.MapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi)
                 {
                     vm.HandleVesselClick(mmsi);
                 }
@@ -66,7 +65,7 @@ public partial class MapView : UserControl
 
             // Wire viewport changes for dynamic area tracking
             _navigatedHandler = (_, _) => vm.OnViewportChanged();
-            vm.Map.Navigator.Navigated += _navigatedHandler;
+            vm.Map.Navigator.ViewportChanged += _navigatedHandler;
 
             // Wire hover tooltip
             MapControl.MouseMove += OnMapMouseMove;
@@ -85,7 +84,7 @@ public partial class MapView : UserControl
         if (_currentViewModel is null) return;
 
         var screenPos = e.GetPosition(MapControl);
-        var mapInfo = MapControl.GetMapInfo(new Mapsui.MPoint(screenPos.X, screenPos.Y));
+        var mapInfo = MapControl.GetMapInfo(new Mapsui.Manipulations.ScreenPosition(screenPos.X, screenPos.Y));
 
         if (mapInfo?.Feature?[MapViewModel.MmsiFeatureKey] is int mmsi)
         {
