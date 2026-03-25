@@ -30,6 +30,8 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
     private BoundingBox? _currentArea;
     private TaskCompletionSource<BoundingBox>? _areaWaiter;
 
+    private readonly EventHandler<ConnectionStatus> _onConnectionStatusChanged;
+
     public ConnectionStatus ConnectionStatus => _aisClient.Status;
     public event EventHandler<ConnectionStatus>? ConnectionStatusChanged;
 
@@ -48,8 +50,9 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         _purgeInterval = TimeSpan.FromMinutes(_trackingOptions.PurgeIntervalMinutes);
         _staleAge = TimeSpan.FromMinutes(_trackingOptions.StaleAgeMinutes);
 
-        _aisClient.ConnectionStatusChanged += (_, status) =>
+        _onConnectionStatusChanged = (_, status) =>
             ConnectionStatusChanged?.Invoke(this, status);
+        _aisClient.ConnectionStatusChanged += _onConnectionStatusChanged;
 
         _aisClient.MessageReceived += OnMessageReceived;
 
@@ -199,6 +202,14 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
             vessel.CurrentPosition.Latitude, vessel.CurrentPosition.Longitude);
 
         return distance > _trackingOptions.EtaDistanceThresholdNm;
+    }
+
+    public override void Dispose()
+    {
+        _aisClient.ConnectionStatusChanged -= _onConnectionStatusChanged;
+        _aisClient.MessageReceived -= OnMessageReceived;
+        _vesselStore.VesselRemoved -= OnVesselRemoved;
+        base.Dispose();
     }
 
     private readonly object _portCacheLock = new();

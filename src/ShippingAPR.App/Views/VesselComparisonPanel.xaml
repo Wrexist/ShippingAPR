@@ -1,0 +1,153 @@
+<UserControl x:Class="ShippingAPR.App.Views.VesselComparisonPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+        <StackPanel Margin="8">
+
+            <TextBlock Text="Vessel Comparison" FontSize="16" FontWeight="Bold"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
+                       Margin="0,0,0,12"/>
+
+            <!-- No comparison selected -->
+            <TextBlock Text="Select two vessels from the list to compare them side by side."
+                       Style="{DynamicResource SubTextStyle}"
+                       TextWrapping="Wrap" Margin="0,0,0,12"
+                       Visibility="{Binding HasComparison, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+
+            <!-- Comparison table -->
+            <StackPanel Visibility="{Binding HasComparison, Converter={StaticResource BoolToVis}}">
+
+                <!-- Headers -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="" />
+                    <TextBlock Grid.Column="1" Text="{Binding NameA}" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Grid.Column="2" Text="{Binding NameB}" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}" TextTrimming="CharacterEllipsis"/>
+                </Grid>
+
+                <!-- Type -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Type" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding TypeA}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding TypeB}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Flag -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Flag" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding FlagA}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding FlagB}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Speed -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Speed" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding SpeedA}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding SpeedB}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Dimensions -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Dimensions" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding DimensionsA}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding DimensionsB}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Draught -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Draught" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding DraughtA}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding DraughtB}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Destination -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Destination" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding DestinationA}" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="2" Text="{Binding DestinationB}" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                </Border>
+
+                <!-- Emissions -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Emissions" Style="{DynamicResource SubTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding EmissionsA}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding EmissionsB}" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Deltas -->
+                <TextBlock Text="Comparison" FontWeight="Bold" Margin="0,12,0,8"
+                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding SpeedDelta}" Style="{DynamicResource SubTextStyle}"/>
+                </Border>
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding SizeDelta}" Style="{DynamicResource SubTextStyle}"/>
+                </Border>
+
+                <Button Content="Clear Comparison" Command="{Binding ClearCommand}"
+                        Margin="0,12,0,0" HorizontalAlignment="Left"
+                        Style="{DynamicResource SecondaryButtonStyle}"/>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

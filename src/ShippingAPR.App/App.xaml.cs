@@ -142,6 +142,7 @@ public partial class App : Application
                 services.AddSingleton<EncounterJournalViewModel>();
                 services.AddSingleton<ShipmentViewModel>();
                 services.AddSingleton<MaritimeNewsViewModel>();
+                services.AddSingleton<VesselComparisonViewModel>();
 
                 // Views
                 services.AddSingleton<MainWindow>();

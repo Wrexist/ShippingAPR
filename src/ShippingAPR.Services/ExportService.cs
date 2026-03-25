@@ -70,10 +70,87 @@ public sealed class ExportService
         });
     }
 
+    /// <summary>
+    /// Exports a vessel's track history to GPX format.
+    /// </summary>
+    public string ExportTrackToGpx(Vessel vessel)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        sb.AppendLine("<gpx version=\"1.1\" creator=\"ShippingAPR\"");
+        sb.AppendLine("     xmlns=\"http://www.topografix.com/GPX/1/1\">");
+        sb.AppendLine($"  <trk>");
+        sb.AppendLine($"    <name>{EscapeXml(vessel.DisplayName)} (MMSI: {vessel.Mmsi})</name>");
+        sb.AppendLine($"    <desc>Track history exported from ShippingAPR</desc>");
+        sb.AppendLine($"    <trkseg>");
+
+        foreach (var tp in vessel.Track)
+        {
+            var lat = tp.Latitude.ToString("F6", CultureInfo.InvariantCulture);
+            var lon = tp.Longitude.ToString("F6", CultureInfo.InvariantCulture);
+            var time = tp.Timestamp.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+            sb.AppendLine($"      <trkpt lat=\"{lat}\" lon=\"{lon}\">");
+            sb.AppendLine($"        <time>{time}</time>");
+            sb.AppendLine($"        <speed>{tp.SpeedOverGround.ToString("F1", CultureInfo.InvariantCulture)}</speed>");
+            sb.AppendLine($"      </trkpt>");
+        }
+
+        sb.AppendLine($"    </trkseg>");
+        sb.AppendLine($"  </trk>");
+        sb.AppendLine("</gpx>");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Exports a vessel's track history to KML format.
+    /// </summary>
+    public string ExportTrackToKml(Vessel vessel)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        sb.AppendLine("<kml xmlns=\"http://www.opengis.net/kml/2.2\">");
+        sb.AppendLine("  <Document>");
+        sb.AppendLine($"    <name>{EscapeXml(vessel.DisplayName)} (MMSI: {vessel.Mmsi})</name>");
+        sb.AppendLine("    <Style id=\"trackLine\">");
+        sb.AppendLine("      <LineStyle>");
+        sb.AppendLine("        <color>ff0000ff</color>");
+        sb.AppendLine("        <width>3</width>");
+        sb.AppendLine("      </LineStyle>");
+        sb.AppendLine("    </Style>");
+        sb.AppendLine("    <Placemark>");
+        sb.AppendLine($"      <name>Track: {EscapeXml(vessel.DisplayName)}</name>");
+        sb.AppendLine("      <styleUrl>#trackLine</styleUrl>");
+        sb.AppendLine("      <LineString>");
+        sb.AppendLine("        <tessellate>1</tessellate>");
+        sb.Append("        <coordinates>");
+
+        var first = true;
+        foreach (var tp in vessel.Track)
+        {
+            if (!first) sb.Append(' ');
+            sb.Append(tp.Longitude.ToString("F6", CultureInfo.InvariantCulture));
+            sb.Append(',');
+            sb.Append(tp.Latitude.ToString("F6", CultureInfo.InvariantCulture));
+            sb.Append(",0");
+            first = false;
+        }
+
+        sb.AppendLine("</coordinates>");
+        sb.AppendLine("      </LineString>");
+        sb.AppendLine("    </Placemark>");
+        sb.AppendLine("  </Document>");
+        sb.AppendLine("</kml>");
+        return sb.ToString();
+    }
+
     private static string Escape(string value)
     {
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
     }
+
+    private static string EscapeXml(string value) =>
+        value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;")
+             .Replace("\"", "&quot;").Replace("'", "&apos;");
 }
