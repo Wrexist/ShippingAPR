@@ -40,6 +40,41 @@
                       Style="{DynamicResource GlassToggleStyle}"/>
         </StackPanel>
 
+        <!-- Advanced Filters -->
+        <StackPanel Grid.Row="2" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Border Width="3" Height="12" CornerRadius="2"
+                        Background="{DynamicResource SuccessBrush}"
+                        Margin="0,0,8,0"/>
+                <TextBlock Text="ADVANCED FILTERS"
+                           Style="{DynamicResource SubTextStyle}"
+                           FontWeight="Bold" FontSize="10"/>
+            </StackPanel>
+
+            <!-- Destination filter -->
+            <TextBlock Text="Destination" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassBorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">
+                <TextBox Text="{Binding DestinationFilter, UpdateSourceTrigger=PropertyChanged}"
+                         Background="Transparent"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
+                         BorderThickness="0" Padding="8,5" FontSize="12"/>
+            </Border>
+
+            <!-- Flag filter -->
+            <TextBlock Text="Flag (country code)" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassBorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">
+                <TextBox Text="{Binding FlagFilter, UpdateSourceTrigger=PropertyChanged}"
+                         Background="Transparent"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
+                         BorderThickness="0" Padding="8,5" FontSize="12"
+                         MaxLength="3"/>
+            </Border>
+        </StackPanel>
+
         <!-- Speed Range — Glass slider -->
         <StackPanel Grid.Row="3" Margin="0,10,0,0">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">

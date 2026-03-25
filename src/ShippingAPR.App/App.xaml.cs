@@ -8,7 +8,11 @@ using ShippingAPR.App.Configuration;
 using ShippingAPR.App.ViewModels;
 using ShippingAPR.App.Views;
 using ShippingAPR.Core.Interfaces;
+using ShippingAPR.Core.Enums;
+using ShippingAPR.Infrastructure;
 using ShippingAPR.Infrastructure.AisStream;
+using ShippingAPR.Infrastructure.Datalastic;
+using ShippingAPR.Infrastructure.DataDocked;
 using ShippingAPR.Infrastructure.Mapping;
 using ShippingAPR.Infrastructure.Ports;
 using ShippingAPR.Infrastructure.VesselFinder;
@@ -84,11 +88,41 @@ public partial class App : Application
                 services.Configure<MarineWeatherOptions>(
                     ctx.Configuration.GetSection(MarineWeatherOptions.SectionName));
 
+                // Provider options
+                services.Configure<DatalasticOptions>(
+                    ctx.Configuration.GetSection(DatalasticOptions.SectionName));
+                services.Configure<DataDockedOptions>(
+                    ctx.Configuration.GetSection(DataDockedOptions.SectionName));
+
                 // Core infrastructure
                 services.AddSingleton<AisMessageMapper>();
                 services.AddSingleton<PortRepository>();
                 services.AddSingleton<IPortRepository>(sp => sp.GetRequiredService<PortRepository>());
-                services.AddSingleton<IAisStreamClient, AisStreamClient>();
+
+                // AIS data providers (concrete types for factory resolution)
+                services.AddSingleton<AisStreamClient>();
+                services.AddHttpClient<DatalasticClient>();
+                services.AddHttpClient<DataDockedClient>();
+                services.AddSingleton<AisProviderFactory>();
+
+                // Wire up the active provider with optional fallback
+                services.AddSingleton<IAisDataProvider>(sp =>
+                {
+                    var config = sp.GetRequiredService<IConfiguration>();
+                    var factory = sp.GetRequiredService<AisProviderFactory>();
+                    var logger = sp.GetRequiredService<ILogger<FallbackAisProvider>>();
+
+                    var activeType = Enum.TryParse<AisProviderType>(config["AisProvider:Active"], true, out var a)
+                        ? a : AisProviderType.AisStream;
+                    var primary = factory.Create(activeType);
+
+                    IAisDataProvider? fallback = null;
+                    if (Enum.TryParse<AisProviderType>(config["AisProvider:Fallback"], true, out var f))
+                        fallback = factory.Create(f);
+
+                    return new FallbackAisProvider(primary, fallback, logger);
+                });
+
                 services.AddHttpClient<IVesselEnrichmentClient, VesselFinderClient>();
 
                 // Weather & ocean data clients

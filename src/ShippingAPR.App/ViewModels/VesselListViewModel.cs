@@ -82,7 +82,7 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
     {
         var vessels = _vesselStore.Vessels.Values
             .Where(v => v.CurrentPosition is not null)
-            .Where(v => _filterViewModel.ShouldShow(v.Type, v.CurrentPosition!.SpeedOverGround))
+            .Where(v => _filterViewModel.ShouldShowVessel(v))
             .Select(v => new VesselListItem
             {
                 Mmsi = v.Mmsi,

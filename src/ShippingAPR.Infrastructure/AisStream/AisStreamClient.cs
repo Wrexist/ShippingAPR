@@ -12,7 +12,7 @@ using ShippingAPR.Infrastructure.Mapping;
 
 namespace ShippingAPR.Infrastructure.AisStream;
 
-public sealed class AisStreamClient : IAisStreamClient, IDisposable
+public sealed class AisStreamClient : IAisDataProvider, IDisposable
 {
     private readonly AisStreamOptions _options;
     private readonly ILogger<AisStreamClient> _logger;

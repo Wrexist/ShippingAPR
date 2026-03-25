@@ -114,6 +114,13 @@
                             AutomationProperties.Name="{x:Static res:Strings.ToggleLanguageTooltip}"
                             Margin="0,0,6,0"/>
 
+                    <Button Content="&#x2699;"
+                            Command="{Binding OpenSettingsCommand}"
+                            Style="{DynamicResource IconButtonStyle}"
+                            ToolTip="Settings"
+                            AutomationProperties.Name="Settings"
+                            Margin="0,0,6,0"/>
+
                     <Button Content="&#x263C;"
                             Command="{Binding ToggleThemeCommand}"
                             Style="{DynamicResource IconButtonStyle}"

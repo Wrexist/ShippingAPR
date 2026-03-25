@@ -243,6 +243,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void OpenSettings()
+    {
+        var settingsVm = new SettingsViewModel(_configuration);
+        var dialog = new SettingsDialog(settingsVm);
+        dialog.Owner = Application.Current.MainWindow;
+        dialog.ShowDialog();
+    }
+
+    [RelayCommand]
     private void ToggleTheme()
     {
         IsDarkTheme = !IsDarkTheme;
@@ -525,7 +534,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         Application.Current?.Dispatcher.Invoke(() =>
         {
-            ConnectionStatusText = status switch
+            var providerName = _configuration["AisProvider:Active"] ?? "AisStream";
+            var statusBase = status switch
             {
                 ConnectionStatus.Connected => Strings.Connected,
                 ConnectionStatus.Connecting => Strings.Connecting,
@@ -535,6 +545,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 ConnectionStatus.Failed => Strings.Error + " (reconnection failed)",
                 _ => status.ToString()
             };
+
+            ConnectionStatusText = status == ConnectionStatus.Connected
+                ? $"{statusBase} ({providerName})"
+                : statusBase;
 
             ConnectionStatusColor = status switch
             {

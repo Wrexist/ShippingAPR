@@ -3,7 +3,7 @@ using ShippingAPR.Core.Models;
 
 namespace ShippingAPR.Core.Interfaces;
 
-public interface IAisStreamClient
+public interface IAisDataProvider
 {
     Task ConnectAsync(BoundingBox area, CancellationToken cancellationToken = default);
     Task DisconnectAsync();
