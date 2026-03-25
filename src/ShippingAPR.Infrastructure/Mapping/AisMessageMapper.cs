@@ -126,7 +126,7 @@ public sealed class AisMessageMapper
                 ShipType = shipType,
                 Destination = CleanAisString(data.Destination),
                 ReportedEta = reportedEta,
-                Draught = data.MaximumStaticDraught / NavigationConstants.DraughtDivisor,
+                Draught = Math.Max(0, data.MaximumStaticDraught) / NavigationConstants.DraughtDivisor,
                 DimensionA = data.Dimension?.A ?? 0,
                 DimensionB = data.Dimension?.B ?? 0,
                 DimensionC = data.Dimension?.C ?? 0,

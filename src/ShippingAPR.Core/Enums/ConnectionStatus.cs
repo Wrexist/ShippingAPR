@@ -6,5 +6,7 @@ public enum ConnectionStatus
     Connecting,
     Connected,
     Reconnecting,
-    Error
+    Error,
+    /// <summary>Permanent failure after all reconnection attempts exhausted.</summary>
+    Failed
 }

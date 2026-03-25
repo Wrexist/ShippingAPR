@@ -18,7 +18,13 @@ public static class EtaCalculator
     /// 4. EffectiveSpeed = SOG * cos(courseDeviation) — projected speed along bearing
     /// 5. ETA = distance / effectiveSpeed
     /// </summary>
-    public static EtaResult? Calculate(VesselPosition position, Port destination)
+    public static EtaResult? Calculate(VesselPosition position, Port destination) =>
+        Calculate(position, destination, DateTime.UtcNow);
+
+    /// <summary>
+    /// Overload accepting an explicit "now" timestamp for deterministic testing.
+    /// </summary>
+    public static EtaResult? Calculate(VesselPosition position, Port destination, DateTime utcNow)
     {
         if (position.SpeedOverGround < NavigationConstants.StationaryThresholdKnots ||
             position.SpeedOverGround > NavigationConstants.MaxPlausibleSpeedKnots)
@@ -29,7 +35,7 @@ public static class EtaCalculator
             destination.Latitude, destination.Longitude);
 
         if (distance < NavigationConstants.MinDistanceNm)
-            return new EtaResult(0, TimeSpan.Zero, DateTime.UtcNow, 0, 0);
+            return new EtaResult(0, TimeSpan.Zero, utcNow, 0, 0);
 
         var bearing = BearingCalculator.InitialBearing(
             position.Latitude, position.Longitude,
@@ -48,7 +54,7 @@ public static class EtaCalculator
 
         var hoursToArrival = distance / effectiveSpeed;
         var timeToArrival = TimeSpan.FromHours(hoursToArrival);
-        var estimatedArrival = DateTime.UtcNow + timeToArrival;
+        var estimatedArrival = utcNow + timeToArrival;
 
         return new EtaResult(
             Math.Round(distance, 1),

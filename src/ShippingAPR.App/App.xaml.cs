@@ -192,7 +192,12 @@ public partial class App : Application
             if (welcomeDialog.ShowDialog() == true && !string.IsNullOrEmpty(welcomeDialog.ApiKey))
             {
                 // Save API key to appsettings.json
-                MainViewModel.SaveApiKey(welcomeDialog.ApiKey);
+                if (!MainViewModel.SaveApiKey(welcomeDialog.ApiKey))
+                {
+                    MessageBox.Show(
+                        "Failed to save API key to appsettings.json.\nYou can add it manually by editing the file.",
+                        "ShippingAPR", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
                 mainViewModel.HasApiKey = true;
             }
         }

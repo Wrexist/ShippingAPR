@@ -57,7 +57,9 @@ public sealed class TideDataClient : ITideDataClient
 
             var hourly = doc.RootElement.GetProperty("hourly");
             var times = hourly.GetProperty("time").EnumerateArray()
-                .Select(t => DateTime.Parse(t.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind))
+                .Select(t => DateTime.TryParse(t.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dt) ? dt : (DateTime?)null)
+                .Where(t => t.HasValue)
+                .Select(t => t!.Value)
                 .ToList();
             var waveHeights = hourly.GetProperty("wave_height").EnumerateArray()
                 .Select(v => v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0.0).ToList();
