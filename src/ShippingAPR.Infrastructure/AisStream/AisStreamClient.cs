@@ -173,7 +173,9 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
 
                             if (result.MessageType == WebSocketMessageType.Close)
                             {
-                                _logger.LogInformation("WebSocket closed by server");
+                                _logger.LogInformation("WebSocket closed remotely (status: {Status}, description: {Description})",
+                                    result.CloseStatus?.ToString() ?? "unknown",
+                                    result.CloseStatusDescription ?? "none");
                                 needsReconnect = true;
                                 break;
                             }

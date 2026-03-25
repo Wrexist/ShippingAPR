@@ -126,6 +126,23 @@ public class AlertRuleTests
         rule.Matches(noMatch).Should().BeFalse();
     }
 
+    [Fact]
+    public void ZoneFilter_WithNoPosition_ReturnsFalse()
+    {
+        var zone = new AlertZone("Test Zone", 57.0, 58.0, 11.0, 12.0);
+        var rule = new AlertRule { Name = "Zone watch", ZoneFilter = zone };
+
+        // Vessel with no position data
+        var vessel = new Vessel { Mmsi = 100000001 };
+        vessel.UpdateStaticData(new VesselStaticData
+        {
+            ShipType = VesselType.Cargo,
+            CountryCode = "SE"
+        });
+
+        rule.Matches(vessel).Should().BeFalse();
+    }
+
     private static Vessel CreateVessel(int mmsi, VesselType type, string flag, double speed,
         double lat = 57.7, double lon = 11.9)
     {

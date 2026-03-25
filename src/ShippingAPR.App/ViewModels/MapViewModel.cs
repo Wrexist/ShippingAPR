@@ -9,9 +9,12 @@ using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling;
+using BruTile.Predefined;
+using BruTile.Web;
 using Microsoft.Extensions.Options;
 using NetTopologySuite.Geometries;
 using ShippingAPR.App.Configuration;
+using ShippingAPR.Core.Calculations;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
@@ -46,6 +49,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private MemoryLayer? _weatherLayer;
     private MemoryLayer? _heatmapLayer;
     private MemoryLayer? _measureLayer;
+    private MemoryLayer? _projectionLayer;
     private Vessel? _highlightedVessel;
     private bool _viewportTrackingEnabled = true;
     private bool _isTracking;
@@ -89,6 +93,10 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
     private MPoint? _measureStart;
     private MPoint? _measureEnd;
+
+    // Route projection
+    [ObservableProperty]
+    private bool _showProjectedRoute = true;
 
     // Route playback
     [ObservableProperty]
@@ -238,6 +246,13 @@ public partial class MapViewModel : ObservableObject, IDisposable
             IsMapInfoLayer = true
         };
         Map.Layers.Add(_vesselLayer);
+
+        // Route projection layer (predicted path)
+        _projectionLayer = new MemoryLayer
+        {
+            Name = "Projection"
+        };
+        Map.Layers.Add(_projectionLayer);
 
         // Measurement layer (distance tool)
         _measureLayer = new MemoryLayer
@@ -475,6 +490,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
     {
         _highlightedVessel = vessel;
         UpdateTrackVisualization(vessel);
+        UpdateRouteProjection(vessel);
         // Trigger re-render to update highlight style
         _vesselLayer?.DataHasChanged();
     }
@@ -520,6 +536,66 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         _trailLayer.Features = features;
         _trailLayer.DataHasChanged();
+    }
+
+    /// <summary>
+    /// Draws a dashed projected path for the highlighted vessel based on current COG/SOG.
+    /// Projects 60 minutes into the future with 12 intermediate points.
+    /// </summary>
+    private void UpdateRouteProjection(Vessel? vessel)
+    {
+        if (_projectionLayer is null) return;
+
+        if (!ShowProjectedRoute || vessel?.CurrentPosition is null)
+        {
+            _projectionLayer.Features = [];
+            _projectionLayer.DataHasChanged();
+            return;
+        }
+
+        var projected = RouteProjectionCalculator.Project(vessel.CurrentPosition);
+        if (projected.Count == 0)
+        {
+            _projectionLayer.Features = [];
+            _projectionLayer.DataHasChanged();
+            return;
+        }
+
+        var features = new List<IFeature>();
+
+        // Start from current position
+        var prevPoint = SphericalMercator.FromLonLat(
+            vessel.CurrentPosition.Longitude, vessel.CurrentPosition.Latitude);
+
+        for (var i = 0; i < projected.Count; i++)
+        {
+            var nextPoint = SphericalMercator.FromLonLat(projected[i].Longitude, projected[i].Latitude);
+
+            var coords = new[] { new Coordinate(prevPoint.x, prevPoint.y), new Coordinate(nextPoint.x, nextPoint.y) };
+            var segment = new LineString(coords);
+            var feature = new GeometryFeature(segment);
+
+            // Fade opacity from 160 to 40 along the projection
+            var alpha = (byte)(160 - (i * 120 / projected.Count));
+            feature.Styles.Add(new VectorStyle
+            {
+                Line = new Pen(new Mapsui.Styles.Color(255, 165, 0, alpha), 2)
+                {
+                    PenStyle = PenStyle.Dash
+                }
+            });
+
+            features.Add(feature);
+            prevPoint = nextPoint;
+        }
+
+        _projectionLayer.Features = features;
+        _projectionLayer.DataHasChanged();
+    }
+
+    partial void OnShowProjectedRouteChanged(bool value)
+    {
+        UpdateRouteProjection(_highlightedVessel);
     }
 
     private static Mapsui.Styles.Color GetSpeedColor(double speedKnots)
@@ -784,13 +860,20 @@ public partial class MapViewModel : ObservableObject, IDisposable
             var polygon = new Polygon(ring);
             var feature = new GeometryFeature(polygon);
 
-            // Parse zone color
+            // Parse zone color with fallback for malformed values
             byte r = 108, g = 99, b = 255;
             if (zone.Color.Length == 7 && zone.Color.StartsWith('#'))
             {
-                r = Convert.ToByte(zone.Color.Substring(1, 2), 16);
-                g = Convert.ToByte(zone.Color.Substring(3, 2), 16);
-                b = Convert.ToByte(zone.Color.Substring(5, 2), 16);
+                try
+                {
+                    r = Convert.ToByte(zone.Color.Substring(1, 2), 16);
+                    g = Convert.ToByte(zone.Color.Substring(3, 2), 16);
+                    b = Convert.ToByte(zone.Color.Substring(5, 2), 16);
+                }
+                catch (FormatException)
+                {
+                    // Keep defaults on malformed hex color
+                }
             }
 
             feature.Styles.Add(new VectorStyle
@@ -1107,14 +1190,24 @@ public partial class MapViewModel : ObservableObject, IDisposable
         if (Map.Layers.Count > 0)
             Map.Layers.Remove(Map.Layers.First());
 
-        // All modes start with OpenStreetMap as base
-        // (Satellite/SeaMap would require additional tile packages —
-        //  for now, we switch to different OSM-based styles)
-        Map.Layers.Insert(0, OpenStreetMap.CreateTileLayer());
+        var tileLayer = layerName switch
+        {
+            "Dark" => CreateDarkTileLayer(),
+            _ => OpenStreetMap.CreateTileLayer()
+        };
 
-        // Note: To enable satellite/nautical charts, add BruTile.MbTiles
-        // or a custom HttpTileSource for ESRI/OpenSeaMap tile servers.
-        // The architecture is ready — just swap the tile source above.
+        Map.Layers.Insert(0, tileLayer);
+    }
+
+    private static TileLayer CreateDarkTileLayer()
+    {
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+            new[] { "a", "b", "c", "d" },
+            name: "CartoDB Dark",
+            attribution: new BruTile.Attribution("(C) OpenStreetMap contributors, (C) CARTO", "https://carto.com/attributions"));
+        return new TileLayer(tileSource) { Name = "CartoDB Dark" };
     }
 
     // ═══════════════════════════════════════════════

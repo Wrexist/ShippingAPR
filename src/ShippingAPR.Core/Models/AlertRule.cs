@@ -42,8 +42,11 @@ public sealed class AlertRule
         if (MmsiFilter is { Count: > 0 } && !MmsiFilter.Contains(vessel.Mmsi))
             return false;
 
-        if (ZoneFilter is not null && vessel.CurrentPosition is { } p)
+        if (ZoneFilter is not null)
         {
+            if (vessel.CurrentPosition is not { } p)
+                return false; // Cannot evaluate zone filter without position data
+
             if (p.Latitude < ZoneFilter.MinLat || p.Latitude > ZoneFilter.MaxLat ||
                 p.Longitude < ZoneFilter.MinLon || p.Longitude > ZoneFilter.MaxLon)
                 return false;

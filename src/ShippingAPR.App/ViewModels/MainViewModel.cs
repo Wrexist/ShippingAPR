@@ -84,6 +84,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public EncounterJournalViewModel EncounterJournalViewModel { get; }
     public ShipmentViewModel ShipmentViewModel { get; }
     public MaritimeNewsViewModel MaritimeNewsViewModel { get; }
+    public VesselComparisonViewModel VesselComparisonViewModel { get; }
 
     [ObservableProperty]
     private bool _isNotificationCenterOpen;
@@ -111,7 +112,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ChokepointViewModel chokepointViewModel,
         EncounterJournalViewModel encounterJournalViewModel,
         ShipmentViewModel shipmentViewModel,
-        MaritimeNewsViewModel maritimeNewsViewModel)
+        MaritimeNewsViewModel maritimeNewsViewModel,
+        VesselComparisonViewModel vesselComparisonViewModel)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
@@ -138,6 +140,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         EncounterJournalViewModel = encounterJournalViewModel;
         ShipmentViewModel = shipmentViewModel;
         MaritimeNewsViewModel = maritimeNewsViewModel;
+        VesselComparisonViewModel = vesselComparisonViewModel;
 
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
@@ -185,7 +188,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Auto-start tracking if API key is available
         if (HasApiKey)
         {
-            _ = AutoStartTrackingAsync();
+            AutoStartTrackingAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "Unhandled error in auto-start tracking");
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 
@@ -312,7 +319,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(StartTrackingTooltip));
 
             // Auto-start tracking after API key is configured
-            _ = AutoStartTrackingAsync();
+            AutoStartTrackingAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "Unhandled error in auto-start tracking");
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 
@@ -410,6 +421,74 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    [RelayCommand]
+    private void ExportTrackGpx()
+    {
+        var vessel = VesselDetailViewModel.Vessel;
+        if (vessel?.Track is null || vessel.Track.Count < 2)
+        {
+            ShowToast("Select a vessel with track history to export");
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "GPX files (*.gpx)|*.gpx",
+            DefaultExt = ".gpx",
+            FileName = $"{vessel.DisplayName}_{DateTime.Now:yyyyMMdd_HHmmss}.gpx"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                var gpx = _exportService.ExportTrackToGpx(vessel);
+                File.WriteAllText(dialog.FileName, gpx);
+                _logger.LogInformation("Exported track for {Name} to GPX: {Path}", vessel.DisplayName, dialog.FileName);
+                ShowToast($"Track exported: {Path.GetFileName(dialog.FileName)}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to export GPX");
+                ShowErrorNotification("Export", ex.Message);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void ExportTrackKml()
+    {
+        var vessel = VesselDetailViewModel.Vessel;
+        if (vessel?.Track is null || vessel.Track.Count < 2)
+        {
+            ShowToast("Select a vessel with track history to export");
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "KML files (*.kml)|*.kml",
+            DefaultExt = ".kml",
+            FileName = $"{vessel.DisplayName}_{DateTime.Now:yyyyMMdd_HHmmss}.kml"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                var kml = _exportService.ExportTrackToKml(vessel);
+                File.WriteAllText(dialog.FileName, kml);
+                _logger.LogInformation("Exported track for {Name} to KML: {Path}", vessel.DisplayName, dialog.FileName);
+                ShowToast($"Track exported: {Path.GetFileName(dialog.FileName)}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to export KML");
+                ShowErrorNotification("Export", ex.Message);
+            }
+        }
+    }
+
     private void ShowExportNotification(int count, string filePath)
     {
         var fileName = Path.GetFileName(filePath);
@@ -480,5 +559,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         EncounterJournalViewModel.Dispose();
         ShipmentViewModel.Dispose();
         MaritimeNewsViewModel.Dispose();
+        AchievementViewModel.Dispose();
+        PortDashboardViewModel.Dispose();
+        AlertRuleViewModel.Dispose();
     }
 }
