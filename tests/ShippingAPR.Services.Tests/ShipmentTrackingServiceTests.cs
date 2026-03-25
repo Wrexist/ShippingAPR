@@ -77,9 +77,9 @@ public class ShipmentTrackingServiceTests : IDisposable
     public void GetProgress_NoAssignedVessel_ReturnsBasicInfo()
     {
         _portMock.Setup(p => p.FindByName("Shanghai"))
-            .Returns(new Port { Name = "Shanghai", Latitude = 31.2, Longitude = 121.5, Locode = "CNSHA", Country = "CN" });
+            .Returns(new Port("CNSHA", "Shanghai", "CN", 31.2, 121.5));
         _portMock.Setup(p => p.FindByName("Rotterdam"))
-            .Returns(new Port { Name = "Rotterdam", Latitude = 51.9, Longitude = 4.5, Locode = "NLRTM", Country = "NL" });
+            .Returns(new Port("NLRTM", "Rotterdam", "NL", 51.9, 4.5));
 
         var shipment = _service.AddShipment("Test", "Shanghai", "Rotterdam");
         var progress = _service.GetProgress(shipment.Id);
@@ -92,18 +92,19 @@ public class ShipmentTrackingServiceTests : IDisposable
     [Fact]
     public void GetProgress_WithAssignedVessel_CalculatesProgress()
     {
-        var originPort = new Port { Name = "Shanghai", Latitude = 31.2, Longitude = 121.5, Locode = "CNSHA", Country = "CN" };
-        var destPort = new Port { Name = "Rotterdam", Latitude = 51.9, Longitude = 4.5, Locode = "NLRTM", Country = "NL" };
+        var originPort = new Port("CNSHA", "Shanghai", "CN", 31.2, 121.5);
+        var destPort = new Port("NLRTM", "Rotterdam", "NL", 51.9, 4.5);
         _portMock.Setup(p => p.FindByName("Shanghai")).Returns(originPort);
         _portMock.Setup(p => p.FindByName("Rotterdam")).Returns(destPort);
 
         var vessel = new Vessel(123456789);
-        vessel.Update(
+        vessel.UpdatePosition(
             new VesselPosition
             {
                 Latitude = 40.0, Longitude = 60.0,
                 SpeedOverGround = 14.0, Timestamp = DateTime.UtcNow
-            },
+            });
+        vessel.UpdateStaticData(
             new VesselStaticData { Name = "Carrier" });
         _storeMock.Setup(s => s.GetByMmsi(123456789)).Returns(vessel);
 

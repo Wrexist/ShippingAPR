@@ -95,11 +95,11 @@ public class ChokepointMonitorServiceTests
         _storeMock.Raise(s => s.VesselAdded += null!, null!, vessel);
 
         // Move vessel outside bounds
-        vessel.Update(new VesselPosition
+        vessel.UpdatePosition(new VesselPosition
         {
             Latitude = 28.0, Longitude = 32.4,
             SpeedOverGround = 10.0, Timestamp = DateTime.UtcNow
-        }, null);
+        });
         _storeMock.Raise(s => s.VesselUpdated += null!, null!, vessel);
 
         var status = _service.GetStatus("Suez Canal");
@@ -134,14 +134,15 @@ public class ChokepointMonitorServiceTests
     private static Vessel CreateVessel(int mmsi, double lat, double lon)
     {
         var vessel = new Vessel(mmsi);
-        vessel.Update(
+        vessel.UpdatePosition(
             new VesselPosition
             {
                 Latitude = lat, Longitude = lon,
                 SpeedOverGround = 10.0, CourseOverGround = 180.0,
                 TrueHeading = 180.0, Status = NavigationalStatus.UnderWayUsingEngine,
                 Timestamp = DateTime.UtcNow
-            },
+            });
+        vessel.UpdateStaticData(
             new VesselStaticData { Name = "Test Vessel", ShipType = VesselType.Cargo });
         return vessel;
     }

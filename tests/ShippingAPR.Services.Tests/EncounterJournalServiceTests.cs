@@ -157,12 +157,13 @@ public class EncounterJournalServiceTests : IDisposable
         string countryCode = "SE")
     {
         var vessel = new Vessel(mmsi);
-        vessel.Update(
+        vessel.UpdatePosition(
             new VesselPosition
             {
                 Latitude = 57.0, Longitude = 12.0,
                 SpeedOverGround = 12.0, Timestamp = DateTime.UtcNow
-            },
+            });
+        vessel.UpdateStaticData(
             new VesselStaticData
             {
                 Name = name, ShipType = VesselType.Cargo,
