@@ -443,7 +443,17 @@ public partial class MapViewModel : ObservableObject, IDisposable
         // before data starts arriving from the WebSocket.
         UpdateClusterVisibility();
 
-        await _trackingService.StartTrackingAsync(area);
+        try
+        {
+            await _trackingService.StartTrackingAsync(area);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("API key"))
+        {
+            _isTracking = false;
+            MessageBox.Show(
+                "AisStream API key is not configured.\n\nPlease set your API key in Settings or in appsettings.json under AisStream:ApiKey.",
+                "ShippingAPR", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     /// <summary>Navigate to a preset region.</summary>
