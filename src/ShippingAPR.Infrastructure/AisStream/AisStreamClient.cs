@@ -51,8 +51,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
 
         try
         {
-            _webSocket = new ClientWebSocket();
-            _webSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
+            _webSocket = CreateConfiguredWebSocket();
 
             using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             connectCts.CancelAfter(TimeSpan.FromSeconds(_options.ConnectTimeoutSeconds));
@@ -177,6 +176,14 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
                             }
 
                             messageBuffer.Write(buffer, 0, result.Count);
+
+                            if (messageBuffer.Length > _options.MaxMessageSizeBytes)
+                            {
+                                _logger.LogWarning("Message exceeded max size ({Size} bytes), skipping",
+                                    messageBuffer.Length);
+                                messageBuffer.SetLength(0);
+                                break;
+                            }
                         } while (!result.EndOfMessage);
 
                         if (needsReconnect) break;
@@ -208,21 +215,28 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
     }
 
     /// <summary>
-    /// Attempts to reconnect with exponential backoff. Returns true if reconnected, false if cancelled.
+    /// Attempts to reconnect with exponential backoff and jitter.
+    /// Returns true if reconnected, false if cancelled or max attempts exceeded.
     /// </summary>
     private async Task<bool> TryReconnectAsync(CancellationToken ct)
     {
         var delay = 1;
         var maxDelay = _options.ReconnectMaxDelaySeconds;
+        var maxAttempts = _options.ReconnectMaxAttempts;
 
-        while (!ct.IsCancellationRequested)
+        for (var attempt = 0; attempt < maxAttempts && !ct.IsCancellationRequested; attempt++)
         {
             SetStatus(ConnectionStatus.Reconnecting);
-            _logger.LogInformation("Reconnecting in {Delay}s...", delay);
+
+            // Add jitter (0-25% of delay) to avoid thundering herd
+            var jitter = Random.Shared.NextDouble() * delay * 0.25;
+            var actualDelay = delay + jitter;
+            _logger.LogInformation("Reconnecting in {Delay:F1}s (attempt {Attempt}/{Max})...",
+                actualDelay, attempt + 1, maxAttempts);
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(delay), ct);
+                await Task.Delay(TimeSpan.FromSeconds(actualDelay), ct);
             }
             catch (OperationCanceledException)
             {
@@ -233,8 +247,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             try
             {
                 _webSocket?.Dispose();
-                newSocket = new ClientWebSocket();
-                newSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
+                newSocket = CreateConfiguredWebSocket();
 
                 await newSocket.ConnectAsync(
                     new Uri(_options.WebSocketUrl), ct);
@@ -255,7 +268,7 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
                 }
 
                 SetStatus(ConnectionStatus.Connected);
-                _logger.LogInformation("Reconnected to AIS stream");
+                _logger.LogInformation("Reconnected to AIS stream after {Attempt} attempt(s)", attempt + 1);
                 return true;
             }
             catch (OperationCanceledException)
@@ -266,12 +279,26 @@ public sealed class AisStreamClient : IAisStreamClient, IDisposable
             catch (Exception ex)
             {
                 newSocket?.Dispose();
-                _logger.LogWarning(ex, "Reconnection attempt failed");
+                _logger.LogWarning(ex, "Reconnection attempt {Attempt}/{Max} failed",
+                    attempt + 1, maxAttempts);
                 delay = Math.Min(delay * 2, maxDelay);
             }
         }
 
+        if (!ct.IsCancellationRequested)
+        {
+            _logger.LogError("All {Max} reconnection attempts exhausted — giving up", maxAttempts);
+            SetStatus(ConnectionStatus.Error);
+        }
+
         return false;
+    }
+
+    private ClientWebSocket CreateConfiguredWebSocket()
+    {
+        var ws = new ClientWebSocket();
+        ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(_options.KeepAliveIntervalSeconds);
+        return ws;
     }
 
     private void ProcessMessage(string json)

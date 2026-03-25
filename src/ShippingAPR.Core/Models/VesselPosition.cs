@@ -10,17 +10,27 @@ public sealed class VesselPosition
     public required double Latitude
     {
         get => _latitude;
-        init => _latitude = value is >= -90 and <= 90
-            ? value
-            : throw new ArgumentOutOfRangeException(nameof(Latitude), value, "Must be between -90 and 90");
+        init
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+                throw new ArgumentException("Latitude must be a finite number", nameof(Latitude));
+            _latitude = value is >= -90 and <= 90
+                ? value
+                : throw new ArgumentOutOfRangeException(nameof(Latitude), value, "Must be between -90 and 90");
+        }
     }
 
     public required double Longitude
     {
         get => _longitude;
-        init => _longitude = value is >= -180 and <= 180
-            ? value
-            : throw new ArgumentOutOfRangeException(nameof(Longitude), value, "Must be between -180 and 180");
+        init
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+                throw new ArgumentException("Longitude must be a finite number", nameof(Longitude));
+            _longitude = value is >= -180 and <= 180
+                ? value
+                : throw new ArgumentOutOfRangeException(nameof(Longitude), value, "Must be between -180 and 180");
+        }
     }
 
     public double SpeedOverGround { get; init; }

@@ -5,7 +5,7 @@ namespace ShippingAPR.Core.Models;
 /// </summary>
 public sealed class Shipment
 {
-    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..8];
+    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..16];
     public required string Name { get; init; }
     public required string OriginPortName { get; init; }
     public required string DestinationPortName { get; init; }

@@ -92,12 +92,12 @@ public sealed class AlertEngine : IDisposable
             _logger.LogInformation("Alert fired: {Rule} for {Vessel}", rule.Name, vessel.DisplayName);
         }
 
-        // Cleanup old cooldowns periodically
-        if (_firedRecently.Count > 1000)
+        // Cleanup expired cooldowns to prevent unbounded growth
+        if (_firedRecently.Count > 200)
         {
-            var now2 = DateTime.UtcNow;
+            var cutoff = DateTime.UtcNow - CooldownPeriod;
             var expired = _firedRecently
-                .Where(kvp => now2 - kvp.Value > CooldownPeriod)
+                .Where(kvp => kvp.Value < cutoff)
                 .Select(kvp => kvp.Key)
                 .ToList();
             foreach (var k in expired)

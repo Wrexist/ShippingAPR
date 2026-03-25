@@ -7,7 +7,7 @@ namespace ShippingAPR.Core.Models;
 /// </summary>
 public sealed class Encounter
 {
-    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..8];
+    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..16];
     public int Mmsi { get; init; }
     public string VesselName { get; init; } = "";
     public VesselType VesselType { get; init; }

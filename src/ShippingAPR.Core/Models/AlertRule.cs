@@ -4,7 +4,7 @@ namespace ShippingAPR.Core.Models;
 
 public sealed class AlertRule
 {
-    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..8];
+    public string Id { get; init; } = Guid.NewGuid().ToString("N")[..16];
     public required string Name { get; init; }
     public bool IsEnabled { get; set; } = true;
 

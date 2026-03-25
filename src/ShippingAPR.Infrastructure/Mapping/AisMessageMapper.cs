@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using ShippingAPR.Core.Constants;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
@@ -10,11 +11,6 @@ namespace ShippingAPR.Infrastructure.Mapping;
 
 public sealed class AisMessageMapper
 {
-    // AIS protocol constants
-    private const int TrueHeadingNotAvailable = 511;
-    private const int MaxNavigationalStatus = 15;
-    private const double DraughtDivisor = 10.0;
-    private const int MmsiToMidDivisor = 1_000_000;
 
     private static readonly Dictionary<int, string> MidToCountryCode = LoadMmsiCountryMappings();
 
@@ -80,8 +76,8 @@ public sealed class AisMessageMapper
                 Longitude = message.MetaData?.Longitude ?? data.Longitude,
                 SpeedOverGround = data.Sog,
                 CourseOverGround = data.Cog,
-                TrueHeading = data.TrueHeading == TrueHeadingNotAvailable ? data.Cog : data.TrueHeading,
-                Status = (NavigationalStatus)Math.Min(data.NavigationalStatus, MaxNavigationalStatus),
+                TrueHeading = data.TrueHeading == NavigationConstants.TrueHeadingNotAvailable ? data.Cog : data.TrueHeading,
+                Status = (NavigationalStatus)Math.Min(data.NavigationalStatus, NavigationConstants.MaxNavigationalStatus),
                 RateOfTurn = data.RateOfTurn,
                 Timestamp = DateTime.UtcNow
             }
@@ -130,7 +126,7 @@ public sealed class AisMessageMapper
                 ShipType = shipType,
                 Destination = CleanAisString(data.Destination),
                 ReportedEta = reportedEta,
-                Draught = data.MaximumStaticDraught / DraughtDivisor,
+                Draught = data.MaximumStaticDraught / NavigationConstants.DraughtDivisor,
                 DimensionA = data.Dimension?.A ?? 0,
                 DimensionB = data.Dimension?.B ?? 0,
                 DimensionC = data.Dimension?.C ?? 0,
@@ -175,7 +171,7 @@ public sealed class AisMessageMapper
     {
         // First 3 digits of MMSI = MID (Maritime Identification Digits)
         // Mappings loaded from embedded mmsi-countries.json (source: ITU-R M.585)
-        var mid = mmsi / MmsiToMidDivisor;
+        var mid = mmsi / NavigationConstants.MmsiToMidDivisor;
         return MidToCountryCode.TryGetValue(mid, out var code) ? code : null;
     }
 }

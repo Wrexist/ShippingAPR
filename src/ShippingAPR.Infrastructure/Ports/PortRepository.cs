@@ -12,22 +12,27 @@ public sealed class PortRepository : IPortRepository
     private const int MinLocodeLength = 4;
     private const int FullLocodeLength = 5;
 
-    private readonly Dictionary<string, Port> _byLocode = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<Port> _allPorts = [];
+    private readonly Lazy<(Dictionary<string, Port> ByLocode, List<Port> AllPorts)> _data;
+
+    private Dictionary<string, Port> ByLocode => _data.Value.ByLocode;
+    private List<Port> AllPorts => _data.Value.AllPorts;
 
     public PortRepository()
     {
-        LoadPorts();
+        _data = new Lazy<(Dictionary<string, Port>, List<Port>)>(LoadPorts);
     }
 
-    private void LoadPorts()
+    private static (Dictionary<string, Port> ByLocode, List<Port> AllPorts) LoadPorts()
     {
+        var byLocode = new Dictionary<string, Port>(StringComparer.OrdinalIgnoreCase);
+        var allPorts = new List<Port>();
+
         var assembly = Assembly.GetExecutingAssembly();
         var resourceName = "ShippingAPR.Infrastructure.Ports.ports.json";
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream is null)
-            throw new InvalidOperationException($"Embedded resource '{resourceName}' not found");
+            return (byLocode, allPorts); // Return empty — don't crash
 
         PortEntry[]? ports;
         try
@@ -35,19 +40,21 @@ public sealed class PortRepository : IPortRepository
             ports = JsonSerializer.Deserialize<PortEntry[]>(stream,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            throw new InvalidOperationException("Failed to deserialize embedded ports.json", ex);
+            return (byLocode, allPorts); // Return empty — don't crash
         }
 
-        if (ports is null) return;
+        if (ports is null) return (byLocode, allPorts);
 
         foreach (var entry in ports)
         {
             var port = new Port(entry.Locode, entry.Name, entry.Country, entry.Lat, entry.Lon);
-            _byLocode[entry.Locode] = port;
-            _allPorts.Add(port);
+            byLocode[entry.Locode] = port;
+            allPorts.Add(port);
         }
+
+        return (byLocode, allPorts);
     }
 
     public Port? FindByLocode(string locode)
@@ -55,12 +62,12 @@ public sealed class PortRepository : IPortRepository
         if (string.IsNullOrWhiteSpace(locode)) return null;
 
         // Try direct match
-        if (_byLocode.TryGetValue(locode, out var port))
+        if (ByLocode.TryGetValue(locode, out var port))
             return port;
 
         // Try with common prefixes/formats
         var cleaned = locode.Trim().ToUpperInvariant().Replace(" ", "");
-        if (_byLocode.TryGetValue(cleaned, out port))
+        if (ByLocode.TryGetValue(cleaned, out port))
             return port;
 
         return null;
@@ -73,17 +80,17 @@ public sealed class PortRepository : IPortRepository
         var normalized = name.Trim().ToUpperInvariant();
 
         // Exact match first
-        var exact = _allPorts.FirstOrDefault(p =>
+        var exact = AllPorts.FirstOrDefault(p =>
             p.Name.Equals(normalized, StringComparison.OrdinalIgnoreCase));
         if (exact is not null) return exact;
 
         // Contains match
-        var contains = _allPorts.FirstOrDefault(p =>
+        var contains = AllPorts.FirstOrDefault(p =>
             p.Name.Contains(normalized, StringComparison.OrdinalIgnoreCase));
         if (contains is not null) return contains;
 
         // Fuzzy: try matching destination field which may contain partial port names
-        return _allPorts
+        return AllPorts
             .Select(p => new { Port = p, Score = FuzzyScore(p.Name, normalized) })
             .Where(x => x.Score > FuzzyMatchThreshold)
             .OrderByDescending(x => x.Score)
@@ -92,7 +99,7 @@ public sealed class PortRepository : IPortRepository
 
     public Port? FindNearest(double latitude, double longitude)
     {
-        return _allPorts
+        return AllPorts
             .Select(p => new
             {
                 Port = p,
@@ -108,13 +115,13 @@ public sealed class PortRepository : IPortRepository
         if (string.IsNullOrWhiteSpace(query))
             return Enumerable.Empty<Port>();
 
-        return _allPorts.Where(p =>
+        return AllPorts.Where(p =>
             p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             p.Locode.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             p.Country.Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
-    public IReadOnlyList<Port> GetAll() => _allPorts;
+    public IReadOnlyList<Port> GetAll() => AllPorts;
 
     /// <summary>
     /// Resolves an AIS destination string to a port. Tries LOCODE first,
