@@ -96,7 +96,11 @@ public partial class App : Application
                 services.AddHostedService(sp => sp.GetRequiredService<VesselTrackingService>());
                 services.AddSingleton<AreaMonitorService>();
                 services.AddSingleton<NotificationService>();
+                services.AddSingleton<WatchlistService>();
+                services.AddSingleton<IWatchlistService>(sp => sp.GetRequiredService<WatchlistService>());
                 services.AddSingleton<ExportService>();
+                services.AddSingleton<StatisticsService>();
+                services.AddHostedService<CollisionRiskService>();
 
                 // User preferences (persisted between sessions)
                 services.AddSingleton<UserPreferences>();
@@ -108,6 +112,8 @@ public partial class App : Application
                 services.AddSingleton<VesselListViewModel>();
                 services.AddSingleton<FilterViewModel>();
                 services.AddSingleton<SearchViewModel>();
+                services.AddSingleton<StatisticsViewModel>();
+                services.AddSingleton<NotificationCenterViewModel>();
 
                 // Views
                 services.AddSingleton<MainWindow>();
@@ -128,6 +134,7 @@ public partial class App : Application
         // Initialize services that need eager construction
         _host.Services.GetRequiredService<AreaMonitorService>();
         _host.Services.GetRequiredService<NotificationService>();
+        _host.Services.GetRequiredService<WatchlistService>();
 
         await _host.StartAsync();
 

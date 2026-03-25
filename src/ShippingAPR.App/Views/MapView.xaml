@@ -14,6 +14,37 @@
         <!-- Map Control -->
         <mapsui:MapControl x:Name="MapControl"/>
 
+        <!-- Vessel Hover Tooltip -->
+        <Popup x:Name="VesselTooltip" Placement="Mouse"
+               IsOpen="False" AllowsTransparency="True"
+               HorizontalOffset="12" VerticalOffset="12"
+               IsHitTestVisible="False">
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassEdgeBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10,8"
+                    MaxWidth="220">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.2" Color="#000000"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock x:Name="TooltipName" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                        <Ellipse x:Name="TooltipTypeIndicator" Width="8" Height="8" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="TooltipType" FontSize="11"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"/>
+                    </StackPanel>
+                    <TextBlock x:Name="TooltipSpeed" FontSize="11" Margin="0,2,0,0"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                    <TextBlock x:Name="TooltipDestination" FontSize="11" Margin="0,2,0,0"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
         <!-- ═══ Top-Left: Area selection + Region buttons ═══ -->
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Left"

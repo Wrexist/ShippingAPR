@@ -1,0 +1,166 @@
+<UserControl x:Class="ShippingAPR.App.Views.DashboardPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+        <StackPanel Margin="8">
+
+            <!-- ═══ Overview ═══ -->
+            <TextBlock Text="Dashboard" FontSize="16" FontWeight="Bold"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
+                       Margin="0,0,0,12"/>
+
+            <!-- Total vessels -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Total Vessels"
+                               Style="{DynamicResource SubTextStyle}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding TotalVessels}"
+                               FontSize="24" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}"/>
+                </Grid>
+            </Border>
+
+            <!-- ═══ By Type ═══ -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="3" Height="14" CornerRadius="2"
+                                Background="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="By Type" Style="{DynamicResource SubTextStyle}"
+                                   FontWeight="Bold" FontSize="11"/>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="#4CAF50" Margin="0,0,6,0"/>
+                            <TextBlock Text="Cargo" Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CargoCount}"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,4,0,0">
+                            <Ellipse Width="8" Height="8" Fill="#FF5722" Margin="0,0,6,0"/>
+                            <TextBlock Text="Tanker" Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TankerCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Margin="0,4,0,0">
+                            <Ellipse Width="8" Height="8" Fill="#2196F3" Margin="0,0,6,0"/>
+                            <TextBlock Text="Passenger" Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PassengerCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" Margin="0,4,0,0">
+                            <Ellipse Width="8" Height="8" Fill="#00BCD4" Margin="0,0,6,0"/>
+                            <TextBlock Text="Fishing" Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FishingCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal" Margin="0,4,0,0">
+                            <Ellipse Width="8" Height="8" Fill="#9E9E9E" Margin="0,0,6,0"/>
+                            <TextBlock Text="Other" Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding OtherCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ Status Breakdown ═══ -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="3" Height="14" CornerRadius="2"
+                                Background="{DynamicResource SuccessBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="Navigation Status" Style="{DynamicResource SubTextStyle}"
+                                   FontWeight="Bold" FontSize="11"/>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Under Way"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UnderWayCount}"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="At Anchor" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AtAnchorCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Moored" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MooredCount}" Margin="0,4,0,0"
+                                   Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Avg Speed" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AverageSpeedText}" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="14"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Watched" Margin="0,4,0,0"
+                                   Style="{DynamicResource SubTextStyle}"/>
+                        <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="&#x2605;" Foreground="#FFD700" FontSize="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding WatchedCount}"
+                                       Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ Top Destinations ═══ -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="3" Height="14" CornerRadius="2"
+                                Background="{DynamicResource InfoBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="Top Destinations" Style="{DynamicResource SubTextStyle}"
+                                   FontWeight="Bold" FontSize="11"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="{Binding TopDestination1}" Style="{DynamicResource ValueTextStyle}"
+                                   FontSize="12" Margin="0,0,0,3"/>
+                        <TextBlock Text="{Binding TopDestination2}" Style="{DynamicResource SubTextStyle}"
+                                   FontSize="11" Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding TopDestination3}" Style="{DynamicResource SubTextStyle}"
+                                   FontSize="11" Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding TopDestination4}" Style="{DynamicResource SubTextStyle}"
+                                   FontSize="11" Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding TopDestination5}" Style="{DynamicResource SubTextStyle}"
+                                   FontSize="11"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -14,6 +14,7 @@ namespace ShippingAPR.App.ViewModels;
 public partial class VesselListViewModel : ObservableObject, IDisposable
 {
     private readonly IVesselStore _vesselStore;
+    private readonly IWatchlistService _watchlistService;
     private readonly FilterViewModel _filterViewModel;
     private readonly DispatcherTimer _refreshTimer;
     private readonly EventHandler<Vessel> _onVesselAdded;
@@ -35,9 +36,10 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<VesselListItem> Vessels { get; } = [];
 
-    public VesselListViewModel(IVesselStore vesselStore, FilterViewModel filterViewModel, IOptions<UiOptions> uiOptions)
+    public VesselListViewModel(IVesselStore vesselStore, IWatchlistService watchlistService, FilterViewModel filterViewModel, IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
+        _watchlistService = watchlistService;
         _filterViewModel = filterViewModel;
 
         _onVesselAdded = (_, _) => ScheduleRefresh();
@@ -91,7 +93,8 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
                 EtaHours = v.CalculatedEta?.TimeToArrival.TotalHours,
                 DistanceNm = v.CalculatedEta?.DistanceNauticalMiles,
                 CountryCode = v.StaticData?.CountryCode ?? "",
-                LastUpdated = v.LastUpdated
+                LastUpdated = v.LastUpdated,
+                IsWatched = _watchlistService.IsWatched(v.Mmsi)
             })
             .OrderBy(v => SortBy switch
             {
@@ -128,6 +131,7 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
                 existing.Destination = item.Destination;
                 existing.EtaHours = item.EtaHours;
                 existing.DistanceNm = item.DistanceNm;
+                existing.IsWatched = item.IsWatched;
             }
             else
             {
@@ -173,6 +177,9 @@ public partial class VesselListItem : ObservableObject
 
     [ObservableProperty]
     private double? _distanceNm;
+
+    [ObservableProperty]
+    private bool _isWatched;
 
     public string CountryCode { get; init; } = "";
     public DateTime LastUpdated { get; init; }

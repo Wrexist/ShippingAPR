@@ -19,7 +19,9 @@ public enum NotificationType
     VesselEntered,
     VesselLeft,
     ConnectionChanged,
-    Warning
+    Warning,
+    WatchlistAlert,
+    CollisionRisk
 }
 
 public sealed class NotificationPublished : ValueChangedMessage<NotificationMessage>
@@ -49,9 +51,10 @@ public sealed class NotificationService
 
         areaMonitor.VesselAreaChanged += (_, evt) =>
         {
+            var zoneSuffix = evt.ZoneName is not null ? $" [{evt.ZoneName}]" : "";
             var msg = new NotificationMessage
             {
-                Title = evt.Entered ? "Vessel Entered Area" : "Vessel Left Area",
+                Title = evt.Entered ? $"Vessel Entered Area{zoneSuffix}" : $"Vessel Left Area{zoneSuffix}",
                 Body = $"{evt.Vessel.DisplayName} (MMSI {evt.Vessel.Mmsi})" +
                        (evt.Vessel.CurrentPosition is not null
                            ? $" at {evt.Vessel.CurrentPosition.SpeedOverGround:F1} kn"

@@ -71,6 +71,35 @@
 
                 <!-- Control buttons — Glass circular -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Notification bell with badge -->
+                    <Grid Margin="0,0,6,0">
+                        <Button Content="&#x1F514;"
+                                Command="{Binding ToggleNotificationCenterCommand}"
+                                Style="{DynamicResource IconButtonStyle}"
+                                ToolTip="Notifications"/>
+                        <!-- Unread badge -->
+                        <Border Background="#F44336" CornerRadius="7"
+                                MinWidth="14" Height="14"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,-2,-2,0"
+                                Padding="3,0"
+                                IsHitTestVisible="False">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding NotificationCenterViewModel.UnreadCount}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding NotificationCenterViewModel.UnreadCount}"
+                                       Foreground="White" FontSize="9" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
                     <Button Content="{Binding CurrentLanguage}"
                             Command="{Binding ToggleLanguageCommand}"
                             Style="{DynamicResource IconButtonStyle}"
@@ -145,7 +174,7 @@
                           Background="Transparent"
                           HorizontalAlignment="Center"/>
 
-            <!-- Right Panel: Glass vessel details -->
+            <!-- Right Panel: Glass vessel details or Dashboard -->
             <Border Grid.Column="4"
                     Background="{DynamicResource GlassFillBrush}"
                     BorderBrush="{DynamicResource GlassEdgeBrush}"
@@ -155,7 +184,14 @@
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.12" Color="#000000" Direction="270"/>
                 </Border.Effect>
-                <views:VesselDetailPanel DataContext="{Binding VesselDetailViewModel}"/>
+                <Grid>
+                    <!-- Vessel Detail (default) -->
+                    <views:VesselDetailPanel DataContext="{Binding VesselDetailViewModel}"
+                                             Visibility="{Binding IsDashboardVisible, Converter={StaticResource InverseBoolToVis}}"/>
+                    <!-- Dashboard (toggled) -->
+                    <views:DashboardPanel DataContext="{Binding StatisticsViewModel}"
+                                          Visibility="{Binding IsDashboardVisible, Converter={StaticResource BoolToVis}}"/>
+                </Grid>
             </Border>
         </Grid>
 
@@ -221,8 +257,13 @@
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="12" VerticalAlignment="Center"/>
 
-                <!-- Start Tracking Button -->
+                <!-- Start Tracking Button + Dashboard toggle -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
+                    <Button Content="&#x1F4CA;"
+                            Command="{Binding ToggleDashboardCommand}"
+                            Style="{DynamicResource IconButtonStyle}"
+                            ToolTip="Toggle Dashboard"
+                            FontSize="14" Margin="0,0,8,0"/>
                     <TextBlock Text="{Binding MessageRateText}"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="11" VerticalAlignment="Center"
@@ -235,6 +276,26 @@
                             FontSize="12" Padding="16,6"/>
                 </StackPanel>
             </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════
+             NOTIFICATION CENTER — Slide-out panel overlay
+             ═══════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Grid.RowSpan="3"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Stretch"
+                Width="340"
+                Margin="0,60,8,8"
+                Visibility="{Binding IsNotificationCenterOpen, Converter={StaticResource BoolToVis}}"
+                Background="{DynamicResource GlassFillBrush}"
+                BorderBrush="{DynamicResource GlassEdgeBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource LargeCornerRadius}"
+                Panel.ZIndex="20">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.3" Color="#000000" Direction="270"/>
+            </Border.Effect>
+            <views:NotificationCenterPanel DataContext="{Binding NotificationCenterViewModel}"/>
         </Border>
 
         <!-- ═══════════════════════════════════════════════════════

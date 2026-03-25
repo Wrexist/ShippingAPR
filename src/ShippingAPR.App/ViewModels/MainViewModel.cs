@@ -67,11 +67,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ? "Connect to AIS stream and start tracking vessels"
         : "Add an API key first to enable tracking";
 
+    [ObservableProperty]
+    private bool _isDashboardVisible;
+
     public MapViewModel MapViewModel { get; }
     public VesselListViewModel VesselListViewModel { get; }
     public VesselDetailViewModel VesselDetailViewModel { get; }
     public FilterViewModel FilterViewModel { get; }
     public SearchViewModel SearchViewModel { get; }
+    public StatisticsViewModel StatisticsViewModel { get; }
+    public NotificationCenterViewModel NotificationCenterViewModel { get; }
+
+    [ObservableProperty]
+    private bool _isNotificationCenterOpen;
 
     public MainViewModel(
         IVesselStore vesselStore,
@@ -84,7 +92,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         VesselListViewModel vesselListViewModel,
         VesselDetailViewModel vesselDetailViewModel,
         FilterViewModel filterViewModel,
-        SearchViewModel searchViewModel)
+        SearchViewModel searchViewModel,
+        StatisticsViewModel statisticsViewModel,
+        NotificationCenterViewModel notificationCenterViewModel)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
@@ -102,6 +112,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         VesselDetailViewModel = vesselDetailViewModel;
         FilterViewModel = filterViewModel;
         SearchViewModel = searchViewModel;
+        StatisticsViewModel = statisticsViewModel;
+        NotificationCenterViewModel = notificationCenterViewModel;
 
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
@@ -168,6 +180,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Non-fatal — user can click Start Tracking manually
             _logger.LogWarning(ex, "Auto-start tracking failed");
         }
+    }
+
+    [RelayCommand]
+    private void ToggleNotificationCenter()
+    {
+        IsNotificationCenterOpen = !IsNotificationCenterOpen;
+        if (IsNotificationCenterOpen)
+            NotificationCenterViewModel.MarkAllReadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void ToggleDashboard()
+    {
+        IsDashboardVisible = !IsDashboardVisible;
     }
 
     [RelayCommand]
@@ -369,5 +395,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         WeakReferenceMessenger.Default.Unregister<NotificationPublished>(this);
         MapViewModel.Dispose();
         VesselListViewModel.Dispose();
+        StatisticsViewModel.Dispose();
     }
 }
