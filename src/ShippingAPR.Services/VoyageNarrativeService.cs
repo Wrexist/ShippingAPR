@@ -46,6 +46,13 @@ public sealed class VoyageNarrativeService : IDisposable
                 SpeedKnots = vessel.CurrentPosition?.SpeedOverGround
             });
         }
+
+        // Initialize baseline speed/status so subsequent updates can detect changes
+        if (vessel.CurrentPosition is { } pos)
+        {
+            _lastSpeed[vessel.Mmsi] = pos.SpeedOverGround;
+            _lastStatus[vessel.Mmsi] = pos.Status;
+        }
     }
 
     private void OnVesselUpdated(object? sender, Vessel vessel)

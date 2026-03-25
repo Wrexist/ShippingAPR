@@ -165,7 +165,7 @@ public class MaritimeIncidentServiceTests : IDisposable
         });
 
         // Simulate vessel update near the incident
-        var vessel = new Vessel(123456789);
+        var vessel = new Vessel { Mmsi = 123456789 };
         vessel.UpdatePosition(
             new VesselPosition
             {

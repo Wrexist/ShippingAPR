@@ -133,7 +133,7 @@ public class ChokepointMonitorServiceTests
 
     private static Vessel CreateVessel(int mmsi, double lat, double lon)
     {
-        var vessel = new Vessel(mmsi);
+        var vessel = new Vessel { Mmsi = mmsi };
         vessel.UpdatePosition(
             new VesselPosition
             {
