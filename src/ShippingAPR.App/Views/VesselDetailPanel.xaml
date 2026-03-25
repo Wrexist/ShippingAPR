@@ -286,6 +286,76 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ═══ Emissions & CII Section ═══ -->
+                <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Width="3" Height="14" CornerRadius="2"
+                                    Background="{DynamicResource SuccessBrush}"
+                                    Margin="0,0,8,0"/>
+                            <TextBlock Text="Emissions &amp; CII"
+                                       Style="{DynamicResource SubTextStyle}"
+                                       FontWeight="Bold" FontSize="11"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- CII Rating Badge -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="CII Rating"
+                                       Style="{DynamicResource SubTextStyle}" VerticalAlignment="Center"/>
+                            <Border Grid.Column="1" CornerRadius="8" Padding="14,4" MinWidth="36"
+                                    HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <SolidColorBrush Color="{Binding CiiRatingColor}"/>
+                                </Border.Background>
+                                <TextBlock Text="{Binding CiiRatingText}" FontSize="18" FontWeight="Bold"
+                                           Foreground="White" HorizontalAlignment="Center">
+                                    <TextBlock.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
+                                    </TextBlock.Effect>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="CO2"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EmissionsCo2Text}"
+                                       Style="{DynamicResource ValueTextStyle}" FontWeight="SemiBold"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Fuel" Margin="0,6,0,0"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EmissionsFuelText}" Margin="0,6,0,0"
+                                       Style="{DynamicResource ValueTextStyle}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="SOx" Margin="0,6,0,0"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EmissionsSoxText}" Margin="0,6,0,0"
+                                       Style="{DynamicResource ValueTextStyle}"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="NOx" Margin="0,6,0,0"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding EmissionsNoxText}" Margin="0,6,0,0"
+                                       Style="{DynamicResource ValueTextStyle}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
                 <!-- ═══ Voyage Story Section ═══ -->
                 <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,10">
                     <StackPanel>

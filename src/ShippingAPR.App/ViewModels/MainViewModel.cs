@@ -80,12 +80,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public AchievementViewModel AchievementViewModel { get; }
     public PortDashboardViewModel PortDashboardViewModel { get; }
     public AlertRuleViewModel AlertRuleViewModel { get; }
+    public ChokepointViewModel ChokepointViewModel { get; }
+    public EncounterJournalViewModel EncounterJournalViewModel { get; }
+    public ShipmentViewModel ShipmentViewModel { get; }
+    public MaritimeNewsViewModel MaritimeNewsViewModel { get; }
 
     [ObservableProperty]
     private bool _isNotificationCenterOpen;
 
     [ObservableProperty]
-    private int _rightPanelIndex; // 0=Detail, 1=Dashboard, 2=Achievements, 3=PortCam, 4=Alerts
+    private int _rightPanelIndex; // 0=Detail, 1=Dashboard, 2=Achievements, 3=PortCam, 4=Alerts, 5=Chokepoints, 6=Journal, 7=Shipments, 8=News
 
     public MainViewModel(
         IVesselStore vesselStore,
@@ -103,7 +107,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         NotificationCenterViewModel notificationCenterViewModel,
         AchievementViewModel achievementViewModel,
         PortDashboardViewModel portDashboardViewModel,
-        AlertRuleViewModel alertRuleViewModel)
+        AlertRuleViewModel alertRuleViewModel,
+        ChokepointViewModel chokepointViewModel,
+        EncounterJournalViewModel encounterJournalViewModel,
+        ShipmentViewModel shipmentViewModel,
+        MaritimeNewsViewModel maritimeNewsViewModel)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
@@ -126,6 +134,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         AchievementViewModel = achievementViewModel;
         PortDashboardViewModel = portDashboardViewModel;
         AlertRuleViewModel = alertRuleViewModel;
+        ChokepointViewModel = chokepointViewModel;
+        EncounterJournalViewModel = encounterJournalViewModel;
+        ShipmentViewModel = shipmentViewModel;
+        MaritimeNewsViewModel = maritimeNewsViewModel;
 
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
@@ -422,5 +434,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MapViewModel.Dispose();
         VesselListViewModel.Dispose();
         StatisticsViewModel.Dispose();
+        ChokepointViewModel.Dispose();
+        EncounterJournalViewModel.Dispose();
+        ShipmentViewModel.Dispose();
+        MaritimeNewsViewModel.Dispose();
     }
 }

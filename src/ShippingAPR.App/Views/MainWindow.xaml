@@ -210,6 +210,18 @@
                             <Button Content="&#x26A1;" ToolTip="Smart Alerts"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="4"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x1F30D;" ToolTip="Chokepoints"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="5"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x1F4D3;" ToolTip="Journal"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="6"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x1F4E6;" ToolTip="Shipments"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="7"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x26A0;" ToolTip="Maritime News"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="8"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
                         </StackPanel>
                     </Border>
 
@@ -284,6 +296,62 @@
                                 </Style>
                             </views:AlertRulePanel.Style>
                         </views:AlertRulePanel>
+
+                        <!-- Chokepoints (index 5) -->
+                        <views:ChokepointPanel DataContext="{Binding ChokepointViewModel}">
+                            <views:ChokepointPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="5">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:ChokepointPanel.Style>
+                        </views:ChokepointPanel>
+
+                        <!-- Journal (index 6) -->
+                        <views:EncounterJournalPanel DataContext="{Binding EncounterJournalViewModel}">
+                            <views:EncounterJournalPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="6">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:EncounterJournalPanel.Style>
+                        </views:EncounterJournalPanel>
+
+                        <!-- Shipments (index 7) -->
+                        <views:ShipmentPanel DataContext="{Binding ShipmentViewModel}">
+                            <views:ShipmentPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="7">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:ShipmentPanel.Style>
+                        </views:ShipmentPanel>
+
+                        <!-- Maritime News (index 8) -->
+                        <views:MaritimeNewsPanel DataContext="{Binding MaritimeNewsViewModel}">
+                            <views:MaritimeNewsPanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="8">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:MaritimeNewsPanel.Style>
+                        </views:MaritimeNewsPanel>
                     </Grid>
                 </Grid>
             </Border>
