@@ -102,7 +102,7 @@
                 </Border.Effect>
                 <Grid>
                 <!-- No results message -->
-                <TextBlock Text="No vessels found"
+                <TextBlock Text="{x:Static res:Strings.NoVesselsFound}"
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="13" HorizontalAlignment="Center"
                            Padding="16,14"

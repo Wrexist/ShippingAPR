@@ -82,7 +82,8 @@
                         <Button Content="&#x1F514;"
                                 Command="{Binding ToggleNotificationCenterCommand}"
                                 Style="{DynamicResource IconButtonStyle}"
-                                ToolTip="Notifications"/>
+                                ToolTip="Notifications"
+                                AutomationProperties.Name="Notifications"/>
                         <!-- Unread badge -->
                         <Border Background="{DynamicResource ErrorBrush}" CornerRadius="7"
                                 MinWidth="14" Height="14"
@@ -110,30 +111,35 @@
                             Command="{Binding ToggleLanguageCommand}"
                             Style="{DynamicResource IconButtonStyle}"
                             ToolTip="{x:Static res:Strings.ToggleLanguageTooltip}"
+                            AutomationProperties.Name="{x:Static res:Strings.ToggleLanguageTooltip}"
                             Margin="0,0,6,0"/>
 
                     <Button Content="&#x263C;"
                             Command="{Binding ToggleThemeCommand}"
                             Style="{DynamicResource IconButtonStyle}"
                             ToolTip="{x:Static res:Strings.ToggleThemeTooltip}"
+                            AutomationProperties.Name="{x:Static res:Strings.ToggleThemeTooltip}"
                             Margin="0,0,12,0"/>
 
                     <!-- Window control buttons -->
                     <Button x:Name="MinimizeBtn" Content="&#x2015;"
                             Click="MinimizeClick"
                             Style="{DynamicResource IconButtonStyle}"
-                            ToolTip="Minimize"
+                            ToolTip="{x:Static res:Strings.Minimize}"
+                            AutomationProperties.Name="{x:Static res:Strings.Minimize}"
                             Width="32" Height="32" FontSize="12"
                             Margin="0,0,4,0"/>
                     <Button x:Name="MaximizeBtn" Content="&#x25A1;"
                             Click="MaximizeClick"
                             Style="{DynamicResource IconButtonStyle}"
-                            ToolTip="Maximize"
+                            ToolTip="{x:Static res:Strings.Maximize}"
+                            AutomationProperties.Name="{x:Static res:Strings.Maximize}"
                             Width="32" Height="32" FontSize="13"
                             Margin="0,0,4,0"/>
                     <Button x:Name="CloseBtn" Content="&#x2715;"
                             Click="CloseClick"
-                            ToolTip="Close"
+                            ToolTip="{x:Static res:Strings.Close}"
+                            AutomationProperties.Name="{x:Static res:Strings.Close}"
                             Width="32" Height="32" FontSize="12"
                             Cursor="Hand"
                             Foreground="{DynamicResource PrimaryTextBrush}"

@@ -22,6 +22,7 @@ public sealed class PortActivityService : IDisposable
 
     // Spatial index: bucket ports by 1-degree grid cells for O(1) average lookup
     private Dictionary<(int latBucket, int lonBucket), List<Port>>? _portGrid;
+    private readonly object _portGridLock = new();
 
     private const double PortRadiusNm = 3.0; // nautical miles
     private const int MaxActivityRecords = 200;
@@ -49,17 +50,24 @@ public sealed class PortActivityService : IDisposable
     {
         if (_portGrid is null)
         {
-            _cachedPorts ??= _portRepository.GetAll();
-            _portGrid = new Dictionary<(int, int), List<Port>>();
-            foreach (var p in _cachedPorts)
+            lock (_portGridLock)
             {
-                var key = ((int)Math.Floor(p.Latitude), (int)Math.Floor(p.Longitude));
-                if (!_portGrid.TryGetValue(key, out var list))
+                if (_portGrid is null)
                 {
-                    list = [];
-                    _portGrid[key] = list;
+                    _cachedPorts ??= _portRepository.GetAll();
+                    var grid = new Dictionary<(int, int), List<Port>>();
+                    foreach (var p in _cachedPorts)
+                    {
+                        var key = ((int)Math.Floor(p.Latitude), (int)Math.Floor(p.Longitude));
+                        if (!grid.TryGetValue(key, out var list))
+                        {
+                            list = [];
+                            grid[key] = list;
+                        }
+                        list.Add(p);
+                    }
+                    _portGrid = grid;
                 }
-                list.Add(p);
             }
         }
 

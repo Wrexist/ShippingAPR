@@ -150,6 +150,13 @@
   <data name="About"><value>Om</value></data>
   <data name="Version"><value>Version</value></data>
 
+  <!-- Window Controls -->
+  <data name="Minimize"><value>Minimera</value></data>
+  <data name="Maximize"><value>Maximera</value></data>
+  <data name="Close"><value>Stäng</value></data>
+  <data name="NoVesselsFound"><value>Inga fartyg hittades</value></data>
+  <data name="AdjustFiltersHint"><value>Justera filter eller zooma kartan för att spåra fartyg</value></data>
+
   <!-- Keyboard Shortcuts -->
   <data name="KeyboardShortcuts"><value>Tangentbordsgenvägar</value></data>
   <data name="ShortcutSearch"><value>Fokusera sökning</value></data>

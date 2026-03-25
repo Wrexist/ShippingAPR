@@ -150,6 +150,13 @@
   <data name="About"><value>About</value></data>
   <data name="Version"><value>Version</value></data>
 
+  <!-- Window Controls -->
+  <data name="Minimize"><value>Minimize</value></data>
+  <data name="Maximize"><value>Maximize</value></data>
+  <data name="Close"><value>Close</value></data>
+  <data name="NoVesselsFound"><value>No vessels found</value></data>
+  <data name="AdjustFiltersHint"><value>Adjust filters or zoom the map to track ships</value></data>
+
   <!-- Keyboard Shortcuts -->
   <data name="KeyboardShortcuts"><value>Keyboard Shortcuts</value></data>
   <data name="ShortcutSearch"><value>Focus search</value></data>
