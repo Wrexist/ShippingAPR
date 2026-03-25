@@ -101,6 +101,11 @@ public partial class App : Application
                 services.AddSingleton<ExportService>();
                 services.AddSingleton<StatisticsService>();
                 services.AddHostedService<CollisionRiskService>();
+                services.AddSingleton<AchievementService>();
+                services.AddSingleton<VoyageNarrativeService>();
+                services.AddSingleton<HeatmapService>();
+                services.AddSingleton<PortActivityService>();
+                services.AddSingleton<AlertEngine>();
 
                 // User preferences (persisted between sessions)
                 services.AddSingleton<UserPreferences>();
@@ -114,6 +119,9 @@ public partial class App : Application
                 services.AddSingleton<SearchViewModel>();
                 services.AddSingleton<StatisticsViewModel>();
                 services.AddSingleton<NotificationCenterViewModel>();
+                services.AddSingleton<AchievementViewModel>();
+                services.AddSingleton<PortDashboardViewModel>();
+                services.AddSingleton<AlertRuleViewModel>();
 
                 // Views
                 services.AddSingleton<MainWindow>();
@@ -135,6 +143,11 @@ public partial class App : Application
         _host.Services.GetRequiredService<AreaMonitorService>();
         _host.Services.GetRequiredService<NotificationService>();
         _host.Services.GetRequiredService<WatchlistService>();
+        _host.Services.GetRequiredService<AchievementService>();
+        _host.Services.GetRequiredService<VoyageNarrativeService>();
+        _host.Services.GetRequiredService<HeatmapService>();
+        _host.Services.GetRequiredService<PortActivityService>();
+        _host.Services.GetRequiredService<AlertEngine>();
 
         await _host.StartAsync();
 

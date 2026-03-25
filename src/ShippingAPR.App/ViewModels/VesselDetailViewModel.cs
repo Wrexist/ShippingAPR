@@ -2,12 +2,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
 
 public partial class VesselDetailViewModel : ObservableObject
 {
     private readonly IWatchlistService _watchlistService;
+    private readonly VoyageNarrativeService _narrativeService;
 
     [ObservableProperty]
     private Vessel? _vessel;
@@ -18,9 +20,13 @@ public partial class VesselDetailViewModel : ObservableObject
     [ObservableProperty]
     private bool _isWatched;
 
-    public VesselDetailViewModel(IWatchlistService watchlistService)
+    [ObservableProperty]
+    private string _voyageStoryText = "";
+
+    public VesselDetailViewModel(IWatchlistService watchlistService, VoyageNarrativeService narrativeService)
     {
         _watchlistService = watchlistService;
+        _narrativeService = narrativeService;
         _watchlistService.WatchlistChanged += (_, _) => UpdateIsWatched();
     }
 
@@ -50,6 +56,12 @@ public partial class VesselDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(PositionText));
         OnPropertyChanged(nameof(LastUpdateText));
         OnPropertyChanged(nameof(TrackPointCount));
+
+        // Generate voyage story
+        if (value is not null)
+            VoyageStoryText = _narrativeService.GenerateNarrative(value.Mmsi);
+        else
+            VoyageStoryText = "";
     }
 
     [RelayCommand]

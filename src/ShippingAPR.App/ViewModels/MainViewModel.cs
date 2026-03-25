@@ -77,9 +77,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public SearchViewModel SearchViewModel { get; }
     public StatisticsViewModel StatisticsViewModel { get; }
     public NotificationCenterViewModel NotificationCenterViewModel { get; }
+    public AchievementViewModel AchievementViewModel { get; }
+    public PortDashboardViewModel PortDashboardViewModel { get; }
+    public AlertRuleViewModel AlertRuleViewModel { get; }
 
     [ObservableProperty]
     private bool _isNotificationCenterOpen;
+
+    [ObservableProperty]
+    private int _rightPanelIndex; // 0=Detail, 1=Dashboard, 2=Achievements, 3=PortCam, 4=Alerts
 
     public MainViewModel(
         IVesselStore vesselStore,
@@ -94,7 +100,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         FilterViewModel filterViewModel,
         SearchViewModel searchViewModel,
         StatisticsViewModel statisticsViewModel,
-        NotificationCenterViewModel notificationCenterViewModel)
+        NotificationCenterViewModel notificationCenterViewModel,
+        AchievementViewModel achievementViewModel,
+        PortDashboardViewModel portDashboardViewModel,
+        AlertRuleViewModel alertRuleViewModel)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
@@ -114,6 +123,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SearchViewModel = searchViewModel;
         StatisticsViewModel = statisticsViewModel;
         NotificationCenterViewModel = notificationCenterViewModel;
+        AchievementViewModel = achievementViewModel;
+        PortDashboardViewModel = portDashboardViewModel;
+        AlertRuleViewModel = alertRuleViewModel;
 
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
@@ -194,6 +206,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ToggleDashboard()
     {
         IsDashboardVisible = !IsDashboardVisible;
+        if (IsDashboardVisible)
+            RightPanelIndex = 1;
+        else
+            RightPanelIndex = 0;
+    }
+
+    [RelayCommand]
+    private void ShowRightPanel(string panelIndex)
+    {
+        if (int.TryParse(panelIndex, out var idx))
+        {
+            RightPanelIndex = idx;
+            IsDashboardVisible = idx != 0;
+        }
     }
 
     [RelayCommand]

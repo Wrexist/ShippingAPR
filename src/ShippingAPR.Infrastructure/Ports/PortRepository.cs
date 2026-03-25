@@ -114,6 +114,8 @@ public sealed class PortRepository : IPortRepository
             p.Country.Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
+    public IReadOnlyList<Port> GetAll() => _allPorts;
+
     /// <summary>
     /// Resolves an AIS destination string to a port. Tries LOCODE first,
     /// then name-based matching with common AIS abbreviations.
