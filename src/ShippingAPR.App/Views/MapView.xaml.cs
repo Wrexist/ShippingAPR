@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Mapsui;
-using Mapsui.UI;
 using Mapsui.Projections;
 using ShippingAPR.App.ViewModels;
 
