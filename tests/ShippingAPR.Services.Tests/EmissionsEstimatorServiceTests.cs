@@ -28,7 +28,7 @@ public class EmissionsEstimatorServiceTests
         int beamC = 16, int beamD = 16,
         double draught = 10.0)
     {
-        var vessel = new Vessel(mmsi);
+        var vessel = new Vessel { Mmsi = mmsi };
         vessel.UpdatePosition(
             new VesselPosition
             {
@@ -73,7 +73,7 @@ public class EmissionsEstimatorServiceTests
     [Fact]
     public void Estimate_NoPosition_ReturnsNull()
     {
-        var vessel = new Vessel(123456789);
+        var vessel = new Vessel { Mmsi = 123456789 };
 
         var result = _service.Estimate(vessel);
 
@@ -249,7 +249,7 @@ public class EmissionsEstimatorServiceTests
     [Fact]
     public void EstimateFuelConsumption_NoDimensions_UsesSizeFactorOne()
     {
-        var vessel = new Vessel(123456789);
+        var vessel = new Vessel { Mmsi = 123456789 };
         vessel.UpdatePosition(
             new VesselPosition
             {

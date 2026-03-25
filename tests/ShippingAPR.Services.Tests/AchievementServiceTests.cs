@@ -16,6 +16,12 @@ public class AchievementServiceTests : IDisposable
 
     public AchievementServiceTests()
     {
+        // Delete persisted data to prevent cross-test contamination
+        var dataPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ShippingAPR", "achievements.json");
+        if (File.Exists(dataPath)) File.Delete(dataPath);
+
         var areaMonitor = new AreaMonitorService(_store, NullLogger<AreaMonitorService>.Instance);
         _notificationService = new NotificationService(
             areaMonitor,

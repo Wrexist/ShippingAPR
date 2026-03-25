@@ -103,7 +103,7 @@ public class ShipmentTrackingServiceTests : IDisposable
         _portMock.Setup(p => p.FindByName("Shanghai")).Returns(originPort);
         _portMock.Setup(p => p.FindByName("Rotterdam")).Returns(destPort);
 
-        var vessel = new Vessel(123456789);
+        var vessel = new Vessel { Mmsi = 123456789 };
         vessel.UpdatePosition(
             new VesselPosition
             {
