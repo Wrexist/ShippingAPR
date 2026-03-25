@@ -171,6 +171,15 @@ public class Strings
     public static string ZoomIn => GetString("ZoomIn");
     public static string ZoomOut => GetString("ZoomOut");
 
+    // Window Controls
+    public static string Minimize => GetString("Minimize");
+    public static string Maximize => GetString("Maximize");
+    public static string Close => GetString("Close");
+
+    // Empty State
+    public static string NoVesselsFound => GetString("NoVesselsFound");
+    public static string AdjustFiltersHint => GetString("AdjustFiltersHint");
+
     // Export
     public static string Export => GetString("Export");
     public static string ExportCsv => GetString("ExportCsv");
