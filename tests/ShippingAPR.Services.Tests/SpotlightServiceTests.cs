@@ -29,7 +29,7 @@ public class SpotlightServiceTests
     public void VesselsWithStaticData_ReturnsSpotlight()
     {
         _store.AddOrUpdate(200000001, CreatePosition(10),
-            new VesselStaticData { ShipType = VesselType.Cargo, LengthOverall = 100 });
+            new VesselStaticData { ShipType = VesselType.Cargo, DimensionA = 100 });
 
         var (vessel, reason) = _sut.GetSpotlight();
 
@@ -41,9 +41,9 @@ public class SpotlightServiceTests
     public void LargeVessel_ScoresHigher()
     {
         _store.AddOrUpdate(200000001, CreatePosition(10),
-            new VesselStaticData { ShipType = VesselType.Cargo, LengthOverall = 50 });
+            new VesselStaticData { ShipType = VesselType.Cargo, DimensionA = 50 });
         _store.AddOrUpdate(200000002, CreatePosition(10),
-            new VesselStaticData { ShipType = VesselType.Cargo, LengthOverall = 350 });
+            new VesselStaticData { ShipType = VesselType.Cargo, DimensionA = 350 });
 
         var (vessel, reason) = _sut.GetSpotlight();
 
