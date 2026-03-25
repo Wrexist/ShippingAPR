@@ -8,6 +8,8 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <local:SelectAreaTextConverter x:Key="SelectAreaText"
                                        xmlns:local="clr-namespace:ShippingAPR.App.Converters"/>
+        <local:BoolToOpacityConverter x:Key="BoolToOpacity"
+                                      xmlns:local="clr-namespace:ShippingAPR.App.Converters"/>
     </UserControl.Resources>
 
     <Grid>
@@ -88,6 +90,61 @@
             </Border>
         </StackPanel>
 
+        <!-- ═══ Map Tools — Top-right floating glass toolbar ═══ -->
+        <StackPanel HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,14,14,0">
+            <Border Background="{DynamicResource GlassFillBrush}"
+                    BorderBrush="{DynamicResource GlassEdgeBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource LargeCornerRadius}"
+                    Padding="4">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.15" Color="#000000"/>
+                </Border.Effect>
+                <StackPanel>
+                    <!-- Weather overlay toggle -->
+                    <Button Content="&#x26C5;" ToolTip="Weather Overlay"
+                            Command="{Binding ToggleWeatherOverlayCommand}"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"
+                            Opacity="{Binding ShowWeatherOverlay, Converter={StaticResource BoolToOpacity}}"/>
+                    <!-- Heatmap toggle -->
+                    <Button Content="&#x1F525;" ToolTip="Traffic Heatmap"
+                            Command="{Binding ToggleHeatmapCommand}"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                    <!-- Distance measurement -->
+                    <Button Content="&#x1F4CF;" ToolTip="Measure Distance"
+                            Command="{Binding ToggleMeasurementCommand}"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                    <Border Height="1"
+                            Background="{DynamicResource GlassBorderBrush}"
+                            Margin="6,2"/>
+                    <!-- Map layer selector -->
+                    <Button Content="&#x1F5FA;" ToolTip="OpenStreetMap"
+                            Command="{Binding SwitchMapLayerCommand}" CommandParameter="OpenStreetMap"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                    <Button Content="&#x1F6F0;" ToolTip="Satellite View"
+                            Command="{Binding SwitchMapLayerCommand}" CommandParameter="Satellite"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                    <Button Content="&#x2693;" ToolTip="Nautical Chart"
+                            Command="{Binding SwitchMapLayerCommand}" CommandParameter="SeaMap"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
         <!-- ═══ Zoom Controls — Bottom-left floating glass ═══ -->
         <StackPanel VerticalAlignment="Bottom"
                     HorizontalAlignment="Left"
@@ -121,6 +178,45 @@
                 </StackPanel>
             </Border>
         </StackPanel>
+
+        <!-- ═══ Measurement Display — Bottom-center floating ═══ -->
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,14"
+                Visibility="{Binding IsMeasuring, Converter={StaticResource BoolToVis}}"
+                Background="{DynamicResource GlassFillBrush}"
+                BorderBrush="{DynamicResource GlassEdgeBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource PillCornerRadius}"
+                Padding="18,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#x1F4CF;" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding MeasurementText}" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══ Playback Controls — Bottom-center ═══ -->
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,56"
+                Visibility="{Binding IsPlaybackMode, Converter={StaticResource BoolToVis}}"
+                Background="{DynamicResource GlassFillBrush}"
+                BorderBrush="{DynamicResource GlassEdgeBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource PillCornerRadius}"
+                Padding="18,10"
+                MinWidth="300">
+            <StackPanel>
+                <TextBlock Text="{Binding PlaybackTimeText}" FontSize="12"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                <Slider Value="{Binding PlaybackPosition}"
+                        Minimum="0" Maximum="1"
+                        Style="{DynamicResource GlassSliderStyle}"
+                        Width="260"/>
+            </StackPanel>
+        </Border>
 
         <!-- ═══ Selection hint — Glass floating banner ═══ -->
         <Border HorizontalAlignment="Center"

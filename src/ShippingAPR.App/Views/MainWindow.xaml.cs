@@ -33,6 +33,39 @@ public partial class MainWindow : Window
         // Register keyboard shortcuts
         InputBindings.Add(new KeyBinding(viewModel.SearchViewModel.FocusSearchCommand, Key.F, ModifierKeys.Control));
         InputBindings.Add(new KeyBinding(viewModel.DismissNotificationCommand, Key.Escape, ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(viewModel.MapViewModel.ZoomInCommand, Key.OemPlus, ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(viewModel.MapViewModel.ZoomOutCommand, Key.OemMinus, ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(viewModel.MapViewModel.ToggleMeasurementCommand, Key.M, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(viewModel.MapViewModel.ToggleWeatherOverlayCommand, Key.W, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(viewModel.ToggleNotificationCenterCommand, Key.N, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(viewModel.ExportCsvCommand, Key.E, ModifierKeys.Control));
+
+        // Tab shortcuts: 1-5 for right panels
+        PreviewKeyDown += (_, args) =>
+        {
+            if (args.KeyboardDevice.Modifiers != ModifierKeys.None) return;
+            var panelIdx = args.Key switch
+            {
+                Key.D1 => 0,
+                Key.D2 => 1,
+                Key.D3 => 2,
+                Key.D4 => 3,
+                Key.D5 => 4,
+                _ => -1
+            };
+            if (panelIdx >= 0 && args.OriginalSource is not System.Windows.Controls.TextBox)
+            {
+                viewModel.ShowRightPanelCommand.Execute(panelIdx.ToString());
+                args.Handled = true;
+            }
+
+            // F11 fullscreen toggle
+            if (args.Key == Key.F11)
+            {
+                WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+                args.Handled = true;
+            }
+        };
 
         Closing += OnWindowClosing;
     }

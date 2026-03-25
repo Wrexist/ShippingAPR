@@ -95,6 +95,56 @@
                 </Grid>
             </Border>
 
+            <!-- ═══ Tide & Sea Level ═══ -->
+            <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,10">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="3" Height="14" CornerRadius="2"
+                                Background="{DynamicResource InfoBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="Tide &amp; Sea Level" Style="{DynamicResource SubTextStyle}"
+                                   FontWeight="Bold" FontSize="11"/>
+                    </StackPanel>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding TideStateIcon}" FontSize="16" FontWeight="Bold"
+                                           VerticalAlignment="Center" Margin="0,0,4,0">
+                                    <TextBlock.Foreground>
+                                        <SolidColorBrush Color="{Binding TideColor}"/>
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                                <TextBlock Text="{Binding CurrentTideLevelText}" FontSize="18" FontWeight="Bold"
+                                           Foreground="{DynamicResource AccentBrush}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding TideStateText}" FontSize="10"
+                                       HorizontalAlignment="Center"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding NextHighTideText}" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Foreground="#4CAF50"/>
+                            <TextBlock Text="High Tide" FontSize="10" HorizontalAlignment="Center"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding NextLowTideText}" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Foreground="#2196F3"/>
+                            <TextBlock Text="Low Tide" FontSize="10" HorizontalAlignment="Center"
+                                       Style="{DynamicResource SubTextStyle}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- ═══ Recent Activity Board ═══ -->
             <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,10">
                 <StackPanel>

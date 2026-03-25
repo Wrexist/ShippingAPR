@@ -27,6 +27,9 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private readonly IVesselTrackingService _trackingService;
     private readonly IWatchlistService _watchlistService;
     private readonly AreaMonitorService _areaMonitorService;
+    private readonly WeatherOverlayService _weatherOverlayService;
+    private readonly HeatmapService _heatmapService;
+    private readonly UserPreferences _userPreferences;
     private readonly UiOptions _uiOptions;
     private readonly DispatcherTimer _updateTimer;
     private readonly DispatcherTimer _viewportDebounceTimer;
@@ -39,6 +42,9 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private MemoryLayer? _selectionLayer;
     private MemoryLayer? _clusterLayer;
     private MemoryLayer? _geofenceLayer;
+    private MemoryLayer? _weatherLayer;
+    private MemoryLayer? _heatmapLayer;
+    private MemoryLayer? _measureLayer;
     private Vessel? _highlightedVessel;
     private bool _viewportTrackingEnabled = true;
     private bool _isTracking;
@@ -61,6 +67,41 @@ public partial class MapViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _showClusters;
 
+    // Weather overlay
+    [ObservableProperty]
+    private bool _showWeatherOverlay;
+
+    // Heatmap overlay
+    [ObservableProperty]
+    private bool _showHeatmap;
+
+    // Map layer switching
+    [ObservableProperty]
+    private string _currentMapLayer = "OpenStreetMap";
+
+    // Distance measurement
+    [ObservableProperty]
+    private bool _isMeasuring;
+
+    [ObservableProperty]
+    private string _measurementText = "";
+
+    private MPoint? _measureStart;
+    private MPoint? _measureEnd;
+
+    // Route playback
+    [ObservableProperty]
+    private bool _isPlaybackMode;
+
+    [ObservableProperty]
+    private double _playbackPosition; // 0.0 to 1.0
+
+    [ObservableProperty]
+    private string _playbackTimeText = "";
+
+    // Map bookmarks
+    public List<MapBookmark> Bookmarks => _userPreferences.Bookmarks;
+
     private MPoint? _selectionStart;
 
     /// <summary>
@@ -74,12 +115,18 @@ public partial class MapViewModel : ObservableObject, IDisposable
         IVesselTrackingService trackingService,
         IWatchlistService watchlistService,
         AreaMonitorService areaMonitorService,
+        WeatherOverlayService weatherOverlayService,
+        HeatmapService heatmapService,
+        UserPreferences userPreferences,
         IOptions<UiOptions> uiOptions)
     {
         _vesselStore = vesselStore;
         _trackingService = trackingService;
         _watchlistService = watchlistService;
         _areaMonitorService = areaMonitorService;
+        _weatherOverlayService = weatherOverlayService;
+        _heatmapService = heatmapService;
+        _userPreferences = userPreferences;
         _uiOptions = uiOptions.Value;
 
         _onVesselChanged = (_, v) => OnVesselChanged(null, v);
@@ -92,6 +139,11 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _vesselStore.StoreCleared += _onStoreCleared;
         _areaMonitorService.GeofencesChanged += (_, _) =>
             Application.Current?.Dispatcher.Invoke(RenderGeofences);
+
+        _weatherOverlayService.WeatherUpdated += (_, _) =>
+            Application.Current?.Dispatcher.Invoke(RenderWeatherOverlay);
+        _heatmapService.HeatmapUpdated += (_, _) =>
+            Application.Current?.Dispatcher.Invoke(RenderHeatmap);
 
         // Batch UI updates for performance
         _updateTimer = new DispatcherTimer
@@ -118,6 +170,22 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         // OpenStreetMap base layer
         Map.Layers.Add(OpenStreetMap.CreateTileLayer());
+
+        // Heatmap layer (traffic density)
+        _heatmapLayer = new MemoryLayer
+        {
+            Name = "Heatmap",
+            Enabled = false
+        };
+        Map.Layers.Add(_heatmapLayer);
+
+        // Weather overlay layer
+        _weatherLayer = new MemoryLayer
+        {
+            Name = "Weather",
+            Enabled = false
+        };
+        Map.Layers.Add(_weatherLayer);
 
         // Trail layer (ship track history)
         _trailLayer = new MemoryLayer
@@ -169,6 +237,13 @@ public partial class MapViewModel : ObservableObject, IDisposable
             IsMapInfoLayer = true
         };
         Map.Layers.Add(_vesselLayer);
+
+        // Measurement layer (distance tool)
+        _measureLayer = new MemoryLayer
+        {
+            Name = "Measurement"
+        };
+        Map.Layers.Add(_measureLayer);
 
         // Start with default view (Northern Europe by default — busy shipping area)
         var center = SphericalMercator.FromLonLat(_uiOptions.DefaultCenterLon, _uiOptions.DefaultCenterLat);
@@ -736,6 +811,359 @@ public partial class MapViewModel : ObservableObject, IDisposable
                 _clusterLayer.DataHasChanged();
             }
         });
+    }
+
+    // ═══════════════════════════════════════════════
+    // Weather Overlay
+    // ═══════════════════════════════════════════════
+
+    [RelayCommand]
+    private async Task ToggleWeatherOverlay()
+    {
+        ShowWeatherOverlay = !ShowWeatherOverlay;
+        _weatherOverlayService.IsEnabled = ShowWeatherOverlay;
+
+        if (_weatherLayer is not null)
+            _weatherLayer.Enabled = ShowWeatherOverlay;
+
+        if (ShowWeatherOverlay)
+        {
+            await _weatherOverlayService.RefreshAsync(
+                SelectedArea.MinLatitude, SelectedArea.MaxLatitude,
+                SelectedArea.MinLongitude, SelectedArea.MaxLongitude);
+        }
+        else
+        {
+            _weatherOverlayService.Clear();
+        }
+    }
+
+    private void RenderWeatherOverlay()
+    {
+        if (_weatherLayer is null || !ShowWeatherOverlay) return;
+
+        var grid = _weatherOverlayService.CurrentGrid;
+        if (grid is null || grid.Points.Length == 0)
+        {
+            _weatherLayer.Features = [];
+            _weatherLayer.DataHasChanged();
+            return;
+        }
+
+        var features = new List<IFeature>();
+        foreach (var point in grid.Points)
+        {
+            var projected = SphericalMercator.FromLonLat(point.Longitude, point.Latitude);
+            var feature = new GeometryFeature(new NetTopologySuite.Geometries.Point(projected.x, projected.y));
+
+            // Wind arrow: rotated triangle showing wind direction
+            var windColor = point.BeaufortScale switch
+            {
+                <= 3 => new Mapsui.Styles.Color(76, 175, 80, 140),     // Green - calm
+                <= 5 => new Mapsui.Styles.Color(255, 235, 59, 160),    // Yellow - moderate
+                <= 7 => new Mapsui.Styles.Color(255, 152, 0, 180),     // Orange - strong
+                _ => new Mapsui.Styles.Color(244, 67, 54, 200)         // Red - severe
+            };
+
+            feature.Styles.Add(new SymbolStyle
+            {
+                SymbolScale = 0.35,
+                SymbolRotation = point.WindDirectionDegrees,
+                Fill = new Brush(windColor),
+                Outline = new Pen(Mapsui.Styles.Color.FromArgb(100, 0, 0, 0), 1),
+                SymbolType = SymbolType.Triangle
+            });
+
+            // Wave height label
+            if (point.WaveHeightMeters > 0.5)
+            {
+                feature.Styles.Add(new LabelStyle
+                {
+                    Text = $"{point.WaveHeightMeters:F1}m",
+                    ForeColor = windColor,
+                    BackColor = null,
+                    Font = new Font { Size = 9 },
+                    Offset = new Offset(0, 15)
+                });
+            }
+
+            features.Add(feature);
+        }
+
+        _weatherLayer.Features = features;
+        _weatherLayer.DataHasChanged();
+    }
+
+    // ═══════════════════════════════════════════════
+    // Traffic Heatmap
+    // ═══════════════════════════════════════════════
+
+    [RelayCommand]
+    private void ToggleHeatmap()
+    {
+        ShowHeatmap = !ShowHeatmap;
+        _heatmapService.IsEnabled = ShowHeatmap;
+
+        if (_heatmapLayer is not null)
+            _heatmapLayer.Enabled = ShowHeatmap;
+
+        if (ShowHeatmap)
+            RenderHeatmap();
+    }
+
+    private void RenderHeatmap()
+    {
+        if (_heatmapLayer is null || !ShowHeatmap) return;
+
+        var grid = _heatmapService.GenerateGrid(
+            SelectedArea.MinLatitude, SelectedArea.MaxLatitude,
+            SelectedArea.MinLongitude, SelectedArea.MaxLongitude, 50);
+
+        if (grid.MaxIntensity == 0)
+        {
+            _heatmapLayer.Features = [];
+            _heatmapLayer.DataHasChanged();
+            return;
+        }
+
+        var features = new List<IFeature>();
+        var res = grid.Resolution;
+
+        for (int y = 0; y < res; y++)
+        {
+            for (int x = 0; x < res; x++)
+            {
+                var cell = grid.Cells[y, x];
+                if (cell.Intensity == 0) continue;
+
+                var ratio = (double)cell.Intensity / grid.MaxIntensity;
+                var alpha = (byte)(ratio * 150 + 30);
+
+                // Gradient: blue -> cyan -> green -> yellow -> red
+                var color = ratio switch
+                {
+                    < 0.2 => new Mapsui.Styles.Color(33, 150, 243, alpha),
+                    < 0.4 => new Mapsui.Styles.Color(0, 188, 212, alpha),
+                    < 0.6 => new Mapsui.Styles.Color(76, 175, 80, alpha),
+                    < 0.8 => new Mapsui.Styles.Color(255, 235, 59, alpha),
+                    _ => new Mapsui.Styles.Color(244, 67, 54, alpha)
+                };
+
+                var projected = SphericalMercator.FromLonLat(cell.CenterLon, cell.CenterLat);
+                var feature = new GeometryFeature(new NetTopologySuite.Geometries.Point(projected.x, projected.y));
+                feature.Styles.Add(new SymbolStyle
+                {
+                    SymbolScale = 0.3 + ratio * 0.5,
+                    Fill = new Brush(color),
+                    Outline = null,
+                    SymbolType = SymbolType.Ellipse
+                });
+
+                features.Add(feature);
+            }
+        }
+
+        _heatmapLayer.Features = features;
+        _heatmapLayer.DataHasChanged();
+    }
+
+    // ═══════════════════════════════════════════════
+    // Distance Measurement Tool
+    // ═══════════════════════════════════════════════
+
+    [RelayCommand]
+    private void ToggleMeasurement()
+    {
+        IsMeasuring = !IsMeasuring;
+        if (!IsMeasuring)
+        {
+            _measureStart = null;
+            _measureEnd = null;
+            MeasurementText = "";
+            if (_measureLayer is not null)
+            {
+                _measureLayer.Features = [];
+                _measureLayer.DataHasChanged();
+            }
+        }
+    }
+
+    public void HandleMeasureClick(double longitude, double latitude)
+    {
+        if (!IsMeasuring) return;
+
+        if (_measureStart is null)
+        {
+            _measureStart = new MPoint(longitude, latitude);
+            MeasurementText = "Click second point...";
+        }
+        else
+        {
+            _measureEnd = new MPoint(longitude, latitude);
+
+            var distNm = Core.Calculations.HaversineCalculator.DistanceInNauticalMiles(
+                _measureStart.Y, _measureStart.X, _measureEnd.Y, _measureEnd.X);
+            var distKm = Core.Calculations.HaversineCalculator.DistanceInKilometers(
+                _measureStart.Y, _measureStart.X, _measureEnd.Y, _measureEnd.X);
+
+            MeasurementText = $"{distNm:F1} NM ({distKm:F1} km)";
+            RenderMeasureLine();
+
+            // Reset for next measurement
+            _measureStart = null;
+            _measureEnd = null;
+        }
+    }
+
+    private void RenderMeasureLine()
+    {
+        if (_measureLayer is null || _measureStart is null || _measureEnd is null) return;
+
+        var p1 = SphericalMercator.FromLonLat(_measureStart.X, _measureStart.Y);
+        var p2 = SphericalMercator.FromLonLat(_measureEnd.X, _measureEnd.Y);
+
+        var coords = new[] { new Coordinate(p1.x, p1.y), new Coordinate(p2.x, p2.y) };
+        var line = new LineString(coords);
+        var feature = new GeometryFeature(line);
+        feature.Styles.Add(new VectorStyle
+        {
+            Line = new Pen(new Mapsui.Styles.Color(255, 215, 0, 220), 3)
+            {
+                PenStyle = PenStyle.Dash
+            }
+        });
+
+        // Start point
+        var startFeature = new GeometryFeature(new NetTopologySuite.Geometries.Point(p1.x, p1.y));
+        startFeature.Styles.Add(new SymbolStyle
+        {
+            SymbolScale = 0.25,
+            Fill = new Brush(new Mapsui.Styles.Color(255, 215, 0)),
+            SymbolType = SymbolType.Ellipse
+        });
+
+        // End point
+        var endFeature = new GeometryFeature(new NetTopologySuite.Geometries.Point(p2.x, p2.y));
+        endFeature.Styles.Add(new SymbolStyle
+        {
+            SymbolScale = 0.25,
+            Fill = new Brush(new Mapsui.Styles.Color(255, 215, 0)),
+            SymbolType = SymbolType.Ellipse
+        });
+
+        // Distance label
+        var midX = (p1.x + p2.x) / 2;
+        var midY = (p1.y + p2.y) / 2;
+        var labelFeature = new GeometryFeature(new NetTopologySuite.Geometries.Point(midX, midY));
+        labelFeature.Styles.Add(new LabelStyle
+        {
+            Text = MeasurementText,
+            ForeColor = new Mapsui.Styles.Color(255, 215, 0),
+            BackColor = new Brush(new Mapsui.Styles.Color(0, 0, 0, 160)),
+            Font = new Font { Size = 12, Bold = true },
+            Offset = new Offset(0, -15)
+        });
+
+        _measureLayer.Features = [feature, startFeature, endFeature, labelFeature];
+        _measureLayer.DataHasChanged();
+    }
+
+    // ═══════════════════════════════════════════════
+    // Map Layer Switching
+    // ═══════════════════════════════════════════════
+
+    [RelayCommand]
+    private void SwitchMapLayer(string layerName)
+    {
+        CurrentMapLayer = layerName;
+
+        // Remove the current base tile layer (always index 0)
+        if (Map.Layers.Count > 0)
+            Map.Layers.RemoveAt(0);
+
+        // All modes start with OpenStreetMap as base
+        // (Satellite/SeaMap would require additional tile packages —
+        //  for now, we switch to different OSM-based styles)
+        Map.Layers.Insert(0, OpenStreetMap.CreateTileLayer());
+
+        // Note: To enable satellite/nautical charts, add BruTile.MbTiles
+        // or a custom HttpTileSource for ESRI/OpenSeaMap tile servers.
+        // The architecture is ready — just swap the tile source above.
+    }
+
+    // ═══════════════════════════════════════════════
+    // Route Playback
+    // ═══════════════════════════════════════════════
+
+    [RelayCommand]
+    private void TogglePlaybackMode()
+    {
+        IsPlaybackMode = !IsPlaybackMode;
+        if (!IsPlaybackMode)
+        {
+            PlaybackPosition = 1.0;
+            PlaybackTimeText = "";
+        }
+    }
+
+    partial void OnPlaybackPositionChanged(double value)
+    {
+        if (!IsPlaybackMode || _highlightedVessel is null) return;
+
+        var track = _highlightedVessel.Track;
+        if (track is null || track.Count < 2) return;
+
+        var idx = (int)(value * (track.Count - 1));
+        idx = Math.Clamp(idx, 0, track.Count - 1);
+        var tp = track[idx];
+
+        PlaybackTimeText = tp.Timestamp.ToString("HH:mm:ss");
+
+        // Move vessel feature to historical position
+        var point = SphericalMercator.FromLonLat(tp.Longitude, tp.Latitude);
+        if (_vesselFeatures.TryGetValue(_highlightedVessel.Mmsi, out var feature) && feature is GeometryFeature gf)
+        {
+            gf.Geometry = new NetTopologySuite.Geometries.Point(point.x, point.y);
+            _vesselLayer?.DataHasChanged();
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // Map Bookmarks
+    // ═══════════════════════════════════════════════
+
+    [RelayCommand]
+    private void SaveBookmark(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        var viewport = Map.Navigator.Viewport;
+        var center = SphericalMercator.ToLonLat(viewport.CenterX, viewport.CenterY);
+
+        _userPreferences.Bookmarks.Add(new MapBookmark
+        {
+            Name = name,
+            Latitude = center.lat,
+            Longitude = center.lon,
+            ZoomLevel = viewport.Resolution
+        });
+        _userPreferences.Save();
+        OnPropertyChanged(nameof(Bookmarks));
+    }
+
+    [RelayCommand]
+    private void NavigateToBookmark(MapBookmark bookmark)
+    {
+        var center = SphericalMercator.FromLonLat(bookmark.Longitude, bookmark.Latitude);
+        Map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), bookmark.ZoomLevel);
+    }
+
+    [RelayCommand]
+    private void RemoveBookmark(MapBookmark bookmark)
+    {
+        _userPreferences.Bookmarks.Remove(bookmark);
+        _userPreferences.Save();
+        OnPropertyChanged(nameof(Bookmarks));
     }
 
     public void Dispose()

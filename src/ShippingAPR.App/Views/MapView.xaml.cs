@@ -46,7 +46,12 @@ public partial class MapView : UserControl
                     var lonLat = SphericalMercator.ToLonLat(
                         args.MapInfo.WorldPosition.X,
                         args.MapInfo.WorldPosition.Y);
-                    vm.HandleMapClick(lonLat.lon, lonLat.lat);
+
+                    // Route click to measurement tool if active
+                    if (vm.IsMeasuring)
+                        vm.HandleMeasureClick(lonLat.lon, lonLat.lat);
+                    else
+                        vm.HandleMapClick(lonLat.lon, lonLat.lat);
                 }
 
                 // Delegate vessel click handling to ViewModel (no Window.GetWindow coupling)
