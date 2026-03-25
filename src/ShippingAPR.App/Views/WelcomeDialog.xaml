@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:res="clr-namespace:ShippingAPR.App.Resources"
         Title="{x:Static res:Strings.WelcomeTitle}"
-        Width="560" Height="620"
+        Width="560" Height="720"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"

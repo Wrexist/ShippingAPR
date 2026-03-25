@@ -68,7 +68,25 @@ public partial class MainWindow : Window
         };
 
         Closing += OnWindowClosing;
+
+        // Window drag support via top bar
+        TopBar.MouseLeftButtonDown += (_, args) =>
+        {
+            if (args.ClickCount == 2)
+            {
+                WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            }
+            else
+            {
+                DragMove();
+            }
+        };
     }
+
+    private void MinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void MaximizeClick(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void CloseClick(object sender, RoutedEventArgs e) => Close();
 
     private void OnWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
