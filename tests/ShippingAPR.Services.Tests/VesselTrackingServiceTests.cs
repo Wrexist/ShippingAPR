@@ -12,7 +12,7 @@ namespace ShippingAPR.Services.Tests;
 
 public class VesselTrackingServiceTests
 {
-    private readonly Mock<IAisStreamClient> _aisClientMock;
+    private readonly Mock<IAisDataProvider> _aisClientMock;
     private readonly VesselStore _vesselStore;
     private readonly PortRepository _portRepository;
     private readonly VesselTrackingService _service;
@@ -20,7 +20,7 @@ public class VesselTrackingServiceTests
 
     public VesselTrackingServiceTests()
     {
-        _aisClientMock = new Mock<IAisStreamClient>();
+        _aisClientMock = new Mock<IAisDataProvider>();
         _vesselStore = new VesselStore(Options.Create(new TrackingOptions()));
         _portRepository = new PortRepository();
         _options = new TrackingOptions

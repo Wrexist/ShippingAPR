@@ -157,6 +157,27 @@
   <data name="NoVesselsFound"><value>No vessels found</value></data>
   <data name="AdjustFiltersHint"><value>Adjust filters or zoom the map to track ships</value></data>
 
+  <!-- Settings & Providers -->
+  <data name="Settings"><value>Settings</value></data>
+  <data name="ActiveProvider"><value>Active Provider</value></data>
+  <data name="FallbackProvider"><value>Fallback Provider</value></data>
+  <data name="PollInterval"><value>Poll Interval</value></data>
+  <data name="SaveRestart"><value>Save &amp; Restart</value></data>
+  <data name="SettingsSaved"><value>Settings saved. Restart the application for changes to take effect.</value></data>
+  <data name="SettingsSaveFailed"><value>Failed to save settings to appsettings.json.</value></data>
+
+  <!-- Advanced Filters -->
+  <data name="AdvancedFilters"><value>ADVANCED FILTERS</value></data>
+  <data name="DestinationFilter"><value>Destination</value></data>
+  <data name="FlagFilter"><value>Flag (country code)</value></data>
+
+  <!-- Geofences -->
+  <data name="GeofenceZones"><value>Geofence Zones</value></data>
+  <data name="ZoneName"><value>Zone Name</value></data>
+  <data name="AlertOnEntry"><value>Alert on Entry</value></data>
+  <data name="AlertOnExit"><value>Alert on Exit</value></data>
+  <data name="AddFromView"><value>Add from Current View</value></data>
+
   <!-- Keyboard Shortcuts -->
   <data name="KeyboardShortcuts"><value>Keyboard Shortcuts</value></data>
   <data name="ShortcutSearch"><value>Focus search</value></data>

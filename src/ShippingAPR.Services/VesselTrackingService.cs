@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,9 +13,10 @@ namespace ShippingAPR.Services;
 
 public sealed class VesselTrackingService : BackgroundService, IVesselTrackingService
 {
-    private readonly IAisStreamClient _aisClient;
+    private readonly IAisDataProvider _aisClient;
     private readonly IVesselStore _vesselStore;
     private readonly PortRepository _portRepository;
+    private readonly IVesselEnrichmentClient? _enrichmentClient;
     private readonly ILogger<VesselTrackingService> _logger;
     private readonly TrackingOptions _trackingOptions;
     private readonly TimeSpan _purgeInterval;
@@ -26,6 +28,13 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
     // Port resolution caching — avoid O(n) port scan on every message
     private readonly ConcurrentDictionary<string, Port?> _portCache = new(StringComparer.OrdinalIgnoreCase);
 
+    // Vessel enrichment — rate-limited queue for fetching missing static data
+    private readonly Channel<int> _enrichmentQueue = Channel.CreateBounded<int>(new BoundedChannelOptions(200)
+    {
+        FullMode = BoundedChannelFullMode.DropOldest
+    });
+    private readonly ConcurrentDictionary<int, bool> _enrichmentRequested = new();
+
     private readonly object _areaLock = new();
     private BoundingBox? _currentArea;
     private TaskCompletionSource<BoundingBox>? _areaWaiter;
@@ -36,15 +45,17 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
     public event EventHandler<ConnectionStatus>? ConnectionStatusChanged;
 
     public VesselTrackingService(
-        IAisStreamClient aisClient,
+        IAisDataProvider aisClient,
         IVesselStore vesselStore,
         PortRepository portRepository,
         ILogger<VesselTrackingService> logger,
-        IOptions<TrackingOptions> trackingOptions)
+        IOptions<TrackingOptions> trackingOptions,
+        IVesselEnrichmentClient? enrichmentClient = null)
     {
         _aisClient = aisClient;
         _vesselStore = vesselStore;
         _portRepository = portRepository;
+        _enrichmentClient = enrichmentClient;
         _logger = logger;
         _trackingOptions = trackingOptions.Value;
         _purgeInterval = TimeSpan.FromMinutes(_trackingOptions.PurgeIntervalMinutes);
@@ -122,6 +133,11 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
             }
         }
 
+        // Start enrichment processor in background if enrichment client is available
+        var enrichmentTask = _enrichmentClient is not null
+            ? ProcessEnrichmentQueueAsync(stoppingToken)
+            : Task.CompletedTask;
+
         // Periodic stale vessel cleanup — runs until cancellation
         using var purgeTimer = new PeriodicTimer(_purgeInterval);
         try
@@ -144,6 +160,8 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         {
             _logger.LogInformation("VesselTrackingService stopping...");
         }
+
+        await enrichmentTask;
     }
 
     private void OnMessageReceived(object? sender, AisMessageEventArgs e)
@@ -151,6 +169,15 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         try
         {
             var vessel = _vesselStore.AddOrUpdate(e.Mmsi, e.Position, e.StaticData);
+
+            // Queue enrichment for vessels missing static data
+            if (_enrichmentClient is not null &&
+                e.MessageType == "PositionReport" &&
+                vessel.StaticData is null &&
+                _enrichmentRequested.TryAdd(e.Mmsi, true))
+            {
+                _enrichmentQueue.Writer.TryWrite(e.Mmsi);
+            }
 
             // Calculate ETA if we have position and destination (with throttling)
             if (vessel.CurrentPosition is not null && vessel.StaticData?.Destination is not null)
@@ -180,9 +207,38 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
         }
     }
 
+    private async Task ProcessEnrichmentQueueAsync(CancellationToken ct)
+    {
+        try
+        {
+            await foreach (var mmsi in _enrichmentQueue.Reader.ReadAllAsync(ct))
+            {
+                try
+                {
+                    var data = await _enrichmentClient!.GetVesselDetailsAsync(mmsi, ct);
+                    if (data is not null)
+                    {
+                        _vesselStore.AddOrUpdate(mmsi, position: null, staticData: data);
+                        _logger.LogDebug("Enriched vessel MMSI {Mmsi} with static data", mmsi);
+                    }
+                }
+                catch (OperationCanceledException) { return; }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to enrich MMSI {Mmsi}", mmsi);
+                }
+
+                // Rate limit enrichment requests
+                await Task.Delay(_trackingOptions.EnrichmentDelayMs, ct);
+            }
+        }
+        catch (OperationCanceledException) { /* expected on shutdown */ }
+    }
+
     private void OnVesselRemoved(object? sender, Vessel vessel)
     {
         _lastEtaPosition.TryRemove(vessel.Mmsi, out _);
+        _enrichmentRequested.TryRemove(vessel.Mmsi, out _);
     }
 
     private bool ShouldRecalculateEta(Vessel vessel)

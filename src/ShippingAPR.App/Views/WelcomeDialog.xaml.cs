@@ -8,6 +8,7 @@ namespace ShippingAPR.App.Views;
 public partial class WelcomeDialog : Window
 {
     public string ApiKey { get; private set; } = string.Empty;
+    public string SelectedProvider { get; private set; } = "AisStream";
 
     public WelcomeDialog()
     {
@@ -53,6 +54,12 @@ public partial class WelcomeDialog : Window
         }
 
         ApiKey = key;
+        SelectedProvider = ProviderSelector.SelectedIndex switch
+        {
+            1 => "Datalastic",
+            2 => "DataDocked",
+            _ => "AisStream"
+        };
         DialogResult = true;
         Close();
     }

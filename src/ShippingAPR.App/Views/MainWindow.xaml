@@ -114,6 +114,13 @@
                             AutomationProperties.Name="{x:Static res:Strings.ToggleLanguageTooltip}"
                             Margin="0,0,6,0"/>
 
+                    <Button Content="&#x2699;"
+                            Command="{Binding OpenSettingsCommand}"
+                            Style="{DynamicResource IconButtonStyle}"
+                            ToolTip="Settings"
+                            AutomationProperties.Name="Settings"
+                            Margin="0,0,6,0"/>
+
                     <Button Content="&#x263C;"
                             Command="{Binding ToggleThemeCommand}"
                             Style="{DynamicResource IconButtonStyle}"
@@ -279,6 +286,9 @@
                             <Button Content="&#x26A0;" ToolTip="Maritime News — Incidents and safety reports"
                                     Command="{Binding ShowRightPanelCommand}" CommandParameter="8"
                                     Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
+                            <Button Content="&#x1F4CD;" ToolTip="Geofences — Monitor geographic zones"
+                                    Command="{Binding ShowRightPanelCommand}" CommandParameter="9"
+                                    Style="{DynamicResource IconButtonStyle}" FontSize="13" Margin="2,0"/>
                         </StackPanel>
                     </Border>
 
@@ -409,6 +419,20 @@
                                 </Style>
                             </views:MaritimeNewsPanel.Style>
                         </views:MaritimeNewsPanel>
+
+                        <!-- Geofence Panel (index 9) -->
+                        <views:GeofencePanel DataContext="{Binding GeofenceViewModel}">
+                            <views:GeofencePanel.Style>
+                                <Style TargetType="UserControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.RightPanelIndex, RelativeSource={RelativeSource AncestorType=Window}}" Value="9">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:GeofencePanel.Style>
+                        </views:GeofencePanel>
                     </Grid>
                 </Grid>
             </Border>

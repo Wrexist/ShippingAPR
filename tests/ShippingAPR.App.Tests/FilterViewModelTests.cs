@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using ShippingAPR.App.Configuration;
 using ShippingAPR.App.ViewModels;
 using ShippingAPR.Core.Enums;
+using ShippingAPR.Core.Models;
 using Xunit;
 
 namespace ShippingAPR.App.Tests;
@@ -133,5 +134,122 @@ public class FilterViewModelTests
         _vm.ShouldShow(VesselType.Tanker, 3).Should().BeFalse();
         // Both pass
         _vm.ShouldShow(VesselType.Tanker, 10).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_DestinationFilter_MatchesPartial()
+    {
+        _vm.DestinationFilter = "GOT";
+
+        var vessel = CreateVessel(destination: "SEGOT");
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+
+        var vessel2 = CreateVessel(destination: "NLRTM");
+        _vm.ShouldShowVessel(vessel2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_DestinationFilter_CaseInsensitive()
+    {
+        _vm.DestinationFilter = "got";
+
+        var vessel = CreateVessel(destination: "SEGOT");
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_FlagFilter_MatchesCountryCode()
+    {
+        _vm.FlagFilter = "SE";
+
+        var vessel = CreateVessel(countryCode: "SE");
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+
+        var vessel2 = CreateVessel(countryCode: "NO");
+        _vm.ShouldShowVessel(vessel2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_StatusFilter_MatchesNavigationalStatus()
+    {
+        _vm.StatusFilter = NavigationalStatus.AtAnchor;
+
+        var vessel = CreateVessel(navStatus: NavigationalStatus.AtAnchor);
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+
+        var vessel2 = CreateVessel(navStatus: NavigationalStatus.UnderWayUsingEngine);
+        _vm.ShouldShowVessel(vessel2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_EmptyAdvancedFilters_ShowsAll()
+    {
+        // Default state: all advanced filters empty
+        var vessel = CreateVessel();
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_NullDestination_HiddenWhenFilterSet()
+    {
+        _vm.DestinationFilter = "GOT";
+
+        var vessel = CreateVessel(destination: null);
+        _vm.ShouldShowVessel(vessel).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_WhitespaceDestinationFilter_ShowsAll()
+    {
+        _vm.DestinationFilter = "   ";
+
+        var vessel = CreateVessel(destination: "SEGOT");
+        // Whitespace-only filter is trimmed to empty, so it's treated as no filter
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_CombinedAdvancedAndTypeFilter()
+    {
+        _vm.ShowCargo = false;
+        _vm.DestinationFilter = "GOT";
+
+        // Cargo type filtered out, even though destination matches
+        var vessel = CreateVessel(destination: "SEGOT");
+        _vm.ShouldShowVessel(vessel).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldShowVessel_VesselWithNoPosition_ReturnsFalse()
+    {
+        // Vessel with no position should be hidden (speed = 0, passes speed check)
+        var vessel = new Vessel(265000001);
+        vessel.UpdateStaticData(new VesselStaticData { Name = "TEST", ShipType = VesselType.Cargo });
+        _vm.ShouldShowVessel(vessel).Should().BeTrue();
+    }
+
+    private static Vessel CreateVessel(
+        string? destination = "TEST",
+        string? countryCode = "SE",
+        NavigationalStatus navStatus = NavigationalStatus.UnderWayUsingEngine)
+    {
+        var vessel = new Vessel(265000001);
+        vessel.UpdatePosition(new VesselPosition
+        {
+            Latitude = 57.7,
+            Longitude = 11.9,
+            SpeedOverGround = 12.5,
+            CourseOverGround = 45,
+            Status = navStatus,
+            Timestamp = DateTime.UtcNow
+        });
+        vessel.UpdateStaticData(new VesselStaticData
+        {
+            Name = "TEST SHIP",
+            ShipType = VesselType.Cargo,
+            Destination = destination,
+            CountryCode = countryCode
+        });
+        return vessel;
     }
 }
