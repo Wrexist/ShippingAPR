@@ -773,19 +773,34 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _clusterLayer.DataHasChanged();
     }
 
+    // Reusable, immutable style sub-objects. Brush (per vessel type) and the three
+    // outline Pens are fully determined by a small finite set of inputs, so we cache
+    // them instead of re-allocating one per vessel on every 250ms render tick. Only
+    // the SymbolStyle itself is created per update, because it carries the vessel's
+    // per-heading SymbolRotation. All access is on the UI thread (DispatcherTimer).
+    private static readonly Pen OutlinePenHighlighted = new(Mapsui.Styles.Color.White, 3);
+    private static readonly Pen OutlinePenWatched = new(new Mapsui.Styles.Color(255, 215, 0), 2); // gold
+    private static readonly Pen OutlinePenNormal = new(Mapsui.Styles.Color.FromArgb(180, 0, 0, 0), 1);
+    private readonly Dictionary<VesselType, Brush> _fillBrushCache = new();
+
+    private Brush GetFillBrush(VesselType type)
+    {
+        if (!_fillBrushCache.TryGetValue(type, out var brush))
+        {
+            brush = new Brush(GetVesselColor(type));
+            _fillBrushCache[type] = brush;
+        }
+        return brush;
+    }
+
     private SymbolStyle CreateVesselStyle(Vessel vessel)
     {
         var isHighlighted = _highlightedVessel?.Mmsi == vessel.Mmsi;
         var isWatched = _watchlistService.IsWatched(vessel.Mmsi);
-        var color = GetVesselColor(vessel.Type);
 
-        Pen outline;
-        if (isHighlighted)
-            outline = new Pen(Mapsui.Styles.Color.White, 3);
-        else if (isWatched)
-            outline = new Pen(new Mapsui.Styles.Color(255, 215, 0), 2); // Gold outline for watched
-        else
-            outline = new Pen(Mapsui.Styles.Color.FromArgb(180, 0, 0, 0), 1);
+        var outline = isHighlighted ? OutlinePenHighlighted
+            : isWatched ? OutlinePenWatched
+            : OutlinePenNormal;
 
         var scale = isHighlighted ? _uiOptions.VesselScaleHighlighted
             : isWatched ? _uiOptions.VesselScaleNormal * 1.15
@@ -795,7 +810,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
         {
             SymbolScale = scale,
             SymbolRotation = vessel.CurrentPosition?.TrueHeading ?? 0,
-            Fill = new Brush(color),
+            Fill = GetFillBrush(vessel.Type),
             Outline = outline,
             SymbolType = SymbolType.Triangle
         };
