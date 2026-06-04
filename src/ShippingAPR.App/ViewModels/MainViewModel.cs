@@ -123,7 +123,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _logger = logger;
         _uiOptions = uiOptions.Value;
         _exportService = exportService;
-        _connectionStatusColor = _uiOptions.StatusColorError;
+        _connectionStatusColor = _uiOptions.StatusColorDisconnected;
 
         // Check if API key is configured for the active provider
         var activeProvider = configuration["AisProvider:Active"] ?? "AisStream";
@@ -563,7 +563,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 ConnectionStatus.Connected => _uiOptions.StatusColorConnected,
                 ConnectionStatus.Connecting or ConnectionStatus.Reconnecting => _uiOptions.StatusColorConnecting,
-                _ => _uiOptions.StatusColorError
+                ConnectionStatus.Disconnected => _uiOptions.StatusColorDisconnected,
+                _ => _uiOptions.StatusColorError // Error / Failed
             };
         });
     }
