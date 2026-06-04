@@ -4,16 +4,19 @@ A modern desktop application for real-time ship tracking in Swedish waters and b
 
 ## Install
 
-1. **[Download ZIP](https://github.com/Wrexist/ShippingAPR/archive/refs/heads/claude/ship-tracking-app-qdNAb.zip)** and extract it
-2. Double-click **`ShippingAPR-Setup.exe`**
-3. Follow the setup wizard
-4. Open **ShippingAPR** from your desktop
+1. Go to the **[latest release](https://github.com/Wrexist/ShippingAPR/releases/latest)** and download **`ShippingAPR-Setup.exe`** from the assets
+2. Double-click the installer and follow the setup wizard
+3. Open **ShippingAPR** from your desktop
 
 That's it. No .NET or developer tools needed. Windows 10 or later (64-bit).
 
 > **Note:** Windows SmartScreen may show a warning since the app is not code-signed. Click **More info** → **Run anyway**. This is normal for open-source apps.
 
-Alternatively, download `ShippingAPR-Setup.exe` directly from the [releases page](https://github.com/Wrexist/ShippingAPR/releases/latest).
+Prefer the command line? Run the quick installer, which downloads the latest release for you:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Install.ps1
+```
 
 ## Getting Started
 
@@ -71,7 +74,7 @@ dotnet test
 git tag 1.0.4
 git push origin 1.0.4
 ```
-The GitHub Actions workflow will automatically build, test, create a release, and update `ShippingAPR-Setup.exe` in the repo.
+The GitHub Actions workflow will automatically build, test, and publish a release with `ShippingAPR-Setup.exe` and the portable zip attached as assets. The installer is never committed back into the repository.
 
 ## Architecture
 

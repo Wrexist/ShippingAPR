@@ -62,19 +62,6 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAPP_VERSION=$version installer\setup.iss
         shell: pwsh
 
-      - name: Copy installer to repo root
-        run: Copy-Item ./installer-output/ShippingAPR-Setup.exe ./ShippingAPR-Setup.exe
-        shell: pwsh
-
-      - name: Commit installer to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ShippingAPR-Setup.exe
-          git commit -m "Update ShippingAPR-Setup.exe to ${{ env.RELEASE_VERSION }}"
-          git push origin HEAD:${{ github.event.repository.default_branch }}
-        shell: pwsh
-
       - name: Create portable zip
         run: Compress-Archive -Path ./publish/* -DestinationPath ./ShippingAPR-${{ env.RELEASE_VERSION }}-portable-win-x64.zip
         shell: pwsh
@@ -99,9 +86,7 @@ jobs:
           body: |
             ## Install
 
-            **Easiest:** [Download the repo ZIP](https://github.com/Wrexist/ShippingAPR/archive/refs/heads/claude/ship-tracking-app-qdNAb.zip), extract it, and double-click `ShippingAPR-Setup.exe`.
-
-            **Direct download:** Download `ShippingAPR-Setup.exe` from the assets below.
+            **Easiest:** Download `ShippingAPR-Setup.exe` from the assets below and double-click it.
 
             **Portable:** Download the `.zip` file, extract anywhere, and run `ShippingAPR.exe`.
 

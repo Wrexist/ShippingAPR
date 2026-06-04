@@ -14,8 +14,8 @@ project.lock.json
 *.rsuser
 launchSettings.json
 
-# Allow the setup installer in repo root
-!ShippingAPR-Setup.exe
+# The built installer is distributed as a GitHub Release asset, never committed.
+ShippingAPR-Setup.exe
 
 ## IDE
 .idea/
