@@ -32,6 +32,7 @@ public partial class App : Application
         // Catch any unhandled exceptions so the app doesn't silently crash
         DispatcherUnhandledException += (_, args) =>
         {
+            LogToCrashFile(args.Exception, nameof(DispatcherUnhandledException));
             ShowStartupError(args.Exception);
             args.Handled = true;
             Shutdown(1);
@@ -39,10 +40,14 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
             if (args.ExceptionObject is Exception ex)
+            {
+                LogToCrashFile(ex, nameof(AppDomain.UnhandledException));
                 ShowStartupError(ex);
+            }
         };
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
+            LogToCrashFile(args.Exception, nameof(TaskScheduler.UnobservedTaskException));
             ShowStartupError(args.Exception);
             args.SetObserved();
         };
@@ -53,6 +58,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            LogToCrashFile(ex, "Startup");
             ShowStartupError(ex);
             Shutdown(1);
         }
@@ -282,9 +288,36 @@ public partial class App : Application
             logger.LogInformation("VesselFinder API key not configured — vessel enrichment will be disabled");
     }
 
+    /// <summary>Directory where crash logs are written (%LOCALAPPDATA%/ShippingAPR/logs).</summary>
+    private static string CrashLogDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "ShippingAPR", "logs");
+
+    /// <summary>
+    /// Appends an unhandled exception to a daily crash log so a field crash leaves
+    /// a diagnostic trail rather than only a transient dialog. Never throws — a
+    /// failure here must not mask the original exception.
+    /// </summary>
+    private static void LogToCrashFile(Exception ex, string source)
+    {
+        try
+        {
+            Directory.CreateDirectory(CrashLogDirectory);
+            var file = Path.Combine(CrashLogDirectory, $"crash-{DateTime.Now:yyyyMMdd}.log");
+            var entry =
+                $"[{DateTime.Now:O}] ({source}) {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}" +
+                $"{ex}{Environment.NewLine}{new string('-', 80)}{Environment.NewLine}";
+            File.AppendAllText(file, entry);
+        }
+        catch
+        {
+            // Crash logging is best-effort; swallow any I/O failure.
+        }
+    }
+
     private static void ShowStartupError(Exception ex)
     {
-        var message = $"ShippingAPR failed to start.\n\n{ex.GetType().Name}: {ex.Message}";
+        var message = $"ShippingAPR hit an unexpected error.\n\n{ex.GetType().Name}: {ex.Message}";
         if (ex.InnerException is not null)
             message += $"\n\nCause: {ex.InnerException.Message}";
 
@@ -296,11 +329,13 @@ public partial class App : Application
             _ => "\n\nTip: Try deleting user preferences at %APPDATA%/ShippingAPR and restarting."
         };
 
+        message += $"\n\nA detailed log was saved to:\n{CrashLogDirectory}";
+
 #if DEBUG
         message += $"\n\nStack trace:\n{ex.StackTrace}";
 #endif
 
-        MessageBox.Show(message, "ShippingAPR - Startup Error",
+        MessageBox.Show(message, "ShippingAPR - Error",
             MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
