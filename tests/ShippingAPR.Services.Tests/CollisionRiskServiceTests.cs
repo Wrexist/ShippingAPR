@@ -33,30 +33,77 @@ public class CollisionRiskServiceTests
             }));
     }
 
+    private IReadOnlyList<NotificationMessage> CollisionAlerts() =>
+        _notificationService.History
+            .Where(n => n.Type == NotificationType.CollisionRisk)
+            .ToList();
+
     [Fact]
-    public void NoVessels_DoesNotThrow()
+    public void Scan_NoVessels_PublishesNothing()
     {
-        // ExecuteAsync is protected, but we can verify scanning works via notification count
-        _notificationService.History.Should().BeEmpty();
+        _sut.ScanForCollisionRisks();
+
+        CollisionAlerts().Should().BeEmpty();
     }
 
     [Fact]
-    public void SingleVessel_NoCollisionRisk()
+    public void Scan_SingleVessel_PublishesNothing()
     {
-        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.9, 10, 90), null);
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 90), null);
 
-        // No collision possible with a single vessel
-        _notificationService.History.Should().BeEmpty();
+        _sut.ScanForCollisionRisks();
+
+        CollisionAlerts().Should().BeEmpty();
     }
 
     [Fact]
-    public void TwoDistantVessels_NoRisk()
+    public void Scan_TwoDistantVessels_NoAlert()
     {
-        // Vessels far apart
-        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.9, 10, 90), null);
-        _store.AddOrUpdate(200000002, CreatePosition(60.0, 20.0, 10, 270), null);
+        // ~19 NM apart at this latitude — beyond the 5 NM pre-filter.
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 90), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 12.50, 10, 270), null);
 
-        _notificationService.History.Should().BeEmpty();
+        _sut.ScanForCollisionRisks();
+
+        CollisionAlerts().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Scan_TwoConvergingVessels_PublishesCollisionRisk()
+    {
+        // ~1.6 NM apart, head-on at 10 kn each → CPA ≈ 0, TCPA ≈ 5 min.
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 90), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 11.95, 10, 270), null);
+
+        _sut.ScanForCollisionRisks();
+
+        CollisionAlerts().Should().ContainSingle()
+            .Which.Type.Should().Be(NotificationType.CollisionRisk);
+    }
+
+    [Fact]
+    public void Scan_ConvergingButTooSlow_NoAlert()
+    {
+        // Both below the 0.5 kn "moving" threshold → filtered out before CPA.
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 0.3, 90), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 11.95, 0.3, 270), null);
+
+        _sut.ScanForCollisionRisks();
+
+        CollisionAlerts().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Scan_SamePairTwice_AlertsOnlyOnce()
+    {
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 90), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 11.95, 10, 270), null);
+
+        _sut.ScanForCollisionRisks();
+        _sut.ScanForCollisionRisks();
+
+        // De-duplicated via the active-risk tracking — still a single alert.
+        CollisionAlerts().Should().ContainSingle();
     }
 
     private static VesselPosition CreatePosition(double lat, double lon, double speed, double course)

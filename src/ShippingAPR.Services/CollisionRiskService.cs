@@ -50,7 +50,7 @@ public sealed class CollisionRiskService : BackgroundService
         }
     }
 
-    private void ScanForCollisionRisks()
+    internal void ScanForCollisionRisks()
     {
         var vessels = _vesselStore.Vessels.Values
             .Where(v => v.CurrentPosition is not null &&
