@@ -39,6 +39,22 @@ public class CpaCalculatorTests
     }
 
     [Fact]
+    public void Calculate_HeadOnAcrossAntiMeridian_ReturnsZeroCpa()
+    {
+        // V1 at lon 179.95° heading east, V2 at lon -179.95° heading west — only
+        // 0.1° (6 NM) apart across the date line, closing head-on. Without
+        // longitude-difference normalisation this would read as ~360° apart and
+        // hide the risk.
+        var result = CpaCalculator.Calculate(
+            1, 0, 179.95, 90, 10,
+            2, 0, -179.95, 270, 10);
+
+        result.Should().NotBeNull();
+        result!.CpaNauticalMiles.Should().BeApproximately(0, 0.001);
+        result.TimeToCpa.TotalHours.Should().BeApproximately(0.3, 0.001); // 6 NM / 20 kn
+    }
+
+    [Fact]
     public void Calculate_DivergingVessels_ReturnsNull()
     {
         // Same start positions but moving apart — CPA already passed (TCPA < 0).
