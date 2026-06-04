@@ -503,10 +503,11 @@
 
                 <!-- Start Tracking Button + Dashboard toggle -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
-                    <TextBlock Text="{Binding MessageRateText}"
+                    <TextBlock Text="{Binding DataFreshnessText}"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="11" VerticalAlignment="Center"
-                               Margin="0,0,16,0"/>
+                               Margin="0,0,16,0"
+                               ToolTip="AIS data freshness — warns if the stream stalls while connected"/>
                     <Button Content="{x:Static res:Strings.StartTracking}"
                             Command="{Binding MapViewModel.StartTrackingCommand}"
                             IsEnabled="{Binding HasApiKey}"

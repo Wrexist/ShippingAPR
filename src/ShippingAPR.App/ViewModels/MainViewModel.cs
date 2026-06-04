@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Win32;
 using ShippingAPR.App.Configuration;
 using ShippingAPR.App.Views;
+using ShippingAPR.Core.Diagnostics;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
@@ -34,7 +36,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly EventHandler _onStoreCleared;
     private readonly PropertyChangedEventHandler _onSelectedVesselChanged;
     private readonly EventHandler<Vessel> _onVesselSelected;
+    private readonly EventHandler<Vessel> _onVesselUpdated;
     private CancellationTokenSource? _notificationCts;
+
+    // Data-freshness tracking
+    private readonly DispatcherTimer _freshnessTimer;
+    private readonly TimeSpan _dataStaleThreshold;
+    private volatile bool _isConnected;
+    private DateTime? _lastDataUtc;
 
     [ObservableProperty]
     private string _connectionStatusText = Strings.Disconnected;
@@ -46,7 +55,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private int _vesselCount;
 
     [ObservableProperty]
-    private string _messageRateText = "";
+    private string _dataFreshnessText = "";
 
     [ObservableProperty]
     private bool _isDarkTheme = true;
@@ -154,10 +163,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
 
-        _onVesselAdded = (_, _) => VesselCount = _vesselStore.Count;
+        _onVesselAdded = (_, _) => { VesselCount = _vesselStore.Count; _lastDataUtc = DateTime.UtcNow; };
+        _onVesselUpdated = (_, _) => _lastDataUtc = DateTime.UtcNow;
         _onStoreCleared = (_, _) => VesselCount = 0;
         _vesselStore.VesselAdded += _onVesselAdded;
+        _vesselStore.VesselUpdated += _onVesselUpdated;
         _vesselStore.StoreCleared += _onStoreCleared;
+
+        // Poll data freshness so a silently stalled stream (no socket error) is
+        // surfaced to the user instead of a frozen but "Connected" map.
+        _dataStaleThreshold = TimeSpan.FromSeconds(_uiOptions.DataStaleThresholdSeconds);
+        _freshnessTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(_uiOptions.DataFreshnessPollMs)
+        };
+        _freshnessTimer.Tick += (_, _) => UpdateDataFreshness();
+        _freshnessTimer.Start();
 
         // Listen for notifications
         WeakReferenceMessenger.Default.Register<NotificationPublished>(this, (_, msg) =>
@@ -541,6 +562,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)
     {
+        _isConnected = status == ConnectionStatus.Connected;
+
         Application.Current?.Dispatcher.Invoke(() =>
         {
             var providerName = _configuration["AisProvider:Active"] ?? "AisStream";
@@ -569,12 +592,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    private void UpdateDataFreshness()
+    {
+        var state = DataFreshness.Evaluate(_isConnected, _lastDataUtc, DateTime.UtcNow, _dataStaleThreshold);
+        DataFreshnessText = state switch
+        {
+            DataFreshnessState.Live => "● Live",
+            DataFreshnessState.Waiting => "Waiting for data…",
+            DataFreshnessState.Stale => $"⚠ No data {DataFreshness.DescribeAge(DateTime.UtcNow - _lastDataUtc!.Value)}",
+            _ => string.Empty // Idle / not connected
+        };
+    }
+
     public void Dispose()
     {
+        _freshnessTimer.Stop();
         _notificationCts?.Cancel();
         _notificationCts?.Dispose();
         _trackingService.ConnectionStatusChanged -= _onConnectionStatusChanged;
         _vesselStore.VesselAdded -= _onVesselAdded;
+        _vesselStore.VesselUpdated -= _onVesselUpdated;
         _vesselStore.StoreCleared -= _onStoreCleared;
         VesselListViewModel.PropertyChanged -= _onSelectedVesselChanged;
         SearchViewModel.VesselSelected -= _onVesselSelected;
