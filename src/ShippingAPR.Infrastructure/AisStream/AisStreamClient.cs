@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Net.NetworkInformation;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -26,6 +27,7 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
 
     private long _messageCount;
     private long _parseErrorCount;
+    private bool _networkEventsSubscribed;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Disconnected;
     public long MessageCount => Interlocked.Read(ref _messageCount);
@@ -67,6 +69,8 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
             SetStatus(ConnectionStatus.Connected);
             _logger.LogInformation("Connected to AIS stream for area {Area}", area);
 
+            SubscribeNetworkEvents();
+
             _receiveCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _receiveTask = ReceiveLoopAsync(_receiveCts.Token);
         }
@@ -93,6 +97,7 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
 
     public async Task DisconnectAsync()
     {
+        UnsubscribeNetworkEvents();
         _receiveCts?.Cancel();
 
         // Await the receive task BEFORE disposing the socket, so the loop
@@ -300,6 +305,54 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
         return false;
     }
 
+    // --- Proactive recovery on network change / sleep-resume ---
+    // Without this, a stalled socket is only noticed reactively (failed receive
+    // or keep-alive timeout), which can take a while after a laptop wakes or the
+    // connection switches (Wi-Fi -> cellular, VPN up/down). Resume typically
+    // re-initialises the network stack, which raises these same events.
+
+    private void SubscribeNetworkEvents()
+    {
+        if (_networkEventsSubscribed) return;
+        NetworkChange.NetworkAddressChanged += OnNetworkAddressChanged;
+        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+        _networkEventsSubscribed = true;
+    }
+
+    private void UnsubscribeNetworkEvents()
+    {
+        if (!_networkEventsSubscribed) return;
+        NetworkChange.NetworkAddressChanged -= OnNetworkAddressChanged;
+        NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+        _networkEventsSubscribed = false;
+    }
+
+    private void OnNetworkAddressChanged(object? sender, EventArgs e) =>
+        ForceReconnectAfterNetworkChange("network address changed");
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+    {
+        if (e.IsAvailable)
+            ForceReconnectAfterNetworkChange("network became available");
+    }
+
+    private void ForceReconnectAfterNetworkChange(string reason)
+    {
+        // Only act when we believe we're connected. Aborting the socket makes the
+        // receive loop's ReceiveAsync throw, which triggers the existing
+        // backoff-based reconnect immediately. Because Abort() moves the status
+        // off Connected, bursts of network events naturally collapse to one
+        // reconnect until we're connected again.
+        if (Status != ConnectionStatus.Connected) return;
+
+        var socket = _webSocket;
+        if (socket is null) return;
+
+        _logger.LogInformation("Detected {Reason}; forcing AIS stream reconnect", reason);
+        try { socket.Abort(); }
+        catch (Exception ex) { _logger.LogDebug(ex, "Error aborting WebSocket after network change"); }
+    }
+
     private ClientWebSocket CreateConfiguredWebSocket()
     {
         var ws = new ClientWebSocket();
@@ -361,6 +414,7 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
 
     public void Dispose()
     {
+        UnsubscribeNetworkEvents();
         _receiveCts?.Cancel();
 
         // Wait briefly for the receive loop to exit gracefully.
