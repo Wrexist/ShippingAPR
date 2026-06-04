@@ -80,8 +80,9 @@ The GitHub Actions workflow will automatically build, test, and publish a releas
 
 ```
 ShippingAPR.Core           Zero-dependency domain models, calculations, interfaces
-ShippingAPR.Infrastructure AIS WebSocket client, VesselFinder REST client, port database
-ShippingAPR.Services       VesselStore, TrackingService, AreaMonitor, Notifications
+ShippingAPR.Infrastructure AIS providers (AisStream WebSocket, Datalastic/DataDocked REST) behind a
+                           provider factory + fallback, VesselFinder enrichment, weather, port database
+ShippingAPR.Services       VesselStore, TrackingService, AreaMonitor, Notifications, and more
 ShippingAPR.App            WPF views, MVVM viewmodels, themes, localization
 ```
 
@@ -99,7 +100,7 @@ ShippingAPR.App            WPF views, MVVM viewmodels, themes, localization
 | Framework | WPF / .NET 8 |
 | Map | Mapsui 5.x (SkiaSharp) |
 | MVVM | CommunityToolkit.Mvvm 8.4 |
-| AIS Data | aisstream.io (WebSocket) |
+| AIS Data | aisstream.io (WebSocket, default), Datalastic / DataDocked (REST) |
 | Enrichment | VesselFinder API (optional) |
 | DI | Microsoft.Extensions.Hosting |
 | Testing | xUnit + FluentAssertions + Moq |

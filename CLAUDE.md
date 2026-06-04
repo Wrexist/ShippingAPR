@@ -1,24 +1,27 @@
 # ShippingAPR - Claude Code Guide
 
 ## Project Overview
-Real-time AIS ship tracking desktop application built with WPF (.NET 8) and Mapsui maps. Streams live vessel positions via aisstream.io WebSocket API and displays them on an interactive world map.
+Real-time AIS ship tracking desktop application built with WPF (.NET 8) and Mapsui maps. Streams live vessel positions from a selectable AIS provider (aisstream.io WebSocket by default, with Datalastic and DataDocked REST polling alternatives) and displays them on an interactive world map. Providers sit behind `AisProviderFactory`, and `FallbackAisProvider` can auto-switch to a configured backup if the primary fails.
 
 ## Architecture
 ```
 src/
   ShippingAPR.Core/          # Domain models, calculations, interfaces (zero dependencies)
-  ShippingAPR.Infrastructure/ # External API clients (AisStream WebSocket, VesselFinder REST), port data
-  ShippingAPR.Services/       # Business logic (VesselStore, VesselTrackingService, AreaMonitor)
+  ShippingAPR.Infrastructure/ # AIS providers (AisStream WebSocket, Datalastic/DataDocked REST),
+                              #   provider factory + fallback, VesselFinder enrichment, weather, port data
+  ShippingAPR.Services/       # Business logic (VesselStore, VesselTrackingService, AreaMonitor, +~20 more)
   ShippingAPR.App/            # WPF UI layer (MVVM ViewModels + XAML Views)
 tests/
-  ShippingAPR.Core.Tests/     # xUnit + FluentAssertions
-  ShippingAPR.Services.Tests/ # xUnit + Moq
+  ShippingAPR.Core.Tests/           # xUnit + FluentAssertions
+  ShippingAPR.Infrastructure.Tests/ # xUnit + Moq
+  ShippingAPR.Services.Tests/       # xUnit + Moq
+  ShippingAPR.App.Tests/            # xUnit (headless ViewModel tests)
 ```
 
 ## Build & Test Commands
 ```bash
-# Build entire solution
-dotnet build src/ShippingAPR.sln
+# Build entire solution (solution file is at the repo root)
+dotnet build ShippingAPR.sln
 
 # Run all tests
 dotnet test tests/ --configuration Release
@@ -37,15 +40,17 @@ dotnet publish src/ShippingAPR.App -c Release -r win-x64 --self-contained -p:Pub
 
 ## Data Flow
 ```
-aisstream.io WebSocket → AisStreamClient → VesselTrackingService → VesselStore
+AIS provider (AisStreamClient / Datalastic / DataDocked, via AisProviderFactory + FallbackAisProvider)
+  → VesselTrackingService → VesselStore
   → Events (VesselAdded/Updated) → MapViewModel (batched) → Mapsui render
                                   → VesselListViewModel (debounced) → UI list
 ```
 
 ## API Keys
 - **Never commit real API keys**. Use `appsettings.Development.json` or `appsettings.Local.json` (both gitignored)
-- aisstream.io key required for ship data; VesselFinder key optional for enrichment
-- Keys configured in `appsettings.json` under `AisStream:ApiKey` and `VesselFinder:ApiKey`
+- A key for the active AIS provider is required for ship data; VesselFinder key optional for enrichment
+- Provider keys live in `appsettings.json` under `AisStream:ApiKey`, `Datalastic:ApiKey`, `DataDocked:ApiKey`, and `VesselFinder:ApiKey`
+- `AisProvider:Active` selects the primary provider; `AisProvider:Fallback` (empty by default) optionally names a backup `FallbackAisProvider` switches to on failure
 
 ## Map Technology
 - **Mapsui 5.0.0-beta.1** with SkiaSharp rendering and OpenStreetMap tiles
