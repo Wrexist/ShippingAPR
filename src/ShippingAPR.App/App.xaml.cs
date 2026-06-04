@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -79,6 +80,17 @@ public partial class App : Application
                 config.SetBasePath(baseDir);
                 config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
                 config.AddJsonFile("appsettings.Development.json", optional: true);
+
+                // Per-user overrides (including API keys) live under %APPDATA%, not the
+                // install directory. Added last so it takes precedence over shipped defaults.
+                var localDir = Path.GetDirectoryName(LocalSettingsStore.FilePath);
+                if (localDir is not null)
+                {
+                    Directory.CreateDirectory(localDir);
+                    config.AddJsonFile(new PhysicalFileProvider(localDir),
+                        Path.GetFileName(LocalSettingsStore.FilePath),
+                        optional: true, reloadOnChange: true);
+                }
             })
             .ConfigureServices((ctx, services) =>
             {

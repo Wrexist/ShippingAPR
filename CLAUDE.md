@@ -50,6 +50,7 @@ AIS provider (AisStreamClient / Datalastic / DataDocked, via AisProviderFactory 
 - **Never commit real API keys**. Use `appsettings.Development.json` or `appsettings.Local.json` (both gitignored)
 - A key for the active AIS provider is required for ship data; VesselFinder key optional for enrichment
 - Provider keys live in `appsettings.json` under `AisStream:ApiKey`, `Datalastic:ApiKey`, `DataDocked:ApiKey`, and `VesselFinder:ApiKey`
+- Keys entered at runtime (welcome dialog / settings) are saved to `%APPDATA%/ShippingAPR/appsettings.Local.json` (off the install dir) and override `appsettings.json`
 - `AisProvider:Active` selects the primary provider; `AisProvider:Fallback` (empty by default) optionally names a backup `FallbackAisProvider` switches to on failure
 
 ## Map Technology

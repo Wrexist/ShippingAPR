@@ -1,8 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -374,40 +372,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StartTrackingTooltip));
     }
 
-    internal static bool SaveApiKey(string apiKey)
-    {
-        try
-        {
-            var exePath = Environment.ProcessPath;
-            var baseDir = exePath is not null
-                ? Path.GetDirectoryName(exePath)
-                : AppContext.BaseDirectory;
-            var path = Path.Combine(baseDir ?? AppContext.BaseDirectory, "appsettings.json");
-
-            if (!File.Exists(path)) return false;
-
-            // Use proper JSON parsing to avoid injection via malformed keys
-            var json = File.ReadAllText(path);
-            var root = JsonNode.Parse(json) ?? new JsonObject();
-            var aisSection = root["AisStream"]?.AsObject();
-            if (aisSection is null)
-            {
-                aisSection = new JsonObject();
-                root["AisStream"] = aisSection;
-            }
-            aisSection["ApiKey"] = apiKey;
-
-            File.WriteAllText(path, root.ToJsonString(
-                new JsonSerializerOptions { WriteIndented = true }));
-            return true;
-        }
-        catch (Exception ex)
-        {
-            // Non-critical — user can manually edit appsettings.json
-            System.Diagnostics.Debug.WriteLine($"Failed to save API key: {ex.Message}");
-            return false;
-        }
-    }
+    internal static bool SaveApiKey(string apiKey) =>
+        LocalSettingsStore.Update(root =>
+            LocalSettingsStore.SetSectionValue(root, "AisStream", "ApiKey", apiKey));
 
     [RelayCommand]
     private void ExportCsv()
