@@ -31,6 +31,12 @@ public static class NavigationConstants
     /// <summary>AIS true heading value indicating "not available" (field value 511).</summary>
     public const int TrueHeadingNotAvailable = 511;
 
+    /// <summary>AIS speed-over-ground value (knots) indicating "not available" (raw field 1023 = 102.3 kn).</summary>
+    public const double SpeedOverGroundNotAvailable = 102.3;
+
+    /// <summary>AIS course-over-ground value (degrees) indicating "not available" (raw field 3600 = 360.0°).</summary>
+    public const double CourseOverGroundNotAvailable = 360.0;
+
     /// <summary>AIS draught is reported in 1/10th meters.</summary>
     public const double DraughtDivisor = 10.0;
 

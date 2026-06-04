@@ -66,17 +66,32 @@ public sealed class AisMessageMapper
 
         var mmsi = message.MetaData?.Mmsi ?? data.UserId;
 
+        var latitude = message.MetaData?.Latitude ?? data.Latitude;
+        var longitude = message.MetaData?.Longitude ?? data.Longitude;
+
+        // AIS reports lat=91 / lon=181 when no position fix is available. Such a report
+        // carries no usable position, so skip it rather than plotting the sentinel
+        // (and rather than letting VesselPosition's range guard throw, which would be
+        // swallowed upstream and silently drop every "no-fix" report).
+        if (latitude is < -90 or > 90 || longitude is < -180 or > 180)
+            return null;
+
+        // SOG 102.3 (raw 1023) and COG 360.0 (raw 3600) are AIS "not available" codes.
+        // Normalise them to 0 so they are never displayed or used as real values.
+        var sog = data.Sog >= NavigationConstants.SpeedOverGroundNotAvailable ? 0 : data.Sog;
+        var cog = data.Cog >= NavigationConstants.CourseOverGroundNotAvailable ? 0 : data.Cog;
+
         return new AisMessageEventArgs
         {
             MessageType = "PositionReport",
             Mmsi = mmsi,
             Position = new VesselPosition
             {
-                Latitude = message.MetaData?.Latitude ?? data.Latitude,
-                Longitude = message.MetaData?.Longitude ?? data.Longitude,
-                SpeedOverGround = data.Sog,
-                CourseOverGround = data.Cog,
-                TrueHeading = data.TrueHeading == NavigationConstants.TrueHeadingNotAvailable ? data.Cog : data.TrueHeading,
+                Latitude = latitude,
+                Longitude = longitude,
+                SpeedOverGround = sog,
+                CourseOverGround = cog,
+                TrueHeading = data.TrueHeading == NavigationConstants.TrueHeadingNotAvailable ? cog : data.TrueHeading,
                 Status = (NavigationalStatus)Math.Min(data.NavigationalStatus, NavigationConstants.MaxNavigationalStatus),
                 RateOfTurn = data.RateOfTurn,
                 Timestamp = DateTime.UtcNow

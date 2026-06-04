@@ -165,6 +165,67 @@ public class AisMessageMapperTests
         _mapper.Map(msg).Should().BeNull();
     }
 
+    // --- AIS Sentinel / "not available" values ---
+
+    [Fact]
+    public void MapPositionReport_SentinelLatitude91_ReturnsNull()
+    {
+        // lat=91 is the AIS "position not available" sentinel — must not be plotted.
+        var msg = CreatePositionReportMessage(lat: 91.0);
+        _mapper.Map(msg).Should().BeNull();
+    }
+
+    [Fact]
+    public void MapPositionReport_SentinelLongitude181_ReturnsNull()
+    {
+        // lon=181 is the AIS "position not available" sentinel — must not be plotted.
+        var msg = CreatePositionReportMessage(lon: 181.0);
+        _mapper.Map(msg).Should().BeNull();
+    }
+
+    [Fact]
+    public void MapPositionReport_BoundaryLatLon_StillMapped()
+    {
+        // Exact bounds (±90 / ±180) are valid positions, not sentinels.
+        var msg = CreatePositionReportMessage(lat: 90.0, lon: 180.0);
+        var result = _mapper.Map(msg);
+
+        result.Should().NotBeNull();
+        result!.Position!.Latitude.Should().Be(90.0);
+        result.Position.Longitude.Should().Be(180.0);
+    }
+
+    [Fact]
+    public void MapPositionReport_SpeedNotAvailable_NormalisedToZero()
+    {
+        // SOG 102.3 (raw 1023) means "not available" — must not be shown as 102.3 kn.
+        var msg = CreatePositionReportMessage(sog: 102.3);
+        var result = _mapper.Map(msg);
+
+        result!.Position!.SpeedOverGround.Should().Be(0);
+    }
+
+    [Fact]
+    public void MapPositionReport_CourseNotAvailable_NormalisedToZero()
+    {
+        // COG 360.0 (raw 3600) means "not available".
+        var msg = CreatePositionReportMessage(cog: 360.0);
+        var result = _mapper.Map(msg);
+
+        result!.Position!.CourseOverGround.Should().Be(0);
+    }
+
+    [Fact]
+    public void MapPositionReport_CourseNotAvailable_HeadingFallbackAlsoNormalised()
+    {
+        // TrueHeading=511 falls back to COG; if COG is also "not available" the
+        // heading must end up as 0, not 360.
+        var msg = CreatePositionReportMessage(trueHeading: 511, cog: 360.0);
+        var result = _mapper.Map(msg);
+
+        result!.Position!.TrueHeading.Should().Be(0);
+    }
+
     // --- Static Data Tests ---
 
     [Fact]
