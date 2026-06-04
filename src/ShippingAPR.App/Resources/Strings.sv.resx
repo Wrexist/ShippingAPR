@@ -90,6 +90,7 @@
   <data name="GetStarted"><value>Kom igång</value></data>
   <data name="ConnectionSuccess"><value>Anslutningen lyckades!</value></data>
   <data name="ConnectionFailed"><value>Anslutningen misslyckades. Kontrollera din API-nyckel.</value></data>
+  <data name="ApiKeyRequired"><value>Ange din API-nyckel.</value></data>
 
   <!-- Notifications -->
   <data name="VesselEnteredArea"><value>Fartyg Har Ankommit till Området</value></data>

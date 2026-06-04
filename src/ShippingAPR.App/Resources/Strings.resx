@@ -90,6 +90,7 @@
   <data name="GetStarted"><value>Get Started</value></data>
   <data name="ConnectionSuccess"><value>Connection successful!</value></data>
   <data name="ConnectionFailed"><value>Connection failed. Please check your API key.</value></data>
+  <data name="ApiKeyRequired"><value>Please enter your API key.</value></data>
 
   <!-- Notifications -->
   <data name="VesselEnteredArea"><value>Vessel Entered Area</value></data>

@@ -125,6 +125,7 @@ public class Strings
     public static string GetStarted => GetString("GetStarted");
     public static string ConnectionSuccess => GetString("ConnectionSuccess");
     public static string ConnectionFailed => GetString("ConnectionFailed");
+    public static string ApiKeyRequired => GetString("ApiKeyRequired");
 
     // Notifications
     public static string VesselEnteredArea => GetString("VesselEnteredArea");
