@@ -7,6 +7,7 @@ using ShippingAPR.Core.Calculations;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Core.Validation;
 using ShippingAPR.Infrastructure.Ports;
 
 namespace ShippingAPR.Services;
@@ -166,6 +167,14 @@ public sealed class VesselTrackingService : BackgroundService, IVesselTrackingSe
 
     private void OnMessageReceived(object? sender, AisMessageEventArgs e)
     {
+        // Skip malformed MMSIs without throwing on the AIS hot path — a bad
+        // value is a data-quality issue, not an exceptional condition.
+        if (!MmsiValidator.IsValid(e.Mmsi))
+        {
+            _logger.LogDebug("Skipping AIS message with invalid MMSI {Mmsi}", e.Mmsi);
+            return;
+        }
+
         try
         {
             var vessel = _vesselStore.AddOrUpdate(e.Mmsi, e.Position, e.StaticData);

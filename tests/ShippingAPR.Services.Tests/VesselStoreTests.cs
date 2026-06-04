@@ -148,7 +148,6 @@ public class VesselStoreTests
     [Theory]
     [InlineData(0)]
     [InlineData(99_999_999)]
-    [InlineData(800_000_000)]
     [InlineData(-1)]
     public void AddOrUpdate_InvalidMmsi_ThrowsArgumentOutOfRange(int invalidMmsi)
     {
@@ -160,6 +159,8 @@ public class VesselStoreTests
     [InlineData(100_000_000)]
     [InlineData(265000001)]
     [InlineData(799_999_999)]
+    [InlineData(970_000_001)] // AIS-SART — a valid 9xx MMSI that the old 7xx bound rejected
+    [InlineData(999_999_999)]
     public void AddOrUpdate_ValidMmsi_Succeeds(int validMmsi)
     {
         var vessel = _store.AddOrUpdate(validMmsi, CreatePosition(57.7, 11.9), null);
