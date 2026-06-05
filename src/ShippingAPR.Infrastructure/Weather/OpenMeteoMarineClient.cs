@@ -72,7 +72,9 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
             var waveHeight = GetDouble(marineCurrent, "wave_height");
             var wavePeriod = GetDouble(marineCurrent, "wave_period");
             var temp = GetDouble(forecastCurrent, "temperature_2m");
-            var visibility = GetDouble(forecastCurrent, "visibility") / 1000.0; // m to km
+            // A missing visibility field must NOT read as 0 km (dense fog) and trigger a
+            // false fog alert — default to a clear value when the model has no data.
+            var visibility = GetDouble(forecastCurrent, "visibility", 10000.0) / 1000.0; // m to km
 
             var weather = new MarineWeather
             {
@@ -141,12 +143,15 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
         }
     }
 
-    private static double GetDouble(JsonElement element, string property)
+    private static double GetDouble(JsonElement element, string property) =>
+        GetDouble(element, property, 0);
+
+    private static double GetDouble(JsonElement element, string property, double defaultValue)
     {
-        if (!element.TryGetProperty(property, out var val)) return 0;
+        if (!element.TryGetProperty(property, out var val)) return defaultValue;
         if (val.ValueKind == JsonValueKind.Number) return val.GetDouble();
-        if (val.ValueKind == JsonValueKind.Null) return 0;
-        return double.TryParse(val.GetString(), out var d) ? d : 0;
+        if (val.ValueKind == JsonValueKind.Null) return defaultValue;
+        return double.TryParse(val.GetString(), out var d) ? d : defaultValue;
     }
 
     /// <summary>
