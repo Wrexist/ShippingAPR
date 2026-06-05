@@ -56,6 +56,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private bool _isTracking;
     private bool _featuresNeedRebuild;
     private readonly EventHandler<Vessel> _onVesselChanged;
+    private readonly EventHandler<Vessel> _onVesselRemoved;
     private readonly EventHandler _onStoreCleared;
 
     [ObservableProperty]
@@ -140,12 +141,14 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _uiOptions = uiOptions.Value;
 
         _onVesselChanged = (_, v) => OnVesselChanged(null, v);
+        _onVesselRemoved = (_, v) => RemoveVessel(v.Mmsi);
         _onStoreCleared = (_, _) => ClearVessels();
 
         InitializeMap();
 
         _vesselStore.VesselAdded += _onVesselChanged;
         _vesselStore.VesselUpdated += _onVesselChanged;
+        _vesselStore.VesselRemoved += _onVesselRemoved;
         _vesselStore.StoreCleared += _onStoreCleared;
         _areaMonitorService.GeofencesChanged += (_, _) =>
             Application.Current?.Dispatcher.Invoke(RenderGeofences);
@@ -929,6 +932,30 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _geofenceLayer.DataHasChanged();
     }
 
+    private void RemoveVessel(int mmsi)
+    {
+        // Drop purged/stale vessels from the map instead of leaking their markers
+        // for the lifetime of the session.
+        Application.Current?.Dispatcher.Invoke(() =>
+        {
+            lock (_pendingLock)
+            {
+                _pendingUpdates.RemoveAll(u => u.Mmsi == mmsi);
+            }
+
+            if (!_vesselFeatures.Remove(mmsi)) return;
+            _featuresNeedRebuild = true;
+            if (_vesselLayer is not null)
+            {
+                _vesselLayer.Features = _vesselFeatures.Values.ToList();
+                _vesselLayer.DataHasChanged();
+            }
+
+            if (_highlightedVessel?.Mmsi == mmsi)
+                _highlightedVessel = null;
+        });
+    }
+
     private void ClearVessels()
     {
         Application.Current?.Dispatcher.Invoke(() =>
@@ -1317,6 +1344,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _viewportDebounceTimer.Stop();
         _vesselStore.VesselAdded -= _onVesselChanged;
         _vesselStore.VesselUpdated -= _onVesselChanged;
+        _vesselStore.VesselRemoved -= _onVesselRemoved;
         _vesselStore.StoreCleared -= _onStoreCleared;
     }
 }
