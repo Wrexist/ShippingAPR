@@ -1246,7 +1246,8 @@ public partial class MapViewModel : ObservableObject, IDisposable
         var tileLayer = layerName switch
         {
             "Dark" => CreateDarkTileLayer(),
-            _ => OpenStreetMap.CreateTileLayer()
+            "Satellite" => CreateSatelliteTileLayer(),
+            _ => OpenStreetMap.CreateTileLayer() // Standard / OpenStreetMap
         };
 
         Map.Layers.Insert(0, tileLayer);
@@ -1261,6 +1262,18 @@ public partial class MapViewModel : ObservableObject, IDisposable
             name: "CartoDB Dark",
             attribution: new BruTile.Attribution("(C) OpenStreetMap contributors, (C) CARTO", "https://carto.com/attributions"));
         return new TileLayer(tileSource) { Name = "CartoDB Dark" };
+    }
+
+    private static TileLayer CreateSatelliteTileLayer()
+    {
+        // Esri World Imagery (satellite/aerial). Esri tiles use {z}/{y}/{x} order and
+        // a single host (no {s} subdomains).
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            name: "Esri World Imagery",
+            attribution: new BruTile.Attribution("(C) Esri, Maxar, Earthstar Geographics", "https://www.esri.com/"));
+        return new TileLayer(tileSource) { Name = "Esri World Imagery" };
     }
 
     // ═══════════════════════════════════════════════
