@@ -1258,10 +1258,23 @@ public partial class MapViewModel : ObservableObject, IDisposable
         {
             "Dark" => CreateDarkTileLayer(),
             "Satellite" => CreateSatelliteTileLayer(),
+            "Depth" => CreateBathymetryTileLayer(),
             _ => OpenStreetMap.CreateTileLayer() // Standard / OpenStreetMap
         };
 
         Map.Layers.Insert(0, tileLayer);
+    }
+
+    private static TileLayer CreateBathymetryTileLayer()
+    {
+        // EMODnet Bathymetry depth-shaded basemap (free XYZ tiles). A practical
+        // alternative to GEBCO's WMS for showing sea-floor depth; vessels render on top.
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png",
+            name: "EMODnet Bathymetry",
+            attribution: new BruTile.Attribution("(C) EMODnet Bathymetry", "https://emodnet.ec.europa.eu/en/bathymetry"));
+        return new TileLayer(tileSource) { Name = "EMODnet Bathymetry" };
     }
 
     private void ToggleSeaMarkOverlay()

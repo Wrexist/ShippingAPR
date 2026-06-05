@@ -136,8 +136,13 @@
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"/>
-                    <Button Content="&#x2693;" ToolTip="Nautical Chart"
+                    <Button Content="&#x2693;" ToolTip="Nautical Chart (OpenSeaMap overlay)"
                             Command="{Binding SwitchMapLayerCommand}" CommandParameter="SeaMap"
+                            Style="{DynamicResource GhostButtonStyle}"
+                            FontSize="14" Width="36" Height="36"
+                            Padding="0" HorizontalContentAlignment="Center"/>
+                    <Button Content="&#x1F30A;" ToolTip="Depth / Bathymetry"
+                            Command="{Binding SwitchMapLayerCommand}" CommandParameter="Depth"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"/>
