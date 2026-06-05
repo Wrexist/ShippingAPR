@@ -370,7 +370,22 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
     {
         try
         {
-            var aisMessage = JsonSerializer.Deserialize<AisMessage>(json);
+            using var doc = JsonDocument.Parse(json);
+
+            // aisstream.io does not close the socket on a bad key or malformed
+            // subscription — it sends a text frame like {"error":"..."} and keeps the
+            // connection open. Detect it and surface an Error status instead of silently
+            // swallowing it (which presents as "Connected" with an empty map).
+            if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("error", out var errorProp))
+            {
+                var errorText = errorProp.GetString() ?? "unknown error";
+                _logger.LogError("AIS stream rejected the request: {Error}", errorText);
+                SetStatus(ConnectionStatus.Error);
+                return;
+            }
+
+            var aisMessage = doc.RootElement.Deserialize<AisMessage>();
             if (aisMessage is null) return;
 
             var args = _mapper.Map(aisMessage);
