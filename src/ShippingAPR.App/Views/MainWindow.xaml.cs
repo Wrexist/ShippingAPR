@@ -116,6 +116,8 @@ public partial class MainWindow : Window
         _preferences.ShowTugPilot = _viewModel.FilterViewModel.ShowTugPilot;
         _preferences.ShowOther = _viewModel.FilterViewModel.ShowOther;
         _preferences.MaxSpeed = _viewModel.FilterViewModel.MaxSpeed;
+        _preferences.DestinationFilter = _viewModel.FilterViewModel.DestinationFilter;
+        _preferences.FlagFilter = _viewModel.FilterViewModel.FlagFilter;
 
         _preferences.Save();
     }

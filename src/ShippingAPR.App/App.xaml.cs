@@ -206,9 +206,11 @@ public partial class App : Application
         // Validate configuration at startup
         ValidateConfiguration(_host.Services);
 
-        // Load persisted user preferences
+        // Load persisted user preferences and apply theme + language BEFORE any
+        // window/ViewModel is created so they actually survive a restart.
         var prefs = _host.Services.GetRequiredService<UserPreferences>();
         prefs.Load();
+        ApplyStartupPreferences(prefs);
 
         // Set sync context for UI thread dispatching
         var vesselStore = _host.Services.GetRequiredService<VesselStore>();
@@ -237,20 +239,31 @@ public partial class App : Application
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         var mainViewModel = _host.Services.GetRequiredService<MainViewModel>();
 
-        // Check if API key is configured
+        // Reflect persisted theme/language and filters in the ViewModels.
+        mainViewModel.IsDarkTheme = prefs.IsDarkTheme;
+        mainViewModel.CurrentLanguage = prefs.Language;
+        ApplyFilterPreferences(prefs, mainViewModel.FilterViewModel);
+
+        // Check whether the ACTIVE provider has a key configured (not just AisStream).
         var config = _host.Services.GetRequiredService<IConfiguration>();
-        var apiKey = config["AisStream:ApiKey"];
+        var activeProvider = config["AisProvider:Active"] ?? "AisStream";
+        var apiKey = activeProvider switch
+        {
+            "Datalastic" => config["Datalastic:ApiKey"],
+            "DataDocked" => config["DataDocked:ApiKey"],
+            _ => config["AisStream:ApiKey"]
+        };
 
         if (string.IsNullOrEmpty(apiKey))
         {
             var welcomeDialog = new WelcomeDialog();
             if (welcomeDialog.ShowDialog() == true && !string.IsNullOrEmpty(welcomeDialog.ApiKey))
             {
-                // Save API key to appsettings.json
-                if (!MainViewModel.SaveApiKey(welcomeDialog.ApiKey))
+                // Save the key to the section for the provider the user actually chose.
+                if (!MainViewModel.SaveProviderApiKey(welcomeDialog.SelectedProvider, welcomeDialog.ApiKey))
                 {
                     MessageBox.Show(
-                        "Failed to save API key to appsettings.json.\nYou can add it manually by editing the file.",
+                        "Failed to save the API key.\nYou can add it manually in Settings.",
                         "ShippingAPR", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 mainViewModel.HasApiKey = true;
@@ -258,6 +271,42 @@ public partial class App : Application
         }
 
         mainWindow.Show();
+    }
+
+    private void ApplyStartupPreferences(UserPreferences prefs)
+    {
+        // Theme: App.xaml ships the dark theme; swap to light if persisted.
+        if (!prefs.IsDarkTheme)
+        {
+            try
+            {
+                var themeUri = new Uri("pack://application:,,,/Assets/Themes/LightTheme.xaml");
+                Resources.MergedDictionaries.Clear();
+                Resources.MergedDictionaries.Add(new ResourceDictionary { Source = themeUri });
+            }
+            catch (Exception ex)
+            {
+                LogToCrashFile(ex, "ApplyStartupTheme");
+            }
+        }
+
+        // Language: set the UI culture so localized resources resolve correctly.
+        var culture = new System.Globalization.CultureInfo(prefs.Language == "sv" ? "sv-SE" : "en-US");
+        System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;
+    }
+
+    private static void ApplyFilterPreferences(UserPreferences prefs, ViewModels.FilterViewModel filter)
+    {
+        filter.ShowCargo = prefs.ShowCargo;
+        filter.ShowTanker = prefs.ShowTanker;
+        filter.ShowPassenger = prefs.ShowPassenger;
+        filter.ShowFishing = prefs.ShowFishing;
+        filter.ShowTugPilot = prefs.ShowTugPilot;
+        filter.ShowOther = prefs.ShowOther;
+        filter.MaxSpeed = prefs.MaxSpeed;
+        filter.DestinationFilter = prefs.DestinationFilter;
+        filter.FlagFilter = prefs.FlagFilter;
     }
 
     private static void ValidateConfiguration(IServiceProvider services)

@@ -373,8 +373,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     internal static bool SaveApiKey(string apiKey) =>
-        LocalSettingsStore.Update(root =>
-            LocalSettingsStore.SetSectionValue(root, "AisStream", "ApiKey", apiKey));
+        SaveProviderApiKey("AisStream", apiKey);
+
+    /// <summary>
+    /// Saves an API key to the section for the chosen provider and makes that provider
+    /// active, so a non-AisStream choice in the welcome dialog is honoured.
+    /// </summary>
+    internal static bool SaveProviderApiKey(string provider, string apiKey)
+    {
+        var section = provider switch
+        {
+            "Datalastic" => "Datalastic",
+            "DataDocked" => "DataDocked",
+            _ => "AisStream"
+        };
+        return LocalSettingsStore.Update(root =>
+        {
+            LocalSettingsStore.SetSectionValue(root, section, "ApiKey", apiKey);
+            LocalSettingsStore.SetSectionValue(root, "AisProvider", "Active", section);
+        });
+    }
 
     [RelayCommand]
     private void ExportCsv()
