@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.Services;
 
 /// <summary>
@@ -105,7 +107,7 @@ public sealed class FleetService
             List<FleetGroup> custom;
             lock (_lock) custom = _groups.Where(g => g.GroupType == FleetGroupType.Custom).ToList();
             var json = JsonSerializer.Serialize(custom, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(DataPath, json);
+            AtomicFile.WriteAllText(DataPath, json);
         }
         catch (Exception ex)
         {

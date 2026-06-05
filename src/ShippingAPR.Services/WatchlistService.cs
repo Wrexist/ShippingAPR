@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.Services;
 
 public sealed class WatchlistService : IWatchlistService, IDisposable
@@ -145,7 +147,7 @@ public sealed class WatchlistService : IWatchlistService, IDisposable
             lock (_lock) { mmsis = [.. _watched]; }
 
             var json = JsonSerializer.Serialize(mmsis, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(WatchlistPath, json);
+            AtomicFile.WriteAllText(WatchlistPath, json);
         }
         catch (Exception ex)
         {

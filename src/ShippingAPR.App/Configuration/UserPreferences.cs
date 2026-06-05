@@ -3,6 +3,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Models;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.App.Configuration;
 
 /// <summary>
@@ -106,7 +108,7 @@ public sealed class UserPreferences
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(PreferencesPath, json);
+            AtomicFile.WriteAllText(PreferencesPath, json);
         }
         catch (Exception ex)
         {

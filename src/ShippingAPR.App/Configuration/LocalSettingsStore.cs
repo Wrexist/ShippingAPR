@@ -2,6 +2,8 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.App.Configuration;
 
 /// <summary>
@@ -34,7 +36,7 @@ public static class LocalSettingsStore
 
             mutate(root);
 
-            File.WriteAllText(FilePath, root.ToJsonString(
+            AtomicFile.WriteAllText(FilePath, root.ToJsonString(
                 new JsonSerializerOptions { WriteIndented = true }));
             return true;
         }

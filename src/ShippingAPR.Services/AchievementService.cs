@@ -8,6 +8,8 @@ using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.Services;
 
 public sealed class AchievementUnlocked : ValueChangedMessage<AchievementDefinition>
@@ -230,7 +232,7 @@ public sealed class AchievementService : IDisposable
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(DataPath, json);
+            AtomicFile.WriteAllText(DataPath, json);
         }
         catch (Exception ex)
         {
