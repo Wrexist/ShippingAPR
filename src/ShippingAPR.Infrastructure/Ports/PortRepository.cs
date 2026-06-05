@@ -97,9 +97,9 @@ public sealed class PortRepository : IPortRepository
             .FirstOrDefault()?.Port;
     }
 
-    public Port? FindNearest(double latitude, double longitude)
+    public Port? FindNearest(double latitude, double longitude, double maxDistanceNm = 100.0)
     {
-        return AllPorts
+        var nearest = AllPorts
             .Select(p => new
             {
                 Port = p,
@@ -107,7 +107,11 @@ public sealed class PortRepository : IPortRepository
                     latitude, longitude, p.Latitude, p.Longitude)
             })
             .OrderBy(x => x.Distance)
-            .FirstOrDefault()?.Port;
+            .FirstOrDefault();
+
+        // With a small port DB, the geometrically-nearest port can be hundreds of NM
+        // away. Don't attribute a vessel to a port it isn't actually near.
+        return nearest is not null && nearest.Distance <= maxDistanceNm ? nearest.Port : null;
     }
 
     public IEnumerable<Port> SearchPorts(string query)

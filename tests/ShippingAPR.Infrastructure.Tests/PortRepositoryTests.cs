@@ -81,6 +81,13 @@ public class PortRepositoryTests
         port!.Locode.Should().Contain("GOT");
     }
 
+    [Fact]
+    public void FindNearest_FarFromAnyPort_ReturnsNull()
+    {
+        // Middle of the South Pacific — no port within the default 100 NM.
+        _repo.FindNearest(-30.0, -140.0).Should().BeNull();
+    }
+
     // --- SearchPorts ---
 
     [Fact]
