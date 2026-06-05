@@ -106,6 +106,39 @@ public class CollisionRiskServiceTests
         CollisionAlerts().Should().ContainSingle();
     }
 
+    [Fact]
+    public void Scan_RiskClearsThenRecurs_AlertsAgain()
+    {
+        var clock = new FakeClock();
+        _sut.Clock = clock;
+
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 90), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 11.95, 10, 270), null);
+
+        _sut.ScanForCollisionRisks(); // episode 1 → alert
+        _sut.ScanForCollisionRisks(); // same episode → no new alert
+        CollisionAlerts().Should().ContainSingle();
+
+        // Pair stops converging (moving apart) and time passes beyond the clear window.
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 270), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 11.95, 10, 90), null);
+        clock.Now = clock.Now.AddSeconds(61);
+        _sut.ScanForCollisionRisks(); // no risk; stale episode expires
+
+        // They converge again → a brand-new episode → a second alert.
+        _store.AddOrUpdate(200000001, CreatePosition(57.7, 11.90, 10, 90), null);
+        _store.AddOrUpdate(200000002, CreatePosition(57.7, 11.95, 10, 270), null);
+        _sut.ScanForCollisionRisks();
+
+        CollisionAlerts().Should().HaveCount(2);
+    }
+
+    private sealed class FakeClock : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
     private static VesselPosition CreatePosition(double lat, double lon, double speed, double course)
     {
         return new VesselPosition
