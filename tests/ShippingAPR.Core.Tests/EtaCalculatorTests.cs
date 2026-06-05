@@ -64,8 +64,9 @@ public class EtaCalculatorTests
     [Fact]
     public void VesselPerpendicular_ReturnsNull()
     {
-        // Heading east (90°) toward a northward destination — no progress.
-        var position = CreatePosition(57.0, 11.97, sog: 10.0, cog: 90);
+        // Due south of Gothenburg (same longitude → bearing is exactly north), heading
+        // east (90°) gives an exactly-perpendicular 90° deviation — no progress.
+        var position = CreatePosition(57.0, Gothenburg.Longitude, sog: 10.0, cog: 90);
         EtaCalculator.Calculate(position, Gothenburg).Should().BeNull();
     }
 
