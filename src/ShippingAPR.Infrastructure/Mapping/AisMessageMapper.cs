@@ -54,6 +54,9 @@ public sealed class AisMessageMapper
         {
             "PositionReport" => MapPositionReport(message),
             "ShipStaticData" => MapStaticData(message),
+            "StandardClassBPositionReport" => MapStandardClassBPositionReport(message),
+            "ExtendedClassBPositionReport" => MapExtendedClassBPositionReport(message),
+            "StaticDataReport" => MapStaticDataReport(message),
             _ => null
         };
     }
@@ -64,37 +67,133 @@ public sealed class AisMessageMapper
         var data = report?.PositionReport;
         if (data is null) return null;
 
-        var mmsi = message.MetaData?.Mmsi ?? data.UserId;
-
-        var latitude = message.MetaData?.Latitude ?? data.Latitude;
-        var longitude = message.MetaData?.Longitude ?? data.Longitude;
-
-        // AIS reports lat=91 / lon=181 when no position fix is available. Such a report
-        // carries no usable position, so skip it rather than plotting the sentinel
-        // (and rather than letting VesselPosition's range guard throw, which would be
-        // swallowed upstream and silently drop every "no-fix" report).
-        if (latitude is < -90 or > 90 || longitude is < -180 or > 180)
-            return null;
-
-        // SOG 102.3 (raw 1023) and COG 360.0 (raw 3600) are AIS "not available" codes.
-        // Normalise them to 0 so they are never displayed or used as real values.
-        var sog = data.Sog >= NavigationConstants.SpeedOverGroundNotAvailable ? 0 : data.Sog;
-        var cog = data.Cog >= NavigationConstants.CourseOverGroundNotAvailable ? 0 : data.Cog;
+        var position = BuildPosition(message, data.Latitude, data.Longitude,
+            data.Sog, data.Cog, data.TrueHeading, data.NavigationalStatus, data.RateOfTurn);
+        if (position is null) return null;
 
         return new AisMessageEventArgs
         {
             MessageType = "PositionReport",
-            Mmsi = mmsi,
-            Position = new VesselPosition
+            Mmsi = message.MetaData?.Mmsi ?? data.UserId,
+            Position = position
+        };
+    }
+
+    /// <summary>
+    /// Builds a normalised <see cref="VesselPosition"/> from raw AIS fields, or null when
+    /// no usable position fix is present. Shared by Class A and Class B position reports.
+    /// </summary>
+    private static VesselPosition? BuildPosition(
+        AisMessage message, double dataLat, double dataLon,
+        double sog, double cog, int trueHeading, int navStatus, double rateOfTurn)
+    {
+        var latitude = message.MetaData?.Latitude ?? dataLat;
+        var longitude = message.MetaData?.Longitude ?? dataLon;
+
+        // AIS reports lat=91 / lon=181 when no position fix is available — skip it
+        // rather than plotting the sentinel (or letting VesselPosition's range guard throw).
+        if (latitude is < -90 or > 90 || longitude is < -180 or > 180)
+            return null;
+
+        // SOG 102.3 (raw 1023) and COG 360.0 (raw 3600) are "not available" codes.
+        var s = sog >= NavigationConstants.SpeedOverGroundNotAvailable ? 0 : sog;
+        var c = cog >= NavigationConstants.CourseOverGroundNotAvailable ? 0 : cog;
+
+        return new VesselPosition
+        {
+            Latitude = latitude,
+            Longitude = longitude,
+            SpeedOverGround = s,
+            CourseOverGround = c,
+            TrueHeading = trueHeading == NavigationConstants.TrueHeadingNotAvailable ? c : trueHeading,
+            Status = (NavigationalStatus)Math.Min(navStatus, NavigationConstants.MaxNavigationalStatus),
+            RateOfTurn = rateOfTurn,
+            Timestamp = DateTime.UtcNow
+        };
+    }
+
+    private static AisMessageEventArgs? MapStandardClassBPositionReport(AisMessage message)
+    {
+        var data = message.Message.Deserialize<StandardClassBPositionReportMessage>()?.StandardClassBPositionReport;
+        if (data is null) return null;
+
+        // Class B has no navigational status field — mark it NotDefined(15) rather than
+        // defaulting to 0 ("under way using engine"), which would mislabel every Class B vessel.
+        var position = BuildPosition(message, data.Latitude, data.Longitude,
+            data.Sog, data.Cog, data.TrueHeading, NavigationConstants.MaxNavigationalStatus, 0);
+        if (position is null) return null;
+
+        return new AisMessageEventArgs
+        {
+            MessageType = "StandardClassBPositionReport",
+            Mmsi = message.MetaData?.Mmsi ?? data.UserId,
+            Position = position
+        };
+    }
+
+    private static AisMessageEventArgs? MapExtendedClassBPositionReport(AisMessage message)
+    {
+        var data = message.Message.Deserialize<ExtendedClassBPositionReportMessage>()?.ExtendedClassBPositionReport;
+        if (data is null) return null;
+
+        var position = BuildPosition(message, data.Latitude, data.Longitude,
+            data.Sog, data.Cog, data.TrueHeading, NavigationConstants.MaxNavigationalStatus, 0);
+        if (position is null) return null;
+
+        // Extended Class B also carries name/type/dimensions.
+        VesselStaticData? staticData = null;
+        var name = CleanAisString(data.Name);
+        if (name is not null || data.Type > 0)
+        {
+            staticData = new VesselStaticData
             {
-                Latitude = latitude,
-                Longitude = longitude,
-                SpeedOverGround = sog,
-                CourseOverGround = cog,
-                TrueHeading = data.TrueHeading == NavigationConstants.TrueHeadingNotAvailable ? cog : data.TrueHeading,
-                Status = (NavigationalStatus)Math.Min(data.NavigationalStatus, NavigationConstants.MaxNavigationalStatus),
-                RateOfTurn = data.RateOfTurn,
-                Timestamp = DateTime.UtcNow
+                Name = name,
+                ShipType = MapShipType(data.Type),
+                DimensionA = data.Dimension?.A ?? 0,
+                DimensionB = data.Dimension?.B ?? 0,
+                DimensionC = data.Dimension?.C ?? 0,
+                DimensionD = data.Dimension?.D ?? 0,
+                CountryCode = MmsiToCountryCode(message.MetaData?.Mmsi ?? data.UserId)
+            };
+        }
+
+        return new AisMessageEventArgs
+        {
+            MessageType = "ExtendedClassBPositionReport",
+            Mmsi = message.MetaData?.Mmsi ?? data.UserId,
+            Position = position,
+            StaticData = staticData
+        };
+    }
+
+    private static AisMessageEventArgs? MapStaticDataReport(AisMessage message)
+    {
+        var data = message.Message.Deserialize<StaticDataReportMessage>()?.StaticDataReport;
+        if (data is null) return null;
+
+        var mmsi = message.MetaData?.Mmsi ?? data.UserId;
+        var name = CleanAisString(data.ReportA?.Name);
+        var callSign = CleanAisString(data.ReportB?.CallSign);
+        var shipType = data.ReportB is not null ? MapShipType(data.ReportB.ShipType) : VesselType.Unknown;
+
+        // Nothing useful to record.
+        if (name is null && callSign is null && shipType == VesselType.Unknown)
+            return null;
+
+        return new AisMessageEventArgs
+        {
+            MessageType = "StaticDataReport",
+            Mmsi = mmsi,
+            StaticData = new VesselStaticData
+            {
+                Name = name,
+                CallSign = callSign,
+                ShipType = shipType,
+                DimensionA = data.ReportB?.Dimension?.A ?? 0,
+                DimensionB = data.ReportB?.Dimension?.B ?? 0,
+                DimensionC = data.ReportB?.Dimension?.C ?? 0,
+                DimensionD = data.ReportB?.Dimension?.D ?? 0,
+                CountryCode = MmsiToCountryCode(mmsi)
             }
         };
     }

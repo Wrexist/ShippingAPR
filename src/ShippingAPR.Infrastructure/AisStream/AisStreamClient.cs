@@ -23,7 +23,13 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
     private Task? _receiveTask;
     private SubscriptionMessage? _lastSubscription;
 
-    private static readonly string[] DefaultMessageTypeFilters = ["PositionReport", "ShipStaticData"];
+    private static readonly string[] DefaultMessageTypeFilters =
+    [
+        "PositionReport", "ShipStaticData",
+        // Class B (small craft / pleasure / fishing) — without these a large share
+        // of coastal traffic is invisible.
+        "StandardClassBPositionReport", "ExtendedClassBPositionReport", "StaticDataReport"
+    ];
 
     private long _messageCount;
     private long _parseErrorCount;
