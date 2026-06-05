@@ -197,4 +197,28 @@ public class ExportServiceTests
 
         return vessel;
     }
+
+    [Theory]
+    [InlineData("=cmd|'/c calc'!A1")]
+    [InlineData("+1+2")]
+    [InlineData("-2+3")]
+    [InlineData("@SUM(A1)")]
+    public void Escape_FormulaInjection_PrefixedWithQuote(string input)
+    {
+        // None of these contain a comma/quote/newline, so the only change is the
+        // neutralising leading single quote.
+        ExportService.Escape(input).Should().Be("'" + input);
+    }
+
+    [Fact]
+    public void Escape_PlainText_Unchanged()
+    {
+        ExportService.Escape("STENA GERMANICA").Should().Be("STENA GERMANICA");
+    }
+
+    [Fact]
+    public void Escape_CarriageReturn_IsQuoted()
+    {
+        ExportService.Escape("LINE1\rLINE2").Should().StartWith("\"").And.EndWith("\"");
+    }
 }
