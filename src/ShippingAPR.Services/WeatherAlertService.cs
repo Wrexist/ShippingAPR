@@ -42,8 +42,11 @@ public sealed class WeatherAlertService : BackgroundService
         _logger = logger;
 
         // Prevent unbounded growth of per-MMSI alert state over a 24/7 session.
-        _vesselStore.VesselRemoved += (_, v) => _alertedVessels.TryRemove(v.Mmsi, out _);
+        _vesselStore.VesselRemoved += OnVesselRemoved;
     }
+
+    private void OnVesselRemoved(object? sender, Vessel vessel) =>
+        _alertedVessels.TryRemove(vessel.Mmsi, out _);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
