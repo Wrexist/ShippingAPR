@@ -20,15 +20,24 @@ public sealed class HeatmapGrid
 
     public int MaxIntensity { get; set; }
 
-    public void AddPoint(double lat, double lon)
+    public void AddPoint(double lat, double lon, int weight = 1)
     {
-        var gridX = (int)((lon - MinLon) / (MaxLon - MinLon) * Resolution);
-        var gridY = (int)((lat - MinLat) / (MaxLat - MinLat) * Resolution);
-
-        if (gridX < 0 || gridX >= Resolution || gridY < 0 || gridY >= Resolution)
+        var lonSpan = MaxLon - MinLon;
+        var latSpan = MaxLat - MinLat;
+        if (lonSpan <= 0 || latSpan <= 0 || weight <= 0)
             return;
 
-        Cells[gridY, gridX].Intensity++;
+        var gridX = (int)((lon - MinLon) / lonSpan * Resolution);
+        var gridY = (int)((lat - MinLat) / latSpan * Resolution);
+
+        // Out of the box entirely → drop. A point exactly on the max edge maps to
+        // index == Resolution; clamp it to the last cell rather than discarding it.
+        if (gridX < 0 || gridY < 0 || gridX > Resolution || gridY > Resolution)
+            return;
+        if (gridX == Resolution) gridX = Resolution - 1;
+        if (gridY == Resolution) gridY = Resolution - 1;
+
+        Cells[gridY, gridX].Intensity += weight;
         if (Cells[gridY, gridX].Intensity > MaxIntensity)
             MaxIntensity = Cells[gridY, gridX].Intensity;
     }
