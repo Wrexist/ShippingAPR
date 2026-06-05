@@ -1234,9 +1234,20 @@ public partial class MapViewModel : ObservableObject, IDisposable
     // Map Layer Switching
     // ═══════════════════════════════════════════════
 
+    private TileLayer? _seaMarkLayer;
+
     [RelayCommand]
     private void SwitchMapLayer(string layerName)
     {
+        // OpenSeaMap is a transparent nautical-chart OVERLAY (buoys, lighthouses,
+        // seamarks), not a basemap — toggle it on top of the current base rather than
+        // replacing the base.
+        if (layerName == "SeaMap")
+        {
+            ToggleSeaMarkOverlay();
+            return;
+        }
+
         CurrentMapLayer = layerName;
 
         // Remove the current base tile layer (always index 0)
@@ -1251,6 +1262,31 @@ public partial class MapViewModel : ObservableObject, IDisposable
         };
 
         Map.Layers.Insert(0, tileLayer);
+    }
+
+    private void ToggleSeaMarkOverlay()
+    {
+        if (_seaMarkLayer is not null)
+        {
+            Map.Layers.Remove(_seaMarkLayer);
+            _seaMarkLayer = null;
+            return;
+        }
+
+        _seaMarkLayer = CreateSeaMarkLayer();
+        // Insert just above the base tile layer so vessels still render on top of it.
+        var index = Math.Min(1, Map.Layers.Count);
+        Map.Layers.Insert(index, _seaMarkLayer);
+    }
+
+    private static TileLayer CreateSeaMarkLayer()
+    {
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+            name: "OpenSeaMap Seamarks",
+            attribution: new BruTile.Attribution("(C) OpenSeaMap contributors", "https://www.openseamap.org/"));
+        return new TileLayer(tileSource) { Name = "OpenSeaMap Seamarks" };
     }
 
     private static TileLayer CreateDarkTileLayer()
