@@ -167,6 +167,7 @@ public partial class App : Application
                 services.AddSingleton<AlertEngine>();
                 services.AddSingleton<WeatherOverlayService>();
                 services.AddSingleton<WeatherAlertService>();
+                services.AddHostedService(sp => sp.GetRequiredService<WeatherAlertService>());
                 services.AddSingleton<FleetService>();
                 services.AddSingleton<SpotlightService>();
                 services.AddSingleton<EmissionsEstimatorService>();
