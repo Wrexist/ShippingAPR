@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ShippingAPR.Core.Formatting;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 using ShippingAPR.Services;
@@ -125,7 +126,7 @@ public partial class VesselDetailViewModel : ObservableObject
 
     public string PositionText =>
         Vessel?.CurrentPosition is not null
-            ? $"{Vessel.CurrentPosition.Latitude:F4}°N, {Vessel.CurrentPosition.Longitude:F4}°E"
+            ? CoordinateFormatter.Format(Vessel.CurrentPosition.Latitude, Vessel.CurrentPosition.Longitude)
             : "--";
 
     public string LastUpdateText =>
