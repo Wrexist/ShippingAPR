@@ -47,30 +47,35 @@ public class EtaCalculatorTests
     }
 
     [Fact]
-    public void VesselHeading90DegreesOff_ReducesEffectiveSpeed()
+    public void VesselHeadingPartlyOff_ReducesEffectiveSpeed()
     {
-        // Vessel heading east (90°) but destination is north (0°)
-        var position = CreatePosition(57.0, 11.97, sog: 10.0, cog: 90);
+        // Vessel heading ~60° off the bearing to a northward destination —
+        // still approaching, but slower along the bearing.
+        var position = CreatePosition(57.0, 11.97, sog: 10.0, cog: 60);
         var result = EtaCalculator.Calculate(position, Gothenburg);
 
         result.Should().NotBeNull();
-        // Course deviation should be large
         result!.CourseDeviationDegrees.Should().BeGreaterThan(45);
-        // Effective speed should be much less than SOG
-        result.EffectiveSpeedKnots.Should().BeLessThan(result.DistanceNauticalMiles); // sanity
+        // Effective speed is reduced below SOG by the cosine projection.
+        result.EffectiveSpeedKnots.Should().BeLessThan(10.0);
+        result.EffectiveSpeedKnots.Should().BeGreaterThan(0);
     }
 
     [Fact]
-    public void VesselMovingAway_StillProvidesEstimate()
+    public void VesselPerpendicular_ReturnsNull()
     {
-        // Vessel heading south (180°) but destination is north
-        var position = CreatePosition(57.0, 11.97, sog: 10.0, cog: 180);
-        var result = EtaCalculator.Calculate(position, Gothenburg);
+        // Heading east (90°) toward a northward destination — no progress.
+        var position = CreatePosition(57.0, 11.97, sog: 10.0, cog: 90);
+        EtaCalculator.Calculate(position, Gothenburg).Should().BeNull();
+    }
 
-        result.Should().NotBeNull();
-        result!.CourseDeviationDegrees.Should().BeGreaterThan(150);
-        // Should still give an ETA (though it will be very large)
-        result.TimeToArrival.TotalHours.Should().BeGreaterThan(0);
+    [Fact]
+    public void VesselMovingAway_ReturnsNull()
+    {
+        // Heading south (180°) directly away from a northward destination —
+        // it will never arrive on this course, so there is no valid ETA.
+        var position = CreatePosition(57.0, 11.97, sog: 10.0, cog: 180);
+        EtaCalculator.Calculate(position, Gothenburg).Should().BeNull();
     }
 
     [Fact]

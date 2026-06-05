@@ -44,9 +44,14 @@ public static class EtaCalculator
         var courseDeviation = BearingCalculator.AngleDifference(
             position.CourseOverGround, bearing);
 
+        // A vessel whose course deviates 90° or more from the bearing to the
+        // destination is moving perpendicular to (or away from) it and makes no
+        // progress toward arrival on this course. Report "no ETA" rather than a
+        // misleadingly finite one produced by clamping a negative cosine.
+        if (courseDeviation >= 90.0)
+            return null;
+
         // Project speed along bearing to destination.
-        // If deviation > 90°, vessel is moving away — use minimum speed
-        // to still provide an estimate (though it will be very large).
         var cosDeviation = Math.Cos(courseDeviation * Math.PI / 180.0);
         var effectiveSpeed = Math.Max(
             position.SpeedOverGround * Math.Max(cosDeviation, NavigationConstants.CosineDeviationFloor),
