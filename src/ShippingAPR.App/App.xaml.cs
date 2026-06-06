@@ -163,6 +163,7 @@ public partial class App : Application
                 services.AddHostedService(sp => sp.GetRequiredService<VesselTrackingService>());
                 services.AddSingleton<AreaMonitorService>();
                 services.AddSingleton<NotificationService>();
+                services.AddSingleton<AnomalyDetectionService>();
                 services.AddSingleton<WatchlistService>();
                 services.AddSingleton<IWatchlistService>(sp => sp.GetRequiredService<WatchlistService>());
                 services.AddSingleton<ExportService>();
@@ -227,6 +228,7 @@ public partial class App : Application
         // Initialize services that need eager construction
         _host.Services.GetRequiredService<AreaMonitorService>();
         _host.Services.GetRequiredService<NotificationService>();
+        _host.Services.GetRequiredService<AnomalyDetectionService>();
         _host.Services.GetRequiredService<WatchlistService>();
         _host.Services.GetRequiredService<AchievementService>();
         _host.Services.GetRequiredService<VoyageNarrativeService>();
