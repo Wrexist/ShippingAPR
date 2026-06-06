@@ -1,14 +1,29 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using ShippingAPR.App.ViewModels;
 using ShippingAPR.Core.Enums;
+using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Infrastructure.Ports;
+using ShippingAPR.Services;
 using Xunit;
 
 namespace ShippingAPR.App.Tests;
 
 public class VesselDetailViewModelTests
 {
-    private readonly VesselDetailViewModel _vm = new();
+    private static VesselDetailViewModel CreateVm()
+    {
+        var store = new VesselStore();
+        return new VesselDetailViewModel(
+            Mock.Of<IWatchlistService>(),
+            new VoyageNarrativeService(store, new PortRepository(), NullLogger<VoyageNarrativeService>.Instance),
+            new EmissionsEstimatorService(store),
+            store);
+    }
+
+    private readonly VesselDetailViewModel _vm = CreateVm();
 
     [Fact]
     public void NullVessel_AllPropertiesReturnDefaults()

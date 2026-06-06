@@ -603,6 +603,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         WeakReferenceMessenger.Default.Unregister<NotificationPublished>(this);
         MapViewModel.Dispose();
         VesselListViewModel.Dispose();
+        VesselDetailViewModel.Dispose();
         StatisticsViewModel.Dispose();
         ChokepointViewModel.Dispose();
         EncounterJournalViewModel.Dispose();
