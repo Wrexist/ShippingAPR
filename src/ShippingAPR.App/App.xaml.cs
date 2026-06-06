@@ -15,6 +15,7 @@ using ShippingAPR.Infrastructure.AisStream;
 using ShippingAPR.Infrastructure.Datalastic;
 using ShippingAPR.Infrastructure.DataDocked;
 using ShippingAPR.Infrastructure.Mapping;
+using ShippingAPR.Infrastructure.Persistence;
 using ShippingAPR.Infrastructure.Ports;
 using ShippingAPR.Infrastructure.VesselFinder;
 using ShippingAPR.Infrastructure.Weather;
@@ -105,6 +106,8 @@ public partial class App : Application
                     ctx.Configuration.GetSection(UiOptions.SectionName));
                 services.Configure<MarineWeatherOptions>(
                     ctx.Configuration.GetSection(MarineWeatherOptions.SectionName));
+                services.Configure<TrackHistoryOptions>(
+                    ctx.Configuration.GetSection(TrackHistoryOptions.SectionName));
 
                 // Provider options
                 services.Configure<DatalasticOptions>(
@@ -150,6 +153,11 @@ public partial class App : Application
                 // Services
                 services.AddSingleton<VesselStore>();
                 services.AddSingleton<IVesselStore>(sp => sp.GetRequiredService<VesselStore>());
+
+                // Durable track-history persistence (SQLite)
+                services.AddSingleton<ITrackHistoryStore, SqliteTrackHistoryStore>();
+                services.AddSingleton<TrackPersistenceService>();
+                services.AddHostedService(sp => sp.GetRequiredService<TrackPersistenceService>());
                 services.AddSingleton<VesselTrackingService>();
                 services.AddSingleton<IVesselTrackingService>(sp => sp.GetRequiredService<VesselTrackingService>());
                 services.AddHostedService(sp => sp.GetRequiredService<VesselTrackingService>());
