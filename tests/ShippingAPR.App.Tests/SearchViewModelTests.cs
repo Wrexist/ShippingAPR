@@ -46,7 +46,7 @@ public class SearchViewModelTests
         var vessel = new Vessel { Mmsi = 265000001 };
         vessel.UpdateStaticData(new VesselStaticData { Name = "TEST SHIP" });
 
-        _storeMock.Setup(s => s.Search("TEST"))
+        _storeMock.Setup(s => s.Search("TEST", It.IsAny<int>()))
             .Returns(new[] { vessel });
 
         _vm.SearchQuery = "TEST";
@@ -63,7 +63,7 @@ public class SearchViewModelTests
             .Select(i => new Vessel { Mmsi = i })
             .ToArray();
 
-        _storeMock.Setup(s => s.Search("SHIP"))
+        _storeMock.Setup(s => s.Search("SHIP", It.IsAny<int>()))
             .Returns(vessels);
 
         _vm.SearchQuery = "SHIP";
@@ -74,7 +74,7 @@ public class SearchViewModelTests
     [Fact]
     public void NoResults_ShowResultsFalse()
     {
-        _storeMock.Setup(s => s.Search("NONEXISTENT"))
+        _storeMock.Setup(s => s.Search("NONEXISTENT", It.IsAny<int>()))
             .Returns(Enumerable.Empty<Vessel>());
 
         _vm.SearchQuery = "NONEXISTENT";
@@ -104,7 +104,7 @@ public class SearchViewModelTests
         vessel.UpdateStaticData(new VesselStaticData { Name = "STENA GERMANICA" });
 
         // Need to stub the search that will be triggered by setting SearchQuery
-        _storeMock.Setup(s => s.Search(It.IsAny<string>()))
+        _storeMock.Setup(s => s.Search(It.IsAny<string>(), It.IsAny<int>()))
             .Returns(Enumerable.Empty<Vessel>());
 
         _vm.SelectResultCommand.Execute(vessel);
@@ -127,7 +127,7 @@ public class SearchViewModelTests
     [Fact]
     public void ClearSearch_ResetsEverything()
     {
-        _storeMock.Setup(s => s.Search(It.IsAny<string>()))
+        _storeMock.Setup(s => s.Search(It.IsAny<string>(), It.IsAny<int>()))
             .Returns(new[] { new Vessel { Mmsi = 1 } });
 
         _vm.SearchQuery = "TEST";
