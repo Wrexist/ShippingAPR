@@ -20,7 +20,8 @@ public class PortRepositoryTests
     {
         var port = _repo.FindByLocode("SEGOT");
         port.Should().NotBeNull();
-        port!.Name.Should().Contain("Gothenburg").Or.Contain("Göteborg").Or.Contain("GOTHENBURG");
+        var name = port!.Name.ToLowerInvariant();
+        (name.Contains("gothenburg") || name.Contains("göteborg")).Should().BeTrue();
     }
 
     [Fact]

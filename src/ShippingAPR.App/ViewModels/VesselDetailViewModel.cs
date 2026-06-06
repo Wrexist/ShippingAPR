@@ -13,7 +13,7 @@ public partial class VesselDetailViewModel : ObservableObject, IDisposable
     private readonly VoyageNarrativeService _narrativeService;
     private readonly EmissionsEstimatorService _emissionsService;
     private readonly IVesselStore _vesselStore;
-    private readonly EventHandler _onWatchlistChanged;
+    private readonly EventHandler<int> _onWatchlistChanged;
     private readonly EventHandler<Vessel> _onVesselUpdated;
 
     [ObservableProperty]
