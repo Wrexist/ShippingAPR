@@ -108,7 +108,8 @@ public class PortRepositoryTests
     [Fact]
     public void SearchPorts_ByCountry_ReturnsMatches()
     {
-        var results = _repo.SearchPorts("Sweden").ToList();
+        // ports.json stores ISO country codes (e.g. "SE"), not full names.
+        var results = _repo.SearchPorts("SE").ToList();
         results.Should().NotBeEmpty();
     }
 
