@@ -72,7 +72,7 @@ public class SearchViewModelTests
     }
 
     [Fact]
-    public void NoResults_ShowResultsFalse()
+    public void NoResults_ShowsNoResultsMessage()
     {
         _storeMock.Setup(s => s.Search("NONEXISTENT", It.IsAny<int>()))
             .Returns(Enumerable.Empty<Vessel>());
@@ -80,7 +80,9 @@ public class SearchViewModelTests
         _vm.SearchQuery = "NONEXISTENT";
 
         _vm.Results.Should().BeEmpty();
-        _vm.ShowResults.Should().BeFalse();
+        // The dropdown stays open to show a "no vessels found" message.
+        _vm.HasNoResults.Should().BeTrue();
+        _vm.ShowResults.Should().BeTrue();
     }
 
     [Fact]

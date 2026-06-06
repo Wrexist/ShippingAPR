@@ -56,7 +56,7 @@ public partial class SearchViewModel : ObservableObject
     {
         Results.Clear();
 
-        var results = _vesselStore.Search(query).Take(_maxResults);
+        var results = (_vesselStore.Search(query) ?? Enumerable.Empty<Vessel>()).Take(_maxResults);
         foreach (var vessel in results)
             Results.Add(vessel);
 
@@ -70,8 +70,10 @@ public partial class SearchViewModel : ObservableObject
         if (vessel is null) return;
 
         VesselSelected?.Invoke(this, vessel);
-        ShowResults = false;
+        // Set the query first (it re-triggers a search), then force the dropdown closed,
+        // so selecting a result doesn't immediately re-open it with a "no results" message.
         SearchQuery = vessel.DisplayName;
+        ShowResults = false;
     }
 
     [RelayCommand]
