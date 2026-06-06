@@ -159,7 +159,6 @@
   <data name="AdjustFiltersHint"><value>Adjust filters or zoom the map to track ships</value></data>
 
   <!-- Settings & Providers -->
-  <data name="Settings"><value>Settings</value></data>
   <data name="ActiveProvider"><value>Active Provider</value></data>
   <data name="FallbackProvider"><value>Fallback Provider</value></data>
   <data name="PollInterval"><value>Poll Interval</value></data>

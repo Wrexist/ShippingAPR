@@ -159,7 +159,6 @@
   <data name="AdjustFiltersHint"><value>Justera filter eller zooma kartan för att spåra fartyg</value></data>
 
   <!-- Settings & Providers -->
-  <data name="Settings"><value>Inställningar</value></data>
   <data name="ActiveProvider"><value>Aktiv leverantör</value></data>
   <data name="FallbackProvider"><value>Reservleverantör</value></data>
   <data name="PollInterval"><value>Pollningsintervall</value></data>
