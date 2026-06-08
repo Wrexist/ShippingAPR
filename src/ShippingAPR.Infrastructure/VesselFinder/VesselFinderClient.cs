@@ -69,7 +69,7 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
                 }
 
                 var json = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-                var doc = JsonDocument.Parse(json);
+                using var doc = JsonDocument.Parse(json);
 
                 // VesselFinder returns an array of vessel objects
                 if (doc.RootElement.ValueKind != JsonValueKind.Array ||
@@ -81,12 +81,14 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
 
                 var vessel = doc.RootElement[0];
 
+                // Parse each field defensively: the API may send numbers as strings (or
+                // omit fields). A type mismatch on one field must not discard the others.
                 return new VesselStaticData
                 {
-                    Name = vessel.TryGetProperty("AIS_NAME", out var name) ? name.GetString() : null,
-                    ImoNumber = vessel.TryGetProperty("IMO", out var imo) ? imo.GetInt32() : 0,
-                    CallSign = vessel.TryGetProperty("CALLSIGN", out var cs) ? cs.GetString() : null,
-                    Destination = vessel.TryGetProperty("AIS_DESTINATION", out var dest) ? dest.GetString() : null
+                    Name = ReadString(vessel, "AIS_NAME"),
+                    ImoNumber = ReadInt(vessel, "IMO"),
+                    CallSign = ReadString(vessel, "CALLSIGN"),
+                    Destination = ReadString(vessel, "AIS_DESTINATION")
                 };
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && attempt < _options.MaxRetryCount)
@@ -105,5 +107,29 @@ public sealed class VesselFinderClient : IVesselEnrichmentClient
 
         _logger.LogWarning("VesselFinder: all {MaxRetry} retries exhausted for MMSI {Mmsi}", _options.MaxRetryCount, mmsi);
         return null;
+    }
+
+    /// <summary>Reads a string field, tolerating a missing field, JSON null, or a numeric value.</summary>
+    private static string? ReadString(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out var value)) return null;
+        return value.ValueKind switch
+        {
+            JsonValueKind.String => value.GetString(),
+            JsonValueKind.Number => value.GetRawText(),
+            _ => null
+        };
+    }
+
+    /// <summary>Reads an int field, tolerating a missing field, JSON null, or a numeric string.</summary>
+    private static int ReadInt(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out var value)) return 0;
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number => value.TryGetInt32(out var n) ? n : 0,
+            JsonValueKind.String => int.TryParse(value.GetString(), out var p) ? p : 0,
+            _ => 0
+        };
     }
 }
