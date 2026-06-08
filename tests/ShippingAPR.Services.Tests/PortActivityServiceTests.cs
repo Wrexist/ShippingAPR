@@ -122,6 +122,61 @@ public class PortActivityServiceTests : IDisposable
         active.Should().Contain("Gothenburg");
     }
 
+    [Fact]
+    public void VesselInDeadband_DoesNotFlapDeparture()
+    {
+        var records = new List<PortActivityRecord>();
+        _sut.ActivityRecorded += (_, r) => records.Add(r);
+
+        // Arrival close to the port.
+        _store.AddOrUpdate(100000123, PositionAt(57.709, 11.975), null);
+
+        // Drift to ~3.5 NM north — inside the deadband (3–4 NM), so no departure.
+        _store.AddOrUpdate(100000123, PositionAt(57.7089 + 3.5 / 60.0, 11.9746), null);
+        _store.AddOrUpdate(100000123, PositionAt(57.7089 + 3.5 / 60.0, 11.9746), null);
+
+        records.Should().ContainSingle();
+        records[0].ActivityType.Should().Be(PortActivityType.Arrival);
+        _sut.GetCongestion("Gothenburg").VesselsInPort.Should().Be(1);
+    }
+
+    [Fact]
+    public void VesselBeyondDepartureRadius_RegistersDeparture()
+    {
+        var records = new List<PortActivityRecord>();
+        _sut.ActivityRecorded += (_, r) => records.Add(r);
+
+        _store.AddOrUpdate(100000123, PositionAt(57.709, 11.975), null);          // arrival
+        _store.AddOrUpdate(100000123, PositionAt(57.7089 + 5.0 / 60.0, 11.9746), null); // ~5 NM → departure
+
+        records.Should().HaveCount(2);
+        records[1].ActivityType.Should().Be(PortActivityType.Departure);
+        _sut.GetCongestion("Gothenburg").VesselsInPort.Should().Be(0);
+    }
+
+    [Fact]
+    public void VesselRemovedFromFeed_NoLongerCountsInPort()
+    {
+        _store.AddOrUpdate(100000123, PositionAt(57.709, 11.975), null);
+        _sut.GetCongestion("Gothenburg").VesselsInPort.Should().Be(1);
+
+        _store.PurgeStale(TimeSpan.FromSeconds(-1)); // removes all, fires VesselRemoved
+
+        _sut.GetCongestion("Gothenburg").VesselsInPort.Should().Be(0);
+        _sut.GetActivePortNames().Should().NotContain("Gothenburg");
+    }
+
+    private static VesselPosition PositionAt(double lat, double lon) =>
+        new()
+        {
+            Latitude = lat,
+            Longitude = lon,
+            SpeedOverGround = 3,
+            CourseOverGround = 0,
+            TrueHeading = 0,
+            Status = NavigationalStatus.UnderWayUsingEngine
+        };
+
     public void Dispose()
     {
         _sut.Dispose();
