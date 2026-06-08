@@ -14,13 +14,26 @@ public sealed class ChokepointMonitorService : IDisposable
     private readonly IVesselStore _vesselStore;
     private readonly ILogger<ChokepointMonitorService> _logger;
 
-    // Vessels currently inside each chokepoint zone
-    private readonly ConcurrentDictionary<string, HashSet<int>> _vesselsInZone = new();
+    // Per chokepoint, the vessels we are tracking. The value is the time the vessel was
+    // first observed *outside* the zone after having been inside (its "pending exit"), or
+    // null while it is solidly inside. A vessel only counts toward VesselsInTransit while
+    // its value is null; pending-exit vessels are retained purely to de-duplicate transits
+    // when a vessel's position jitters back and forth across the boundary.
+    private readonly ConcurrentDictionary<string, Dictionary<int, DateTime?>> _vesselsInZone = new();
     // Transit log per chokepoint
     private readonly ConcurrentDictionary<string, List<ChokepointTransitRecord>> _transitLog = new();
-    private readonly object _lock = new();
 
     private const int MaxTransitRecords = 200;
+
+    /// <summary>Clock used for exit-confirmation timing; overridable in tests.</summary>
+    internal TimeProvider Clock { get; set; } = TimeProvider.System;
+
+    /// <summary>
+    /// How long a vessel must be observed outside a zone before its exit is confirmed.
+    /// Re-entering within this window is treated as the same transit (boundary jitter),
+    /// not a new one, so a single vessel can't inflate the transit count.
+    /// </summary>
+    internal TimeSpan ExitConfirmWindow { get; set; } = TimeSpan.FromMinutes(5);
 
     public event EventHandler<ChokepointTransitRecord>? TransitDetected;
 
@@ -65,12 +78,13 @@ public sealed class ChokepointMonitorService : IDisposable
 
         foreach (var cp in Chokepoints)
         {
-            _vesselsInZone[cp.Name] = new HashSet<int>();
+            _vesselsInZone[cp.Name] = new Dictionary<int, DateTime?>();
             _transitLog[cp.Name] = new List<ChokepointTransitRecord>();
         }
 
         _vesselStore.VesselAdded += OnVesselUpdate;
         _vesselStore.VesselUpdated += OnVesselUpdate;
+        _vesselStore.VesselRemoved += OnVesselRemoved;
         _vesselStore.StoreCleared += OnStoreCleared;
     }
 
@@ -78,25 +92,51 @@ public sealed class ChokepointMonitorService : IDisposable
     {
         if (vessel.CurrentPosition is not { } pos) return;
 
+        var now = Clock.GetUtcNow().UtcDateTime;
+
         foreach (var cp in Chokepoints)
         {
             var isInZone = cp.Bounds.Contains(pos.Latitude, pos.Longitude);
-            var vesselSet = _vesselsInZone[cp.Name];
+            var tracked = _vesselsInZone[cp.Name];
+            var newTransit = false;
 
-            lock (vesselSet)
+            lock (tracked)
             {
-                var wasInZone = vesselSet.Contains(vessel.Mmsi);
+                var present = tracked.TryGetValue(vessel.Mmsi, out var pendingExit);
 
-                if (isInZone && !wasInZone)
+                if (isInZone)
                 {
-                    vesselSet.Add(vessel.Mmsi);
-                    RecordTransit(cp.Name, vessel, pos.SpeedOverGround);
+                    if (!present)
+                    {
+                        // A vessel we weren't tracking has appeared inside — a new transit.
+                        tracked[vessel.Mmsi] = null;
+                        newTransit = true;
+                    }
+                    else if (pendingExit is { } since && now - since >= ExitConfirmWindow)
+                    {
+                        // It had effectively left (grace elapsed) and is now back — count it again.
+                        tracked[vessel.Mmsi] = null;
+                        newTransit = true;
+                    }
+                    else if (pendingExit is not null)
+                    {
+                        // Re-entered within the grace window: same transit, just cancel the exit.
+                        tracked[vessel.Mmsi] = null;
+                    }
+                    // else: solidly inside already — nothing to do.
                 }
-                else if (!isInZone && wasInZone)
+                else if (present)
                 {
-                    vesselSet.Remove(vessel.Mmsi);
+                    if (pendingExit is null)
+                        tracked[vessel.Mmsi] = now;                 // first reading outside — start grace
+                    else if (now - pendingExit.Value >= ExitConfirmWindow)
+                        tracked.Remove(vessel.Mmsi);                // confirmed gone
                 }
             }
+
+            // Fire outside the lock to avoid holding it across event handlers.
+            if (newTransit)
+                RecordTransit(cp.Name, vessel, pos.SpeedOverGround);
         }
     }
 
@@ -123,6 +163,13 @@ public sealed class ChokepointMonitorService : IDisposable
         _logger.LogDebug("Chokepoint transit: {Vessel} entered {Chokepoint}", vessel.DisplayName, chokepointName);
     }
 
+    private void OnVesselRemoved(object? sender, Vessel vessel)
+    {
+        // A vessel that dropped out of the feed should no longer count as in transit.
+        foreach (var set in _vesselsInZone.Values)
+            lock (set) { set.Remove(vessel.Mmsi); }
+    }
+
     private void OnStoreCleared(object? sender, EventArgs e)
     {
         foreach (var set in _vesselsInZone.Values)
@@ -138,9 +185,13 @@ public sealed class ChokepointMonitorService : IDisposable
         var now = DateTime.UtcNow;
         var cutoff24h = now.AddHours(-24);
 
-        var inZone = _vesselsInZone.TryGetValue(chokepointName, out var set)
-            ? set.Count
-            : 0;
+        int inZone = 0;
+        if (_vesselsInZone.TryGetValue(chokepointName, out var set))
+        {
+            // Only vessels solidly inside (no pending exit) count as currently in transit.
+            lock (set)
+                inZone = set.Values.Count(pendingExit => pendingExit is null);
+        }
 
         var log = _transitLog.TryGetValue(chokepointName, out var records)
             ? records
@@ -189,6 +240,7 @@ public sealed class ChokepointMonitorService : IDisposable
     {
         _vesselStore.VesselAdded -= OnVesselUpdate;
         _vesselStore.VesselUpdated -= OnVesselUpdate;
+        _vesselStore.VesselRemoved -= OnVesselRemoved;
         _vesselStore.StoreCleared -= OnStoreCleared;
     }
 }

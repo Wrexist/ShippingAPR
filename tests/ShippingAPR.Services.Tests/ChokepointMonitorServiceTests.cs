@@ -131,6 +131,81 @@ public class ChokepointMonitorServiceTests
         status.VesselsInTransit.Should().Be(0);
     }
 
+    [Fact]
+    public void VesselJitteringOnBoundary_CountsSingleTransit()
+    {
+        var clock = new FakeClock();
+        _service.Clock = clock;
+
+        var transitCount = 0;
+        _service.TransitDetected += (_, _) => transitCount++;
+
+        var vessel = CreateVessel(mmsi: 100000001, lat: 30.5, lon: 32.4); // inside Suez
+        _storeMock.Raise(s => s.VesselAdded += null!, null!, vessel);       // transit #1
+
+        // Jitter just outside, then back inside a few seconds later — same transit.
+        clock.Now = clock.Now.AddSeconds(10);
+        MoveVessel(vessel, 28.0, 32.4);
+        _storeMock.Raise(s => s.VesselUpdated += null!, null!, vessel);
+
+        clock.Now = clock.Now.AddSeconds(10);
+        MoveVessel(vessel, 30.5, 32.4);
+        _storeMock.Raise(s => s.VesselUpdated += null!, null!, vessel);
+
+        transitCount.Should().Be(1);
+        _service.GetStatus("Suez Canal").VesselsInTransit.Should().Be(1);
+    }
+
+    [Fact]
+    public void VesselReentersAfterExitWindow_CountsNewTransit()
+    {
+        var clock = new FakeClock();
+        _service.Clock = clock;
+
+        var transitCount = 0;
+        _service.TransitDetected += (_, _) => transitCount++;
+
+        var vessel = CreateVessel(mmsi: 100000001, lat: 30.5, lon: 32.4);
+        _storeMock.Raise(s => s.VesselAdded += null!, null!, vessel);       // transit #1
+
+        clock.Now = clock.Now.AddSeconds(10);
+        MoveVessel(vessel, 28.0, 32.4);                                     // exits → grace starts
+        _storeMock.Raise(s => s.VesselUpdated += null!, null!, vessel);
+
+        clock.Now = clock.Now.AddMinutes(10);                              // past the exit window
+        MoveVessel(vessel, 30.5, 32.4);                                     // genuine re-entry
+        _storeMock.Raise(s => s.VesselUpdated += null!, null!, vessel);
+
+        transitCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void VesselRemovedFromFeed_NoLongerCountsAsInTransit()
+    {
+        var vessel = CreateVessel(mmsi: 100000001, lat: 30.5, lon: 32.4);
+        _storeMock.Raise(s => s.VesselAdded += null!, null!, vessel);
+        _service.GetStatus("Suez Canal").VesselsInTransit.Should().Be(1);
+
+        _storeMock.Raise(s => s.VesselRemoved += null!, null!, vessel);
+
+        _service.GetStatus("Suez Canal").VesselsInTransit.Should().Be(0);
+    }
+
+    private sealed class FakeClock : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    private static void MoveVessel(Vessel vessel, double lat, double lon) =>
+        vessel.UpdatePosition(new VesselPosition
+        {
+            Latitude = lat, Longitude = lon,
+            SpeedOverGround = 10.0, CourseOverGround = 180.0,
+            TrueHeading = 180.0, Status = NavigationalStatus.UnderWayUsingEngine,
+            Timestamp = DateTime.UtcNow
+        });
+
     private static Vessel CreateVessel(int mmsi, double lat, double lon)
     {
         var vessel = new Vessel { Mmsi = mmsi };
