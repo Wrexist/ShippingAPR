@@ -112,6 +112,33 @@ public class AreaMonitorServiceTests
         events[0].Entered.Should().BeFalse();
     }
 
+    [Fact]
+    public void PolygonGeofence_TriggersInsidePolygonNotJustBoundingBox()
+    {
+        var store = new VesselStore();
+        var monitor = new AreaMonitorService(store, Mock.Of<ILogger<AreaMonitorService>>());
+        // Right triangle (lat,lon): (0,0)-(0,10)-(10,0). Inside iff lat+lon <= 10.
+        monitor.AddGeofence(new GeofenceZone
+        {
+            Name = "Tri",
+            Bounds = new BoundingBox(0, 0, 10, 10),
+            Polygon = new GeoPoint[] { new(0, 0), new(0, 10), new(10, 0) }
+        });
+
+        var entered = new List<VesselGeofenceEvent>();
+        monitor.GeofenceTriggered += (_, e) => entered.Add(e);
+
+        // Inside the bounding box but outside the triangle (lat+lon > 10): no entry.
+        store.AddOrUpdate(100000001, CreatePosition(8, 8), null);
+        store.AddOrUpdate(100000001, CreatePosition(9, 9), null);
+        entered.Should().BeEmpty();
+
+        // Cross into the triangle proper: entry fires once.
+        store.AddOrUpdate(100000001, CreatePosition(2, 2), null);
+        entered.Should().ContainSingle();
+        entered[0].Entered.Should().BeTrue();
+    }
+
     private static VesselPosition CreatePosition(double lat, double lon) =>
         new()
         {

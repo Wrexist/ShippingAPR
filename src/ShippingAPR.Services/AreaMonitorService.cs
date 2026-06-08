@@ -97,7 +97,10 @@ public sealed class AreaMonitorService : IDisposable
         // Legacy single-area monitoring
         if (_monitoredArea is not null)
         {
-            var transition = EvaluateTransition(_previousState, vessel.Mmsi, _monitoredArea, lat, lon);
+            var (latM, lonM) = Margin(_monitoredArea);
+            var transition = EvaluateTransition(_previousState, vessel.Mmsi,
+                _monitoredArea.Contains(lat, lon),
+                _monitoredArea.ContainsWithMargin(lat, lon, latM, lonM));
             if (transition != Transition.None)
                 RaiseAreaEvent(vessel, transition == Transition.Entered, null);
         }
@@ -107,7 +110,10 @@ public sealed class AreaMonitorService : IDisposable
         {
             if (!_geofenceStates.TryGetValue(name, out var states)) continue;
 
-            var transition = EvaluateTransition(states, vessel.Mmsi, zone.Bounds, lat, lon);
+            var (latM, lonM) = Margin(zone.Bounds);
+            var transition = EvaluateTransition(states, vessel.Mmsi,
+                zone.Contains(lat, lon),
+                zone.ContainsWithMargin(lat, lon, latM, lonM));
             if (transition == Transition.Entered && zone.AlertOnEntry)
             {
                 RaiseGeofenceEvent(vessel, zone, entered: true);
@@ -121,32 +127,34 @@ public sealed class AreaMonitorService : IDisposable
         }
     }
 
+    /// <summary>The hysteresis deadband margins (lat, lon) for a zone's bounding box.</summary>
+    private static (double Lat, double Lon) Margin(BoundingBox box) =>
+        (Math.Max(MinMarginDegrees, HysteresisFraction * (box.MaxLatitude - box.MinLatitude)),
+         Math.Max(MinMarginDegrees, HysteresisFraction * (box.MaxLongitude - box.MinLongitude)));
+
     /// <summary>
     /// Updates per-vessel zone state and returns whether this update is an enter/leave
     /// transition. The first observation only records a baseline (never alerts). A vessel
-    /// is considered to have entered once it is inside the box, and to have left only once
-    /// it is also outside the box grown by a hysteresis margin — the deadband in between
+    /// is considered to have entered once it is inside the zone, and to have left only once
+    /// it is also outside the zone grown by a hysteresis margin — the deadband in between
     /// stops a vessel lingering on the boundary from flapping alerts, while a genuine
     /// crossing (even a brief one) still fires.
     /// </summary>
     private static Transition EvaluateTransition(
-        ConcurrentDictionary<int, bool> states, int mmsi, BoundingBox box, double lat, double lon)
+        ConcurrentDictionary<int, bool> states, int mmsi, bool isInside, bool insideWithMargin)
     {
-        var latMargin = Math.Max(MinMarginDegrees, HysteresisFraction * (box.MaxLatitude - box.MinLatitude));
-        var lonMargin = Math.Max(MinMarginDegrees, HysteresisFraction * (box.MaxLongitude - box.MinLongitude));
-
         var transition = Transition.None;
         states.AddOrUpdate(mmsi,
             // First time we see this vessel for this zone: record a baseline, never alert.
-            _ => box.Contains(lat, lon),
+            _ => isInside,
             (_, wasInside) =>
             {
-                if (!wasInside && box.Contains(lat, lon))
+                if (!wasInside && isInside)
                 {
                     transition = Transition.Entered;
                     return true;
                 }
-                if (wasInside && !box.ContainsWithMargin(lat, lon, latMargin, lonMargin))
+                if (wasInside && !insideWithMargin)
                 {
                     transition = Transition.Left;
                     return false;
