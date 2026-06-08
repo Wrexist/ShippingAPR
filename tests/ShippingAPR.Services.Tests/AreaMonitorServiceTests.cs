@@ -71,6 +71,47 @@ public class AreaMonitorServiceTests
         eventCount.Should().Be(0);
     }
 
+    [Fact]
+    public void VesselJitteringOnBoundary_DoesNotFlap()
+    {
+        // Monitored area's north edge is at lat 57.75; the hysteresis deadband extends a
+        // little beyond it. A vessel oscillating across that edge must not flap alerts.
+        var events = new List<VesselAreaEvent>();
+        _monitor.VesselAreaChanged += (_, evt) => events.Add(evt);
+
+        // Start clearly outside, then cross clearly inside → a single "entered".
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.90, 11.95), null); // baseline outside
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null); // enters
+
+        // Now jitter just across the boundary, within the deadband — no further alerts.
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.752, 11.95), null); // just outside box
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.748, 11.95), null); // just inside box
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.752, 11.95), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.748, 11.95), null);
+
+        events.Should().ContainSingle();
+        events[0].Entered.Should().BeTrue();
+    }
+
+    [Fact]
+    public void VesselLeavingBeyondMargin_FiresLeftOnce()
+    {
+        var events = new List<VesselAreaEvent>();
+
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null); // baseline inside
+
+        _monitor.VesselAreaChanged += (_, evt) => events.Add(evt);
+
+        // Drift just outside the box but within the deadband — still considered inside.
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.752, 11.95), null);
+        events.Should().BeEmpty();
+
+        // Move clearly beyond the deadband — a confirmed exit, fired exactly once.
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.90, 11.95), null);
+        events.Should().ContainSingle();
+        events[0].Entered.Should().BeFalse();
+    }
+
     private static VesselPosition CreatePosition(double lat, double lon) =>
         new()
         {

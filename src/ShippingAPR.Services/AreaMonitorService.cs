@@ -22,11 +22,18 @@ public sealed class VesselAreaNotification : ValueChangedMessage<VesselAreaEvent
 
 public sealed class AreaMonitorService : IDisposable
 {
+    private enum Transition { None, Entered, Left }
+
+    /// <summary>Fraction of each zone dimension used as the hysteresis deadband.</summary>
+    private const double HysteresisFraction = 0.05;
+    /// <summary>Floor for the deadband (~500 m) so very small zones still resist jitter.</summary>
+    private const double MinMarginDegrees = 0.005;
+
     private readonly IVesselStore _vesselStore;
     private readonly ILogger<AreaMonitorService> _logger;
     private readonly EventHandler _onStoreCleared;
 
-    // Legacy single-area support
+    // Legacy single-area support. Value = whether the vessel is currently considered inside.
     private readonly ConcurrentDictionary<int, bool> _previousState = new();
     private BoundingBox? _monitoredArea;
 
@@ -60,7 +67,7 @@ public sealed class AreaMonitorService : IDisposable
 
     public void SetMonitoredArea(BoundingBox? area)
     {
-        _monitoredArea = area ?? throw new ArgumentNullException(nameof(area));
+        _monitoredArea = area;
         _previousState.Clear();
     }
 
@@ -90,7 +97,9 @@ public sealed class AreaMonitorService : IDisposable
         // Legacy single-area monitoring
         if (_monitoredArea is not null)
         {
-            CheckAreaTransition(vessel, lat, lon, _monitoredArea, _previousState, null);
+            var transition = EvaluateTransition(_previousState, vessel.Mmsi, _monitoredArea, lat, lon);
+            if (transition != Transition.None)
+                RaiseAreaEvent(vessel, transition == Transition.Entered, null);
         }
 
         // Multi-zone geofence monitoring
@@ -98,99 +107,84 @@ public sealed class AreaMonitorService : IDisposable
         {
             if (!_geofenceStates.TryGetValue(name, out var states)) continue;
 
-            var isInside = zone.Bounds.Contains(lat, lon);
-            // Use a thread-safe pattern: capture previous state atomically via AddOrUpdate.
-            // The closure captures 'previouslyInside' by ref to extract the old value.
-            var previouslyInside = false;
-            states.AddOrUpdate(vessel.Mmsi,
-                _ => { previouslyInside = false; return isInside; },
-                (_, old) => { previouslyInside = old; return isInside; });
-
-            if (isInside && !previouslyInside && zone.AlertOnEntry)
+            var transition = EvaluateTransition(states, vessel.Mmsi, zone.Bounds, lat, lon);
+            if (transition == Transition.Entered && zone.AlertOnEntry)
             {
-                var geoEvt = new VesselGeofenceEvent
-                {
-                    Vessel = vessel,
-                    Zone = zone,
-                    Entered = true,
-                    Timestamp = DateTime.UtcNow
-                };
-                _logger.LogInformation("Vessel {Name} entered geofence '{Zone}'", vessel.DisplayName, name);
-                GeofenceTriggered?.Invoke(this, geoEvt);
-
-                // Also fire legacy event for notification compatibility
-                var areaEvt = new VesselAreaEvent
-                {
-                    Vessel = vessel,
-                    Entered = true,
-                    Timestamp = DateTime.UtcNow,
-                    ZoneName = name
-                };
-                VesselAreaChanged?.Invoke(this, areaEvt);
-                WeakReferenceMessenger.Default.Send(new VesselAreaNotification(areaEvt));
+                RaiseGeofenceEvent(vessel, zone, entered: true);
+                RaiseAreaEvent(vessel, entered: true, name);
             }
-            else if (!isInside && previouslyInside && zone.AlertOnExit)
+            else if (transition == Transition.Left && zone.AlertOnExit)
             {
-                var geoEvt = new VesselGeofenceEvent
-                {
-                    Vessel = vessel,
-                    Zone = zone,
-                    Entered = false,
-                    Timestamp = DateTime.UtcNow
-                };
-                _logger.LogInformation("Vessel {Name} left geofence '{Zone}'", vessel.DisplayName, name);
-                GeofenceTriggered?.Invoke(this, geoEvt);
-
-                var areaEvt = new VesselAreaEvent
-                {
-                    Vessel = vessel,
-                    Entered = false,
-                    Timestamp = DateTime.UtcNow,
-                    ZoneName = name
-                };
-                VesselAreaChanged?.Invoke(this, areaEvt);
-                WeakReferenceMessenger.Default.Send(new VesselAreaNotification(areaEvt));
+                RaiseGeofenceEvent(vessel, zone, entered: false);
+                RaiseAreaEvent(vessel, entered: false, name);
             }
         }
     }
 
-    private void CheckAreaTransition(Vessel vessel, double lat, double lon, BoundingBox area,
-        ConcurrentDictionary<int, bool> state, string? zoneName)
+    /// <summary>
+    /// Updates per-vessel zone state and returns whether this update is an enter/leave
+    /// transition. The first observation only records a baseline (never alerts). A vessel
+    /// is considered to have entered once it is inside the box, and to have left only once
+    /// it is also outside the box grown by a hysteresis margin — the deadband in between
+    /// stops a vessel lingering on the boundary from flapping alerts, while a genuine
+    /// crossing (even a brief one) still fires.
+    /// </summary>
+    private static Transition EvaluateTransition(
+        ConcurrentDictionary<int, bool> states, int mmsi, BoundingBox box, double lat, double lon)
     {
-        var isInside = area.Contains(lat, lon);
-        var previouslyInside = false;
-        state.AddOrUpdate(vessel.Mmsi,
-            _ => { previouslyInside = false; return isInside; },
-            (_, old) => { previouslyInside = old; return isInside; });
+        var latMargin = Math.Max(MinMarginDegrees, HysteresisFraction * (box.MaxLatitude - box.MinLatitude));
+        var lonMargin = Math.Max(MinMarginDegrees, HysteresisFraction * (box.MaxLongitude - box.MinLongitude));
 
-        if (isInside && !previouslyInside)
-        {
-            var evt = new VesselAreaEvent
+        var transition = Transition.None;
+        states.AddOrUpdate(mmsi,
+            // First time we see this vessel for this zone: record a baseline, never alert.
+            _ => box.Contains(lat, lon),
+            (_, wasInside) =>
             {
-                Vessel = vessel,
-                Entered = true,
-                Timestamp = DateTime.UtcNow,
-                ZoneName = zoneName
-            };
-            _logger.LogInformation("Vessel {Name} (MMSI {Mmsi}) entered monitored area",
-                vessel.DisplayName, vessel.Mmsi);
-            VesselAreaChanged?.Invoke(this, evt);
-            WeakReferenceMessenger.Default.Send(new VesselAreaNotification(evt));
-        }
-        else if (!isInside && previouslyInside)
+                if (!wasInside && box.Contains(lat, lon))
+                {
+                    transition = Transition.Entered;
+                    return true;
+                }
+                if (wasInside && !box.ContainsWithMargin(lat, lon, latMargin, lonMargin))
+                {
+                    transition = Transition.Left;
+                    return false;
+                }
+                // Inside the deadband or no change — keep the current state.
+                return wasInside;
+            });
+
+        return transition;
+    }
+
+    private void RaiseAreaEvent(Vessel vessel, bool entered, string? zoneName)
+    {
+        var evt = new VesselAreaEvent
         {
-            var evt = new VesselAreaEvent
-            {
-                Vessel = vessel,
-                Entered = false,
-                Timestamp = DateTime.UtcNow,
-                ZoneName = zoneName
-            };
-            _logger.LogInformation("Vessel {Name} (MMSI {Mmsi}) left monitored area",
-                vessel.DisplayName, vessel.Mmsi);
-            VesselAreaChanged?.Invoke(this, evt);
-            WeakReferenceMessenger.Default.Send(new VesselAreaNotification(evt));
-        }
+            Vessel = vessel,
+            Entered = entered,
+            Timestamp = DateTime.UtcNow,
+            ZoneName = zoneName
+        };
+        _logger.LogInformation("Vessel {Name} (MMSI {Mmsi}) {Direction} monitored area {Zone}",
+            vessel.DisplayName, vessel.Mmsi, entered ? "entered" : "left", zoneName);
+        VesselAreaChanged?.Invoke(this, evt);
+        WeakReferenceMessenger.Default.Send(new VesselAreaNotification(evt));
+    }
+
+    private void RaiseGeofenceEvent(Vessel vessel, GeofenceZone zone, bool entered)
+    {
+        var geoEvt = new VesselGeofenceEvent
+        {
+            Vessel = vessel,
+            Zone = zone,
+            Entered = entered,
+            Timestamp = DateTime.UtcNow
+        };
+        _logger.LogInformation("Vessel {Name} {Direction} geofence '{Zone}'",
+            vessel.DisplayName, entered ? "entered" : "left", zone.Name);
+        GeofenceTriggered?.Invoke(this, geoEvt);
     }
 
     public void Dispose()
