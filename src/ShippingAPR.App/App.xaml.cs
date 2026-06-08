@@ -14,6 +14,7 @@ using ShippingAPR.Infrastructure;
 using ShippingAPR.Infrastructure.AisStream;
 using ShippingAPR.Infrastructure.Datalastic;
 using ShippingAPR.Infrastructure.DataDocked;
+using ShippingAPR.Infrastructure.Http;
 using ShippingAPR.Infrastructure.Mapping;
 using ShippingAPR.Infrastructure.Persistence;
 using ShippingAPR.Infrastructure.Ports;
@@ -122,8 +123,10 @@ public partial class App : Application
 
                 // AIS data providers (concrete types for factory resolution)
                 services.AddSingleton<AisStreamClient>();
-                services.AddHttpClient<DatalasticClient>();
-                services.AddHttpClient<DataDockedClient>();
+                services.AddHttpClient<DatalasticClient>()
+                    .AddHttpMessageHandler(() => new ResilientHttpHandler());
+                services.AddHttpClient<DataDockedClient>()
+                    .AddHttpMessageHandler(() => new ResilientHttpHandler());
                 services.AddSingleton<AisProviderFactory>();
 
                 // Wire up the active provider with optional fallback
@@ -144,11 +147,14 @@ public partial class App : Application
                     return new FallbackAisProvider(primary, fallback, logger);
                 });
 
-                services.AddHttpClient<IVesselEnrichmentClient, VesselFinderClient>();
+                services.AddHttpClient<IVesselEnrichmentClient, VesselFinderClient>()
+                    .AddHttpMessageHandler(() => new ResilientHttpHandler());
 
                 // Weather & ocean data clients
-                services.AddHttpClient<IMarineWeatherClient, OpenMeteoMarineClient>();
-                services.AddHttpClient<ITideDataClient, TideDataClient>();
+                services.AddHttpClient<IMarineWeatherClient, OpenMeteoMarineClient>()
+                    .AddHttpMessageHandler(() => new ResilientHttpHandler());
+                services.AddHttpClient<ITideDataClient, TideDataClient>()
+                    .AddHttpMessageHandler(() => new ResilientHttpHandler());
 
                 // Services
                 services.AddSingleton<VesselStore>();

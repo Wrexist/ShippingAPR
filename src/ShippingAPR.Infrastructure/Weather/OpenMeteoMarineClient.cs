@@ -107,6 +107,9 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
         var latStep = (maxLat - minLat) / Math.Max(steps - 1, 1);
         var lonStep = (maxLon - minLon) / Math.Max(steps - 1, 1);
 
+        // Bound the fan-out so a large grid doesn't fire steps^2 simultaneous requests
+        // (which trips Open-Meteo's rate limit).
+        using var gate = new SemaphoreSlim(MaxConcurrentGridRequests);
         var tasks = new List<Task<MarineWeather?>>();
         for (int y = 0; y < steps; y++)
         {
@@ -114,7 +117,7 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
             {
                 var lat = minLat + y * latStep;
                 var lon = minLon + x * lonStep;
-                tasks.Add(GetWeatherAsync(lat, lon, ct));
+                tasks.Add(GetThrottledAsync(lat, lon, gate, ct));
             }
         }
 
@@ -141,6 +144,15 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
             _logger.LogWarning(ex, "Failed to fetch weather grid");
             return null;
         }
+    }
+
+    private const int MaxConcurrentGridRequests = 6;
+
+    private async Task<MarineWeather?> GetThrottledAsync(double lat, double lon, SemaphoreSlim gate, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try { return await GetWeatherAsync(lat, lon, ct).ConfigureAwait(false); }
+        finally { gate.Release(); }
     }
 
     private static double GetDouble(JsonElement element, string property) =>
