@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Infrastructure.Ports;
 using ShippingAPR.Services;
 using Xunit;
 
@@ -16,7 +18,7 @@ public class AnomalyDetectionServiceTests
     {
         var area = new AreaMonitorService(_store, NullLogger<AreaMonitorService>.Instance);
         var notifications = new NotificationService(area, NullLogger<NotificationService>.Instance, Options.Create(new TrackingOptions()));
-        _sut = new AnomalyDetectionService(_store, notifications, NullLogger<AnomalyDetectionService>.Instance);
+        _sut = new AnomalyDetectionService(_store, notifications, new PortRepository(), NullLogger<AnomalyDetectionService>.Instance);
     }
 
     [Fact]
@@ -77,5 +79,53 @@ public class AnomalyDetectionServiceTests
     public void AisGap_UnknownVessel_NotFlagged()
     {
         _sut.CheckAisGap(99999, DateTime.UtcNow).Should().BeNull();
+    }
+
+    // Mid-Atlantic open ocean — far from any of the built-in ports.
+    private const double OceanLat = 30.0;
+    private const double OceanLon = -40.0;
+
+    [Fact]
+    public void Loitering_StaysInSmallAreaTooLong_Flagged()
+    {
+        var t = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        _sut.CheckLoitering(1, OceanLat, OceanLon, NavigationalStatus.UnderWayUsingEngine, t).Should().BeNull(); // anchor set
+
+        var a = _sut.CheckLoitering(1, OceanLat + 0.001, OceanLon + 0.001, NavigationalStatus.UnderWayUsingEngine, t.AddMinutes(70));
+
+        a.Should().NotBeNull();
+        a!.Type.Should().Be(AnomalyType.Loitering);
+    }
+
+    [Fact]
+    public void Loitering_MovesAway_NotFlagged()
+    {
+        var t = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        _sut.CheckLoitering(1, OceanLat, OceanLon, NavigationalStatus.UnderWayUsingEngine, t);
+
+        // ~30 NM away → moved out of the loiter radius, anchor resets
+        _sut.CheckLoitering(1, OceanLat + 0.5, OceanLon, NavigationalStatus.UnderWayUsingEngine, t.AddMinutes(70))
+            .Should().BeNull();
+    }
+
+    [Fact]
+    public void Loitering_AtAnchorStatus_NotFlagged()
+    {
+        var t = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        _sut.CheckLoitering(1, OceanLat, OceanLon, NavigationalStatus.AtAnchor, t);
+
+        _sut.CheckLoitering(1, OceanLat, OceanLon, NavigationalStatus.AtAnchor, t.AddMinutes(70))
+            .Should().BeNull();
+    }
+
+    [Fact]
+    public void Loitering_NearKnownPort_NotFlagged()
+    {
+        var t = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        // Gothenburg coordinates — within the port-exclusion radius.
+        _sut.CheckLoitering(1, 57.7089, 11.9746, NavigationalStatus.UnderWayUsingEngine, t);
+
+        _sut.CheckLoitering(1, 57.7089, 11.9746, NavigationalStatus.UnderWayUsingEngine, t.AddMinutes(70))
+            .Should().BeNull();
     }
 }
