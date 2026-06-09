@@ -101,6 +101,9 @@
                                     <Border.Background>
                                         <SolidColorBrush Color="{Binding SeverityColor}"/>
                                     </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.55" Color="{Binding SeverityColor}"/>
+                                    </Border.Effect>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold"
                                            FontSize="12" TextWrapping="Wrap"

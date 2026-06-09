@@ -50,6 +50,9 @@
                                     <Border.Background>
                                         <SolidColorBrush Color="{Binding CongestionColor}"/>
                                     </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="7" ShadowDepth="0" Opacity="0.5" Color="{Binding CongestionColor}"/>
+                                    </Border.Effect>
                                 </Border>
                             </Grid>
                         </StackPanel>
