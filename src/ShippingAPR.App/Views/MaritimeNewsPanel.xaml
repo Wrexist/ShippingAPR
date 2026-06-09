@@ -43,7 +43,7 @@
 
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding CriticalCount}" FontSize="18" FontWeight="Bold"
-                               Foreground="#EF4444" HorizontalAlignment="Center"/>
+                               Foreground="{DynamicResource ErrorBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Text="{x:Static res:Strings.Critical}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>

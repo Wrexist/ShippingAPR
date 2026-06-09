@@ -72,7 +72,7 @@
                                    Style="{DynamicResource ValueTextStyle}" FontWeight="Bold"/>
 
                         <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" Margin="0,4,0,0">
-                            <Ellipse Width="8" Height="8" Fill="#00BCD4" Margin="0,0,6,0"/>
+                            <Ellipse Width="8" Height="8" Fill="#FF9800" Margin="0,0,6,0"/>
                             <TextBlock Text="{x:Static res:Strings.Fishing}" Style="{DynamicResource SubTextStyle}"/>
                         </StackPanel>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FishingCount}" Margin="0,4,0,0"
@@ -216,17 +216,17 @@
                     <!-- CII Distribution -->
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center">
                         <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#3034D399">
-                            <TextBlock FontSize="11" Foreground="#34D399" FontWeight="Bold">
+                            <TextBlock FontSize="11" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold">
                                 <Run Text="A:"/><Run Text="{Binding CiiACount}"/>
                             </TextBlock>
                         </Border>
                         <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#3060A5FA">
-                            <TextBlock FontSize="11" Foreground="#60A5FA" FontWeight="Bold">
+                            <TextBlock FontSize="11" Foreground="{DynamicResource InfoBrush}" FontWeight="Bold">
                                 <Run Text="B:"/><Run Text="{Binding CiiBCount}"/>
                             </TextBlock>
                         </Border>
                         <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#30FBBF24">
-                            <TextBlock FontSize="11" Foreground="#FBBF24" FontWeight="Bold">
+                            <TextBlock FontSize="11" Foreground="{DynamicResource WarningBrush}" FontWeight="Bold">
                                 <Run Text="C:"/><Run Text="{Binding CiiCCount}"/>
                             </TextBlock>
                         </Border>
@@ -236,7 +236,7 @@
                             </TextBlock>
                         </Border>
                         <Border CornerRadius="6" Padding="8,3" Margin="2,0" Background="#30EF4444">
-                            <TextBlock FontSize="11" Foreground="#EF4444" FontWeight="Bold">
+                            <TextBlock FontSize="11" Foreground="{DynamicResource ErrorBrush}" FontWeight="Bold">
                                 <Run Text="E:"/><Run Text="{Binding CiiECount}"/>
                             </TextBlock>
                         </Border>
