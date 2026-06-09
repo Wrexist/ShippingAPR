@@ -37,7 +37,9 @@
                               Background="Transparent"
                               Foreground="{DynamicResource PrimaryTextBrush}"
                               BorderThickness="0"
-                              Cursor="Hand">
+                              Cursor="Hand"
+                              ToolTip="{x:Static res:Strings.SortVessels}"
+                              AutomationProperties.Name="{x:Static res:Strings.SortVessels}">
                         <ComboBoxItem Content="Name"/>
                         <ComboBoxItem Content="Speed"/>
                         <ComboBoxItem Content="ETA"/>

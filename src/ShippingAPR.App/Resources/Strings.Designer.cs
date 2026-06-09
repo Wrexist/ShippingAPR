@@ -339,4 +339,6 @@ public class Strings
 
     public static string NoShipmentsYet => GetString("NoShipmentsYet");
     public static string NoEncountersYet => GetString("NoEncountersYet");
+
+    public static string SortVessels => GetString("SortVessels");
 }

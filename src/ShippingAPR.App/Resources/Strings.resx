@@ -301,4 +301,5 @@
   <data name="Remove"><value>Remove</value></data>
   <data name="NoShipmentsYet"><value>No shipments yet — add one above</value></data>
   <data name="NoEncountersYet"><value>No vessels logged yet</value></data>
+  <data name="SortVessels"><value>Sort vessels</value></data>
 </root>

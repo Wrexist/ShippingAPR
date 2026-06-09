@@ -301,4 +301,5 @@
   <data name="Remove"><value>Ta bort</value></data>
   <data name="NoShipmentsYet"><value>Inga sändningar än — lägg till en ovan</value></data>
   <data name="NoEncountersYet"><value>Inga fartyg loggade än</value></data>
+  <data name="SortVessels"><value>Sortera fartyg</value></data>
 </root>
