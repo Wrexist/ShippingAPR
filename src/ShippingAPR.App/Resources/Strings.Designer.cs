@@ -322,4 +322,13 @@ public class Strings
     public static string ProviderLabel => GetString("ProviderLabel");
     public static string SkipForNow => GetString("SkipForNow");
     public static string ApiKeyLaterHint => GetString("ApiKeyLaterHint");
+
+    public static string PollInterval => GetString("PollInterval");
+    public static string SettingsSaved => GetString("SettingsSaved");
+    public static string SettingsSaveFailed => GetString("SettingsSaveFailed");
+    public static string DestinationFilter => GetString("DestinationFilter");
+    public static string FlagFilter => GetString("FlagFilter");
+    public static string AlertOnEntry => GetString("AlertOnEntry");
+    public static string AlertOnExit => GetString("AlertOnExit");
+    public static string AddFromView => GetString("AddFromView");
 }
