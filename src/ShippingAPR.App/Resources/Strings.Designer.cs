@@ -336,4 +336,7 @@ public class Strings
     public static string ToggleToolsPanel => GetString("ToggleToolsPanel");
 
     public static string Remove => GetString("Remove");
+
+    public static string NoShipmentsYet => GetString("NoShipmentsYet");
+    public static string NoEncountersYet => GetString("NoEncountersYet");
 }

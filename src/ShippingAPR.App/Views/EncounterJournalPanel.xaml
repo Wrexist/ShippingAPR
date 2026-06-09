@@ -78,6 +78,23 @@
             </Grid>
         </Border>
 
+        <!-- Empty state -->
+        <TextBlock Grid.Row="3" Text="{x:Static res:Strings.NoEncountersYet}"
+                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,28,16,0"
+                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Opacity="0.6"
+                   TextWrapping="Wrap" TextAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Encounters.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
         <!-- Encounter list -->
         <ListBox Grid.Row="3" ItemsSource="{Binding Encounters}"
                  Background="Transparent" BorderThickness="0"
