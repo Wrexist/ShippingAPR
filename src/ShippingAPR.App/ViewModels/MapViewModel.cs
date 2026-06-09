@@ -323,7 +323,16 @@ public partial class MapViewModel : ObservableObject, IDisposable
         SelectedArea = viewportArea;
         AreaStatusText = FormatAreaName(viewportArea);
 
-        _ = _trackingService.ChangeAreaAsync(viewportArea);
+        _ = ChangeAreaSafeAsync(viewportArea);
+    }
+
+    // Tracking-area changes are fire-and-forget from UI events. Swallow transient
+    // failures (e.g. a brief connection error) so they don't surface as unobserved
+    // task exceptions — the connection-status indicator already reflects stream health.
+    private async Task ChangeAreaSafeAsync(BoundingBox area)
+    {
+        try { await _trackingService.ChangeAreaAsync(area); }
+        catch (Exception) { /* connection status indicator reflects failures */ }
     }
 
     private static bool HasAreaChangedSignificantly(BoundingBox old, BoundingBox current, double threshold)
@@ -427,7 +436,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
             _viewportTrackingEnabled = true;
 
             // Start tracking the new area
-            _ = _trackingService.ChangeAreaAsync(SelectedArea);
+            _ = ChangeAreaSafeAsync(SelectedArea);
         }
     }
 
