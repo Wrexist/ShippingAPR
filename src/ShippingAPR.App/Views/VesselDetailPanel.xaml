@@ -49,7 +49,7 @@
                         <!-- Watch/Unwatch button -->
                         <Button Grid.Column="1" Command="{Binding ToggleWatchCommand}"
                                 Style="{DynamicResource IconButtonStyle}"
-                                ToolTip="Toggle watchlist"
+                                ToolTip="{x:Static res:Strings.ToggleWatchlist}"
                                 FontSize="18" Padding="4"
                                 VerticalAlignment="Top">
                             <Button.Content>
@@ -293,7 +293,7 @@
                             <Border Width="3" Height="14" CornerRadius="2"
                                     Background="{DynamicResource SuccessBrush}"
                                     Margin="0,0,8,0"/>
-                            <TextBlock Text="Emissions &amp; CII"
+                            <TextBlock Text="{x:Static res:Strings.EmissionsCii}"
                                        Style="{DynamicResource SubTextStyle}"
                                        FontWeight="Bold" FontSize="11"
                                        VerticalAlignment="Center"/>
@@ -305,7 +305,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="CII Rating"
+                            <TextBlock Grid.Column="0" Text="{x:Static res:Strings.CiiRating}"
                                        Style="{DynamicResource SubTextStyle}" VerticalAlignment="Center"/>
                             <Border Grid.Column="1" CornerRadius="8" Padding="14,4" MinWidth="36"
                                     HorizontalAlignment="Right">
@@ -338,7 +338,7 @@
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EmissionsCo2Text}"
                                        Style="{DynamicResource ValueTextStyle}" FontWeight="SemiBold"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Fuel" Margin="0,6,0,0"
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static res:Strings.Fuel}" Margin="0,6,0,0"
                                        Style="{DynamicResource SubTextStyle}"/>
                             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EmissionsFuelText}" Margin="0,6,0,0"
                                        Style="{DynamicResource ValueTextStyle}"/>
@@ -363,7 +363,7 @@
                             <Border Width="3" Height="14" CornerRadius="2"
                                     Background="{DynamicResource AccentBrush}"
                                     Margin="0,0,8,0"/>
-                            <TextBlock Text="Voyage Story"
+                            <TextBlock Text="{x:Static res:Strings.VoyageStory}"
                                        Style="{DynamicResource SubTextStyle}"
                                        FontWeight="Bold" FontSize="11"
                                        VerticalAlignment="Center"/>

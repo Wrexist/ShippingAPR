@@ -284,4 +284,16 @@ public class Strings
     public static string ColTime => GetString("ColTime");
     public static string ColSpeed => GetString("ColSpeed");
     public static string NoPortActivity => GetString("NoPortActivity");
+
+    public static string Type => GetString("Type");
+    public static string Emissions => GetString("Emissions");
+    public static string Comparison => GetString("Comparison");
+    public static string VesselComparison => GetString("VesselComparison");
+    public static string SelectTwoVessels => GetString("SelectTwoVessels");
+    public static string ClearComparison => GetString("ClearComparison");
+    public static string ToggleWatchlist => GetString("ToggleWatchlist");
+    public static string EmissionsCii => GetString("EmissionsCii");
+    public static string CiiRating => GetString("CiiRating");
+    public static string Fuel => GetString("Fuel");
+    public static string VoyageStory => GetString("VoyageStory");
 }

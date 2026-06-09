@@ -266,4 +266,15 @@
   <data name="ColTime"><value>TIME</value></data>
   <data name="ColSpeed"><value>SPEED</value></data>
   <data name="NoPortActivity"><value>No activity yet for this port</value></data>
+  <data name="Type"><value>Type</value></data>
+  <data name="Emissions"><value>Emissions</value></data>
+  <data name="Comparison"><value>Comparison</value></data>
+  <data name="VesselComparison"><value>Vessel Comparison</value></data>
+  <data name="SelectTwoVessels"><value>Select two vessels from the list to compare them side by side.</value></data>
+  <data name="ClearComparison"><value>Clear Comparison</value></data>
+  <data name="ToggleWatchlist"><value>Toggle watchlist</value></data>
+  <data name="EmissionsCii"><value>Emissions &amp; CII</value></data>
+  <data name="CiiRating"><value>CII Rating</value></data>
+  <data name="Fuel"><value>Fuel</value></data>
+  <data name="VoyageStory"><value>Voyage Story</value></data>
 </root>

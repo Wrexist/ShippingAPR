@@ -266,4 +266,15 @@
   <data name="ColTime"><value>TID</value></data>
   <data name="ColSpeed"><value>FART</value></data>
   <data name="NoPortActivity"><value>Ingen aktivitet än för denna hamn</value></data>
+  <data name="Type"><value>Typ</value></data>
+  <data name="Emissions"><value>Utsläpp</value></data>
+  <data name="Comparison"><value>Jämförelse</value></data>
+  <data name="VesselComparison"><value>Fartygsjämförelse</value></data>
+  <data name="SelectTwoVessels"><value>Välj två fartyg från listan för att jämföra dem sida vid sida.</value></data>
+  <data name="ClearComparison"><value>Rensa jämförelse</value></data>
+  <data name="ToggleWatchlist"><value>Växla bevakningslista</value></data>
+  <data name="EmissionsCii"><value>Utsläpp &amp; CII</value></data>
+  <data name="CiiRating"><value>CII-betyg</value></data>
+  <data name="Fuel"><value>Bränsle</value></data>
+  <data name="VoyageStory"><value>Reseberättelse</value></data>
 </root>
