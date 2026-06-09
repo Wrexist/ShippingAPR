@@ -217,4 +217,33 @@ public class Strings
     public static string HighestEmitter => GetString("HighestEmitter");
     public static string CleanestVessel => GetString("CleanestVessel");
     public static string VesselSpotlight => GetString("VesselSpotlight");
+
+    public static string GlobalChokepoints => GetString("GlobalChokepoints");
+    public static string ChokepointsSubtitle => GetString("ChokepointsSubtitle");
+    public static string InTransit => GetString("InTransit");
+    public static string Transits24h => GetString("Transits24h");
+    public static string Notifications => GetString("Notifications");
+    public static string MarkRead => GetString("MarkRead");
+    public static string Clear => GetString("Clear");
+    public static string NoNotifications => GetString("NoNotifications");
+    public static string ShipJournal => GetString("ShipJournal");
+    public static string EncounterSubtitle => GetString("EncounterSubtitle");
+    public static string Spotted => GetString("Spotted");
+    public static string Countries => GetString("Countries");
+    public static string Types => GetString("Types");
+    public static string ShipSpotter => GetString("ShipSpotter");
+    public static string TrackDiscoveries => GetString("TrackDiscoveries");
+    public static string Achievements => GetString("Achievements");
+    public static string YourStats => GetString("YourStats");
+    public static string VesselsSpotted => GetString("VesselsSpotted");
+    public static string TypesDiscovered => GetString("TypesDiscovered");
+    public static string CountriesTracked => GetString("CountriesTracked");
+    public static string FastestSpotted => GetString("FastestSpotted");
+    public static string SupplyChainTracker => GetString("SupplyChainTracker");
+    public static string ShipmentSubtitle => GetString("ShipmentSubtitle");
+    public static string Pending => GetString("Pending");
+    public static string Arrived => GetString("Arrived");
+    public static string NewShipment => GetString("NewShipment");
+    public static string AddShipment => GetString("AddShipment");
+    public static string ShipmentName => GetString("ShipmentName");
 }

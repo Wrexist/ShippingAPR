@@ -1,6 +1,7 @@
 <UserControl x:Class="ShippingAPR.App.Views.NotificationCenterPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources"
              xmlns:services="clr-namespace:ShippingAPR.Services;assembly=ShippingAPR.Services">
 
     <Grid>
@@ -18,15 +19,15 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Notifications"
+                <TextBlock Grid.Column="0" Text="{x:Static res:Strings.Notifications}"
                            Style="{DynamicResource HeaderTextStyle}"
                            VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="Mark Read"
+                    <Button Content="{x:Static res:Strings.MarkRead}"
                             Command="{Binding MarkAllReadCommand}"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="10" Padding="8,3" Margin="0,0,4,0"/>
-                    <Button Content="Clear"
+                    <Button Content="{x:Static res:Strings.Clear}"
                             Command="{Binding ClearAllCommand}"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="10" Padding="8,3"/>
@@ -46,7 +47,7 @@
         </Border>
 
         <!-- Empty state -->
-        <TextBlock Grid.Row="1" Text="No notifications yet"
+        <TextBlock Grid.Row="1" Text="{x:Static res:Strings.NoNotifications}"
                    Foreground="{DynamicResource SecondaryTextBrush}"
                    FontSize="13" HorizontalAlignment="Center"
                    VerticalAlignment="Center" Opacity="0.6">
