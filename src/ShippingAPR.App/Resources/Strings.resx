@@ -298,4 +298,5 @@
   <data name="ApiKeyLaterHint"><value>You can add your API key later in Settings.</value></data>
   <data name="ToggleListPanel"><value>Show/hide the vessel list</value></data>
   <data name="ToggleToolsPanel"><value>Show/hide the tools panel</value></data>
+  <data name="Remove"><value>Remove</value></data>
 </root>

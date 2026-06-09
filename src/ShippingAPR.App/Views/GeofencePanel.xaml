@@ -63,6 +63,7 @@
                             </StackPanel>
                             <Button Grid.Column="1" Content="X"
                                     Command="{Binding DataContext.RemoveZoneCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    ToolTip="{x:Static res:Strings.Remove}" AutomationProperties.Name="{x:Static res:Strings.Remove}"
                                     CommandParameter="{Binding Name}"
                                     Style="{DynamicResource GhostButtonStyle}"
                                     FontSize="11" Padding="6,2"

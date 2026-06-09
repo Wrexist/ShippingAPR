@@ -64,7 +64,11 @@ public partial class AlertRuleViewModel : ObservableObject, IDisposable
         RefreshRules();
     }
 
-    [RelayCommand]
+    private bool CanAddRule => !string.IsNullOrWhiteSpace(NewRuleName);
+
+    partial void OnNewRuleNameChanged(string value) => AddRuleCommand.NotifyCanExecuteChanged();
+
+    [RelayCommand(CanExecute = nameof(CanAddRule))]
     private void AddRule()
     {
         if (string.IsNullOrWhiteSpace(NewRuleName)) return;

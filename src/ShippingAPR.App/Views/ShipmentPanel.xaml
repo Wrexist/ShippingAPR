@@ -130,6 +130,7 @@
                                 </Border>
                                 <Button Grid.Column="2" Content="&#x2715;"
                                         Command="{Binding DataContext.RemoveShipmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        ToolTip="{x:Static res:Strings.Remove}" AutomationProperties.Name="{x:Static res:Strings.Remove}"
                                         CommandParameter="{Binding Id}"
                                         Style="{DynamicResource GhostButtonStyle}" FontSize="9" Padding="4,0"/>
                             </Grid>

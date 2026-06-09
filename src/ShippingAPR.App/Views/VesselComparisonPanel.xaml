@@ -146,7 +146,7 @@
 
                 <Button Content="{x:Static res:Strings.ClearComparison}" Command="{Binding ClearCommand}"
                         Margin="0,12,0,0" HorizontalAlignment="Left"
-                        Style="{DynamicResource SecondaryButtonStyle}"/>
+                        Style="{DynamicResource GhostButtonStyle}"/>
             </StackPanel>
 
         </StackPanel>

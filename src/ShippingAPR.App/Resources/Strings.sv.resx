@@ -298,4 +298,5 @@
   <data name="ApiKeyLaterHint"><value>Du kan lägga till din API-nyckel senare i Inställningar.</value></data>
   <data name="ToggleListPanel"><value>Visa/dölj fartygslistan</value></data>
   <data name="ToggleToolsPanel"><value>Visa/dölj verktygspanelen</value></data>
+  <data name="Remove"><value>Ta bort</value></data>
 </root>

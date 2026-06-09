@@ -144,6 +144,7 @@
                                         </StackPanel>
                                         <Button Grid.Column="1" Content="&#x2716;"
                                                 Command="{Binding DataContext.RemoveRuleCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                ToolTip="{x:Static res:Strings.Remove}" AutomationProperties.Name="{x:Static res:Strings.Remove}"
                                                 CommandParameter="{Binding Id}"
                                                 Style="{DynamicResource IconButtonStyle}"
                                                 FontSize="10"

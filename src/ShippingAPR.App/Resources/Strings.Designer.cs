@@ -334,4 +334,6 @@ public class Strings
 
     public static string ToggleListPanel => GetString("ToggleListPanel");
     public static string ToggleToolsPanel => GetString("ToggleToolsPanel");
+
+    public static string Remove => GetString("Remove");
 }
