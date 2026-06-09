@@ -184,4 +184,21 @@
   <data name="ShortcutExport"><value>Exportera fartyg</value></data>
   <data name="ShortcutHelp"><value>Visa genvägar</value></data>
   <data name="ShortcutEscape"><value>Avmarkera / Stäng</value></data>
+  <data name="Dashboard"><value>Översikt</value></data>
+  <data name="TotalVessels"><value>Totalt antal fartyg</value></data>
+  <data name="ByType"><value>Efter typ</value></data>
+  <data name="NavigationStatus"><value>Navigationsstatus</value></data>
+  <data name="UnderWay"><value>Under gång</value></data>
+  <data name="AtAnchor"><value>För ankar</value></data>
+  <data name="Moored"><value>Förtöjd</value></data>
+  <data name="AvgSpeed"><value>Medelfart</value></data>
+  <data name="Watched"><value>Bevakade</value></data>
+  <data name="TopDestinations"><value>Främsta destinationer</value></data>
+  <data name="FleetEmissions"><value>Flottans utsläpp</value></data>
+  <data name="TotalCo2"><value>Totalt CO2</value></data>
+  <data name="TotalFuel"><value>Totalt bränsle</value></data>
+  <data name="VesselsMeasured"><value>Uppmätta fartyg</value></data>
+  <data name="HighestEmitter"><value>Största utsläppare</value></data>
+  <data name="CleanestVessel"><value>Renaste fartyg</value></data>
+  <data name="VesselSpotlight"><value>Fartyg i fokus</value></data>
 </root>

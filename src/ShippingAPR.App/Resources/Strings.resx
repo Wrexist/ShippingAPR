@@ -184,4 +184,21 @@
   <data name="ShortcutExport"><value>Export vessels</value></data>
   <data name="ShortcutHelp"><value>Show shortcuts</value></data>
   <data name="ShortcutEscape"><value>Deselect / Close</value></data>
+  <data name="Dashboard"><value>Dashboard</value></data>
+  <data name="TotalVessels"><value>Total Vessels</value></data>
+  <data name="ByType"><value>By Type</value></data>
+  <data name="NavigationStatus"><value>Navigation Status</value></data>
+  <data name="UnderWay"><value>Under Way</value></data>
+  <data name="AtAnchor"><value>At Anchor</value></data>
+  <data name="Moored"><value>Moored</value></data>
+  <data name="AvgSpeed"><value>Avg Speed</value></data>
+  <data name="Watched"><value>Watched</value></data>
+  <data name="TopDestinations"><value>Top Destinations</value></data>
+  <data name="FleetEmissions"><value>Fleet Emissions</value></data>
+  <data name="TotalCo2"><value>Total CO2</value></data>
+  <data name="TotalFuel"><value>Total Fuel</value></data>
+  <data name="VesselsMeasured"><value>Vessels Measured</value></data>
+  <data name="HighestEmitter"><value>Highest Emitter</value></data>
+  <data name="CleanestVessel"><value>Cleanest Vessel</value></data>
+  <data name="VesselSpotlight"><value>Vessel Spotlight</value></data>
 </root>

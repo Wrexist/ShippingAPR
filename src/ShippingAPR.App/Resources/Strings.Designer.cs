@@ -199,4 +199,22 @@ public class Strings
     public static string ShortcutExport => GetString("ShortcutExport");
     public static string ShortcutHelp => GetString("ShortcutHelp");
     public static string ShortcutEscape => GetString("ShortcutEscape");
+
+    public static string Dashboard => GetString("Dashboard");
+    public static string TotalVessels => GetString("TotalVessels");
+    public static string ByType => GetString("ByType");
+    public static string NavigationStatus => GetString("NavigationStatus");
+    public static string UnderWay => GetString("UnderWay");
+    public static string AtAnchor => GetString("AtAnchor");
+    public static string Moored => GetString("Moored");
+    public static string AvgSpeed => GetString("AvgSpeed");
+    public static string Watched => GetString("Watched");
+    public static string TopDestinations => GetString("TopDestinations");
+    public static string FleetEmissions => GetString("FleetEmissions");
+    public static string TotalCo2 => GetString("TotalCo2");
+    public static string TotalFuel => GetString("TotalFuel");
+    public static string VesselsMeasured => GetString("VesselsMeasured");
+    public static string HighestEmitter => GetString("HighestEmitter");
+    public static string CleanestVessel => GetString("CleanestVessel");
+    public static string VesselSpotlight => GetString("VesselSpotlight");
 }
