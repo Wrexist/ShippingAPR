@@ -1,15 +1,16 @@
 <UserControl x:Class="ShippingAPR.App.Views.AlertRulePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
         <StackPanel Margin="8">
 
             <!-- ═══ Header ═══ -->
-            <TextBlock Text="Smart Alerts" FontSize="16" FontWeight="Bold"
+            <TextBlock Text="{x:Static res:Strings.SmartAlerts}" FontSize="16" FontWeight="Bold"
                        Foreground="{DynamicResource PrimaryTextBrush}"
                        Margin="0,0,0,4"/>
-            <TextBlock Text="Custom compound alert rules" FontSize="11"
+            <TextBlock Text="{x:Static res:Strings.SmartAlertsSubtitle}" FontSize="11"
                        Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,0,0,12"/>
 
@@ -24,13 +25,13 @@
                         <TextBlock Text="{Binding RuleCount}" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Center"
                                    Foreground="{DynamicResource AccentBrush}"/>
-                        <TextBlock Text="Rules" FontSize="10" HorizontalAlignment="Center"
+                        <TextBlock Text="{x:Static res:Strings.Rules}" FontSize="10" HorizontalAlignment="Center"
                                    Style="{DynamicResource SubTextStyle}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                         <TextBlock Text="{Binding AlertsFiredCount}" FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Center" Foreground="#FF9800"/>
-                        <TextBlock Text="Alerts Fired" FontSize="10" HorizontalAlignment="Center"
+                        <TextBlock Text="{x:Static res:Strings.AlertsFired}" FontSize="10" HorizontalAlignment="Center"
                                    Style="{DynamicResource SubTextStyle}"/>
                     </StackPanel>
                 </Grid>
@@ -42,12 +43,12 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                         <Border Width="3" Height="14" CornerRadius="2"
                                 Background="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
-                        <TextBlock Text="Create Rule" Style="{DynamicResource SubTextStyle}"
+                        <TextBlock Text="{x:Static res:Strings.CreateRule}" Style="{DynamicResource SubTextStyle}"
                                    FontWeight="Bold" FontSize="11"/>
                     </StackPanel>
 
                     <!-- Rule Name -->
-                    <TextBlock Text="Rule Name" FontSize="10"
+                    <TextBlock Text="{x:Static res:Strings.RuleName}" FontSize="10"
                                Style="{DynamicResource SubTextStyle}" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding NewRuleName, UpdateSourceTrigger=PropertyChanged}"
                              FontSize="12" Padding="8,6" Margin="0,0,0,8"
@@ -55,7 +56,7 @@
                              Background="{DynamicResource GlassFillBrush}"/>
 
                     <!-- Vessel Type -->
-                    <TextBlock Text="Vessel Type (optional)" FontSize="10"
+                    <TextBlock Text="{x:Static res:Strings.VesselTypeOptional}" FontSize="10"
                                Style="{DynamicResource SubTextStyle}" Margin="0,0,0,4"/>
                     <ComboBox ItemsSource="{Binding VesselTypeOptions}"
                               SelectedItem="{Binding NewRuleVesselType}"
@@ -70,7 +71,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Min Speed (kn)" FontSize="10"
+                            <TextBlock Text="{x:Static res:Strings.MinSpeedKn}" FontSize="10"
                                        Style="{DynamicResource SubTextStyle}" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding NewRuleMinSpeed, UpdateSourceTrigger=PropertyChanged}"
                                      FontSize="12" Padding="8,6"
@@ -78,7 +79,7 @@
                                      Background="{DynamicResource GlassFillBrush}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Max Speed (kn)" FontSize="10"
+                            <TextBlock Text="{x:Static res:Strings.MaxSpeedKn}" FontSize="10"
                                        Style="{DynamicResource SubTextStyle}" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding NewRuleMaxSpeed, UpdateSourceTrigger=PropertyChanged}"
                                      FontSize="12" Padding="8,6"
@@ -88,7 +89,7 @@
                     </Grid>
 
                     <!-- Flag Filter -->
-                    <TextBlock Text="Country Flag (e.g. SE, NO)" FontSize="10"
+                    <TextBlock Text="{x:Static res:Strings.CountryFlagHint}" FontSize="10"
                                Style="{DynamicResource SubTextStyle}" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding NewRuleFlag, UpdateSourceTrigger=PropertyChanged}"
                              FontSize="12" Padding="8,6" Margin="0,0,0,10"
@@ -96,7 +97,7 @@
                              Foreground="{DynamicResource PrimaryTextBrush}"
                              Background="{DynamicResource GlassFillBrush}"/>
 
-                    <Button Content="Add Rule"
+                    <Button Content="{x:Static res:Strings.AddRule}"
                             Command="{Binding AddRuleCommand}"
                             Style="{DynamicResource AccentButtonStyle}"
                             FontSize="12" Padding="14,6"
@@ -110,7 +111,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Border Width="3" Height="14" CornerRadius="2"
                                 Background="{DynamicResource SuccessBrush}" Margin="0,0,8,0"/>
-                        <TextBlock Text="Active Rules" Style="{DynamicResource SubTextStyle}"
+                        <TextBlock Text="{x:Static res:Strings.ActiveRules}" Style="{DynamicResource SubTextStyle}"
                                    FontWeight="Bold" FontSize="11"/>
                     </StackPanel>
 
