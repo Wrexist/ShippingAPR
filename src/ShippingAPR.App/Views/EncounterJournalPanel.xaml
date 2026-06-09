@@ -1,6 +1,7 @@
 <UserControl x:Class="ShippingAPR.App.Views.EncounterJournalPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,12 +17,12 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Ship Journal" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="0" Text="{x:Static res:Strings.ShipJournal}" FontSize="16" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryTextBrush}"/>
-                <Button Grid.Column="1" Content="Export" Command="{Binding ExportJournalCommand}"
+                <Button Grid.Column="1" Content="{x:Static res:Strings.Export}" Command="{Binding ExportJournalCommand}"
                         Style="{DynamicResource GhostButtonStyle}" FontSize="10" Padding="8,2"/>
             </Grid>
-            <TextBlock Text="Your personal ship-spotter's logbook"
+            <TextBlock Text="{x:Static res:Strings.EncounterSubtitle}"
                        Style="{DynamicResource SubTextStyle}" FontSize="11" Opacity="0.7"/>
         </StackPanel>
 
@@ -37,21 +38,21 @@
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding TotalEncounters}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Spotted" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.Spotted}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding UniqueCountries}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Countries" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.Countries}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding UniqueTypes}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Types" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.Types}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
@@ -77,6 +78,23 @@
             </Grid>
         </Border>
 
+        <!-- Empty state -->
+        <TextBlock Grid.Row="3" Text="{x:Static res:Strings.NoEncountersYet}"
+                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,28,16,0"
+                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Opacity="0.6"
+                   TextWrapping="Wrap" TextAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Encounters.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
         <!-- Encounter list -->
         <ListBox Grid.Row="3" ItemsSource="{Binding Encounters}"
                  Background="Transparent" BorderThickness="0"
@@ -100,7 +118,7 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Style="{DynamicResource CardStyle}" Padding="10,8" Margin="4,0">
+                    <Border Style="{DynamicResource InteractiveCardStyle}" Padding="10,8" Margin="4,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

@@ -4,6 +4,8 @@ using ShippingAPR.Core.Calculations;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.Services;
 
 /// <summary>
@@ -211,7 +213,7 @@ public sealed class ShipmentTrackingService : IDisposable
             List<Shipment> copy;
             lock (_lock) { copy = _shipments.ToList(); }
             var json = JsonSerializer.Serialize(copy, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(DataPath, json);
+            AtomicFile.WriteAllText(DataPath, json);
         }
         catch (Exception ex)
         {

@@ -125,6 +125,7 @@ public class Strings
     public static string GetStarted => GetString("GetStarted");
     public static string ConnectionSuccess => GetString("ConnectionSuccess");
     public static string ConnectionFailed => GetString("ConnectionFailed");
+    public static string ApiKeyRequired => GetString("ApiKeyRequired");
 
     // Notifications
     public static string VesselEnteredArea => GetString("VesselEnteredArea");
@@ -198,4 +199,146 @@ public class Strings
     public static string ShortcutExport => GetString("ShortcutExport");
     public static string ShortcutHelp => GetString("ShortcutHelp");
     public static string ShortcutEscape => GetString("ShortcutEscape");
+
+    public static string Dashboard => GetString("Dashboard");
+    public static string TotalVessels => GetString("TotalVessels");
+    public static string ByType => GetString("ByType");
+    public static string NavigationStatus => GetString("NavigationStatus");
+    public static string UnderWay => GetString("UnderWay");
+    public static string AtAnchor => GetString("AtAnchor");
+    public static string Moored => GetString("Moored");
+    public static string AvgSpeed => GetString("AvgSpeed");
+    public static string Watched => GetString("Watched");
+    public static string TopDestinations => GetString("TopDestinations");
+    public static string FleetEmissions => GetString("FleetEmissions");
+    public static string TotalCo2 => GetString("TotalCo2");
+    public static string TotalFuel => GetString("TotalFuel");
+    public static string VesselsMeasured => GetString("VesselsMeasured");
+    public static string HighestEmitter => GetString("HighestEmitter");
+    public static string CleanestVessel => GetString("CleanestVessel");
+    public static string VesselSpotlight => GetString("VesselSpotlight");
+
+    public static string GlobalChokepoints => GetString("GlobalChokepoints");
+    public static string ChokepointsSubtitle => GetString("ChokepointsSubtitle");
+    public static string InTransit => GetString("InTransit");
+    public static string Transits24h => GetString("Transits24h");
+    public static string Notifications => GetString("Notifications");
+    public static string MarkRead => GetString("MarkRead");
+    public static string Clear => GetString("Clear");
+    public static string NoNotifications => GetString("NoNotifications");
+    public static string ShipJournal => GetString("ShipJournal");
+    public static string EncounterSubtitle => GetString("EncounterSubtitle");
+    public static string Spotted => GetString("Spotted");
+    public static string Countries => GetString("Countries");
+    public static string Types => GetString("Types");
+    public static string ShipSpotter => GetString("ShipSpotter");
+    public static string TrackDiscoveries => GetString("TrackDiscoveries");
+    public static string Achievements => GetString("Achievements");
+    public static string YourStats => GetString("YourStats");
+    public static string VesselsSpotted => GetString("VesselsSpotted");
+    public static string TypesDiscovered => GetString("TypesDiscovered");
+    public static string CountriesTracked => GetString("CountriesTracked");
+    public static string FastestSpotted => GetString("FastestSpotted");
+    public static string SupplyChainTracker => GetString("SupplyChainTracker");
+    public static string ShipmentSubtitle => GetString("ShipmentSubtitle");
+    public static string Pending => GetString("Pending");
+    public static string Arrived => GetString("Arrived");
+    public static string NewShipment => GetString("NewShipment");
+    public static string AddShipment => GetString("AddShipment");
+    public static string ShipmentName => GetString("ShipmentName");
+
+    public static string MaritimeNews => GetString("MaritimeNews");
+    public static string MaritimeNewsSubtitle => GetString("MaritimeNewsSubtitle");
+    public static string Active => GetString("Active");
+    public static string Warnings => GetString("Warnings");
+    public static string Critical => GetString("Critical");
+    public static string CategoryAll => GetString("CategoryAll");
+    public static string CategorySecurity => GetString("CategorySecurity");
+    public static string CategoryPiracy => GetString("CategoryPiracy");
+    public static string CategoryWeather => GetString("CategoryWeather");
+    public static string CategoryNav => GetString("CategoryNav");
+    public static string SmartAlerts => GetString("SmartAlerts");
+    public static string SmartAlertsSubtitle => GetString("SmartAlertsSubtitle");
+    public static string Rules => GetString("Rules");
+    public static string AlertsFired => GetString("AlertsFired");
+    public static string CreateRule => GetString("CreateRule");
+    public static string RuleName => GetString("RuleName");
+    public static string VesselTypeOptional => GetString("VesselTypeOptional");
+    public static string MinSpeedKn => GetString("MinSpeedKn");
+    public static string MaxSpeedKn => GetString("MaxSpeedKn");
+    public static string CountryFlagHint => GetString("CountryFlagHint");
+    public static string AddRule => GetString("AddRule");
+    public static string ActiveRules => GetString("ActiveRules");
+    public static string PortActivity => GetString("PortActivity");
+    public static string PortActivitySubtitle => GetString("PortActivitySubtitle");
+    public static string SelectPort => GetString("SelectPort");
+    public static string Congestion => GetString("Congestion");
+    public static string InPort => GetString("InPort");
+    public static string Arrivals => GetString("Arrivals");
+    public static string Departures => GetString("Departures");
+    public static string TideSeaLevel => GetString("TideSeaLevel");
+    public static string HighTide => GetString("HighTide");
+    public static string LowTide => GetString("LowTide");
+    public static string ArrivalsDeparturesBoard => GetString("ArrivalsDeparturesBoard");
+    public static string ColVessel => GetString("ColVessel");
+    public static string ColTime => GetString("ColTime");
+    public static string ColSpeed => GetString("ColSpeed");
+    public static string NoPortActivity => GetString("NoPortActivity");
+
+    public static string Type => GetString("Type");
+    public static string Emissions => GetString("Emissions");
+    public static string Comparison => GetString("Comparison");
+    public static string VesselComparison => GetString("VesselComparison");
+    public static string SelectTwoVessels => GetString("SelectTwoVessels");
+    public static string ClearComparison => GetString("ClearComparison");
+    public static string ToggleWatchlist => GetString("ToggleWatchlist");
+    public static string EmissionsCii => GetString("EmissionsCii");
+    public static string CiiRating => GetString("CiiRating");
+    public static string Fuel => GetString("Fuel");
+    public static string VoyageStory => GetString("VoyageStory");
+
+    public static string SettingsSubtitle => GetString("SettingsSubtitle");
+    public static string DataProvider => GetString("DataProvider");
+    public static string ActiveProvider => GetString("ActiveProvider");
+    public static string FallbackProvider => GetString("FallbackProvider");
+    public static string DatalasticPoll => GetString("DatalasticPoll");
+    public static string DataDockedPoll => GetString("DataDockedPoll");
+    public static string ApiKeys => GetString("ApiKeys");
+    public static string AisStreamKeyLabel => GetString("AisStreamKeyLabel");
+    public static string DatalasticKeyLabel => GetString("DatalasticKeyLabel");
+    public static string DataDockedKeyLabel => GetString("DataDockedKeyLabel");
+    public static string VesselFinderKeyLabel => GetString("VesselFinderKeyLabel");
+    public static string Cancel => GetString("Cancel");
+    public static string SaveRestart => GetString("SaveRestart");
+    public static string GeofenceZones => GetString("GeofenceZones");
+    public static string ZoneName => GetString("ZoneName");
+    public static string AddFromCurrentView => GetString("AddFromCurrentView");
+    public static string AdvancedFilters => GetString("AdvancedFilters");
+    public static string FlagCountryCode => GetString("FlagCountryCode");
+    public static string FeatureLivePositions => GetString("FeatureLivePositions");
+    public static string FeatureEta => GetString("FeatureEta");
+    public static string FeatureAreaMonitoring => GetString("FeatureAreaMonitoring");
+    public static string FeatureVesselSearch => GetString("FeatureVesselSearch");
+    public static string ProviderLabel => GetString("ProviderLabel");
+    public static string SkipForNow => GetString("SkipForNow");
+    public static string ApiKeyLaterHint => GetString("ApiKeyLaterHint");
+
+    public static string PollInterval => GetString("PollInterval");
+    public static string SettingsSaved => GetString("SettingsSaved");
+    public static string SettingsSaveFailed => GetString("SettingsSaveFailed");
+    public static string DestinationFilter => GetString("DestinationFilter");
+    public static string FlagFilter => GetString("FlagFilter");
+    public static string AlertOnEntry => GetString("AlertOnEntry");
+    public static string AlertOnExit => GetString("AlertOnExit");
+    public static string AddFromView => GetString("AddFromView");
+
+    public static string ToggleListPanel => GetString("ToggleListPanel");
+    public static string ToggleToolsPanel => GetString("ToggleToolsPanel");
+
+    public static string Remove => GetString("Remove");
+
+    public static string NoShipmentsYet => GetString("NoShipmentsYet");
+    public static string NoEncountersYet => GetString("NoEncountersYet");
+
+    public static string SortVessels => GetString("SortVessels");
 }

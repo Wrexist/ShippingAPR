@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ShippingAPR.App\ShippingAPR.App.csproj" />
     <ProjectReference Include="..\..\src\ShippingAPR.Core\ShippingAPR.Core.csproj" />
+    <ProjectReference Include="..\..\src\ShippingAPR.Infrastructure\ShippingAPR.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\ShippingAPR.Services\ShippingAPR.Services.csproj" />
   </ItemGroup>
 

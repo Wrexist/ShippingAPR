@@ -46,13 +46,13 @@
                 <Border Width="3" Height="12" CornerRadius="2"
                         Background="{DynamicResource SuccessBrush}"
                         Margin="0,0,8,0"/>
-                <TextBlock Text="ADVANCED FILTERS"
+                <TextBlock Text="{x:Static res:Strings.AdvancedFilters}"
                            Style="{DynamicResource SubTextStyle}"
                            FontWeight="Bold" FontSize="10"/>
             </StackPanel>
 
             <!-- Destination filter -->
-            <TextBlock Text="Destination" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
+            <TextBlock Text="{x:Static res:Strings.Destination}" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
             <Border Background="{DynamicResource GlassFillBrush}"
                     BorderBrush="{DynamicResource GlassBorderBrush}"
                     BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">
@@ -63,7 +63,7 @@
             </Border>
 
             <!-- Flag filter -->
-            <TextBlock Text="Flag (country code)" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
+            <TextBlock Text="{x:Static res:Strings.FlagCountryCode}" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
             <Border Background="{DynamicResource GlassFillBrush}"
                     BorderBrush="{DynamicResource GlassBorderBrush}"
                     BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">

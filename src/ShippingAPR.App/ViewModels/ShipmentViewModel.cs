@@ -35,7 +35,16 @@ public partial class ShipmentViewModel : ObservableObject, IDisposable
         Refresh();
     }
 
-    [RelayCommand]
+    private bool CanAddShipment =>
+        !string.IsNullOrWhiteSpace(NewShipmentName) &&
+        !string.IsNullOrWhiteSpace(NewOriginPort) &&
+        !string.IsNullOrWhiteSpace(NewDestPort);
+
+    partial void OnNewShipmentNameChanged(string value) => AddShipmentCommand.NotifyCanExecuteChanged();
+    partial void OnNewOriginPortChanged(string value) => AddShipmentCommand.NotifyCanExecuteChanged();
+    partial void OnNewDestPortChanged(string value) => AddShipmentCommand.NotifyCanExecuteChanged();
+
+    [RelayCommand(CanExecute = nameof(CanAddShipment))]
     private void AddShipment()
     {
         if (string.IsNullOrWhiteSpace(NewShipmentName) ||

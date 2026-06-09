@@ -28,7 +28,11 @@ public partial class GeofenceViewModel : ObservableObject
         RefreshZones();
     }
 
-    [RelayCommand]
+    private bool CanAddZone => !string.IsNullOrWhiteSpace(NewZoneName);
+
+    partial void OnNewZoneNameChanged(string value) => AddFromViewportCommand.NotifyCanExecuteChanged();
+
+    [RelayCommand(CanExecute = nameof(CanAddZone))]
     private void AddFromViewport()
     {
         var name = NewZoneName.Trim();

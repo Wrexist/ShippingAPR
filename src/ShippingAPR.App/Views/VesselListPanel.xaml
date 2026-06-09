@@ -32,11 +32,14 @@
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="2">
-                    <ComboBox SelectedItem="{Binding SortBy}" Width="80" FontSize="11"
+                    <ComboBox SelectedValue="{Binding SortBy}" SelectedValuePath="Content"
+                              Width="80" FontSize="11"
                               Background="Transparent"
                               Foreground="{DynamicResource PrimaryTextBrush}"
                               BorderThickness="0"
-                              Cursor="Hand">
+                              Cursor="Hand"
+                              ToolTip="{x:Static res:Strings.SortVessels}"
+                              AutomationProperties.Name="{x:Static res:Strings.SortVessels}">
                         <ComboBoxItem Content="Name"/>
                         <ComboBoxItem Content="Speed"/>
                         <ComboBoxItem Content="ETA"/>

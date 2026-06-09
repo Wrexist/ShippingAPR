@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Net.NetworkInformation;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -22,10 +23,17 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
     private Task? _receiveTask;
     private SubscriptionMessage? _lastSubscription;
 
-    private static readonly string[] DefaultMessageTypeFilters = ["PositionReport", "ShipStaticData"];
+    private static readonly string[] DefaultMessageTypeFilters =
+    [
+        "PositionReport", "ShipStaticData",
+        // Class B (small craft / pleasure / fishing) — without these a large share
+        // of coastal traffic is invisible.
+        "StandardClassBPositionReport", "ExtendedClassBPositionReport", "StaticDataReport"
+    ];
 
     private long _messageCount;
     private long _parseErrorCount;
+    private bool _networkEventsSubscribed;
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Disconnected;
     public long MessageCount => Interlocked.Read(ref _messageCount);
@@ -67,6 +75,8 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
             SetStatus(ConnectionStatus.Connected);
             _logger.LogInformation("Connected to AIS stream for area {Area}", area);
 
+            SubscribeNetworkEvents();
+
             _receiveCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _receiveTask = ReceiveLoopAsync(_receiveCts.Token);
         }
@@ -93,6 +103,7 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
 
     public async Task DisconnectAsync()
     {
+        UnsubscribeNetworkEvents();
         _receiveCts?.Cancel();
 
         // Await the receive task BEFORE disposing the socket, so the loop
@@ -300,6 +311,54 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
         return false;
     }
 
+    // --- Proactive recovery on network change / sleep-resume ---
+    // Without this, a stalled socket is only noticed reactively (failed receive
+    // or keep-alive timeout), which can take a while after a laptop wakes or the
+    // connection switches (Wi-Fi -> cellular, VPN up/down). Resume typically
+    // re-initialises the network stack, which raises these same events.
+
+    private void SubscribeNetworkEvents()
+    {
+        if (_networkEventsSubscribed) return;
+        NetworkChange.NetworkAddressChanged += OnNetworkAddressChanged;
+        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+        _networkEventsSubscribed = true;
+    }
+
+    private void UnsubscribeNetworkEvents()
+    {
+        if (!_networkEventsSubscribed) return;
+        NetworkChange.NetworkAddressChanged -= OnNetworkAddressChanged;
+        NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+        _networkEventsSubscribed = false;
+    }
+
+    private void OnNetworkAddressChanged(object? sender, EventArgs e) =>
+        ForceReconnectAfterNetworkChange("network address changed");
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+    {
+        if (e.IsAvailable)
+            ForceReconnectAfterNetworkChange("network became available");
+    }
+
+    private void ForceReconnectAfterNetworkChange(string reason)
+    {
+        // Only act when we believe we're connected. Aborting the socket makes the
+        // receive loop's ReceiveAsync throw, which triggers the existing
+        // backoff-based reconnect immediately. Because Abort() moves the status
+        // off Connected, bursts of network events naturally collapse to one
+        // reconnect until we're connected again.
+        if (Status != ConnectionStatus.Connected) return;
+
+        var socket = _webSocket;
+        if (socket is null) return;
+
+        _logger.LogInformation("Detected {Reason}; forcing AIS stream reconnect", reason);
+        try { socket.Abort(); }
+        catch (Exception ex) { _logger.LogDebug(ex, "Error aborting WebSocket after network change"); }
+    }
+
     private ClientWebSocket CreateConfiguredWebSocket()
     {
         var ws = new ClientWebSocket();
@@ -311,7 +370,22 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
     {
         try
         {
-            var aisMessage = JsonSerializer.Deserialize<AisMessage>(json);
+            using var doc = JsonDocument.Parse(json);
+
+            // aisstream.io does not close the socket on a bad key or malformed
+            // subscription — it sends a text frame like {"error":"..."} and keeps the
+            // connection open. Detect it and surface an Error status instead of silently
+            // swallowing it (which presents as "Connected" with an empty map).
+            if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("error", out var errorProp))
+            {
+                var errorText = errorProp.GetString() ?? "unknown error";
+                _logger.LogError("AIS stream rejected the request: {Error}", errorText);
+                SetStatus(ConnectionStatus.Error);
+                return;
+            }
+
+            var aisMessage = doc.RootElement.Deserialize<AisMessage>();
             if (aisMessage is null) return;
 
             var args = _mapper.Map(aisMessage);
@@ -361,6 +435,7 @@ public sealed class AisStreamClient : IAisDataProvider, IDisposable
 
     public void Dispose()
     {
+        UnsubscribeNetworkEvents();
         _receiveCts?.Cancel();
 
         // Wait briefly for the receive loop to exit gracefully.

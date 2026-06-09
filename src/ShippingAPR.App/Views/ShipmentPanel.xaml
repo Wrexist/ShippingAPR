@@ -1,6 +1,11 @@
 <UserControl x:Class="ShippingAPR.App.Views.ShipmentPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources"
+             xmlns:converters="clr-namespace:ShippingAPR.App.Converters">
+    <UserControl.Resources>
+        <converters:PercentToStarConverter x:Key="PercentToStar"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -11,9 +16,9 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="12,8,12,4">
-            <TextBlock Text="Supply Chain Tracker" FontSize="16" FontWeight="Bold"
+            <TextBlock Text="{x:Static res:Strings.SupplyChainTracker}" FontSize="16" FontWeight="Bold"
                        Foreground="{DynamicResource PrimaryTextBrush}"/>
-            <TextBlock Text="Track shipments from origin to destination"
+            <TextBlock Text="{x:Static res:Strings.ShipmentSubtitle}"
                        Style="{DynamicResource SubTextStyle}" FontSize="11" Opacity="0.7"/>
         </StackPanel>
 
@@ -29,21 +34,21 @@
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding PendingCount}" FontSize="18" FontWeight="Bold"
                                Foreground="#9E9E9E" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Pending" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.Pending}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding InTransitCount}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="In Transit" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.InTransit}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding ArrivedCount}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource SuccessBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Arrived" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.Arrived}" Style="{DynamicResource SubTextStyle}"
                                FontSize="9" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
@@ -55,14 +60,14 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <Border Width="3" Height="14" CornerRadius="2"
                             Background="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
-                    <TextBlock Text="New Shipment" Style="{DynamicResource SubTextStyle}"
+                    <TextBlock Text="{x:Static res:Strings.NewShipment}" Style="{DynamicResource SubTextStyle}"
                                FontWeight="Bold" FontSize="11"/>
                 </StackPanel>
                 <TextBox Text="{Binding NewShipmentName, UpdateSourceTrigger=PropertyChanged}"
                          Background="{DynamicResource GlassFillBrush}" BorderThickness="0"
                          Foreground="{DynamicResource PrimaryTextBrush}"
                          Padding="8,6" FontSize="12" Margin="0,0,0,4">
-                    <TextBox.Tag>Shipment name</TextBox.Tag>
+                    <TextBox.Tag><x:Static Member="res:Strings.ShipmentName"/></TextBox.Tag>
                 </TextBox>
                 <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
@@ -79,11 +84,28 @@
                              Foreground="{DynamicResource PrimaryTextBrush}"
                              Padding="8,6" FontSize="11"/>
                 </Grid>
-                <Button Content="Add Shipment" Command="{Binding AddShipmentCommand}"
+                <Button Content="{x:Static res:Strings.AddShipment}" Command="{Binding AddShipmentCommand}"
                         Style="{DynamicResource AccentButtonStyle}"
                         HorizontalAlignment="Stretch" Padding="8,6" FontSize="12"/>
             </StackPanel>
         </Border>
+
+        <!-- Empty state -->
+        <TextBlock Grid.Row="3" Text="{x:Static res:Strings.NoShipmentsYet}"
+                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,28,16,0"
+                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Opacity="0.6"
+                   TextWrapping="Wrap" TextAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Shipments.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
 
         <!-- Shipment list -->
         <ListBox Grid.Row="3" ItemsSource="{Binding Shipments}"
@@ -107,7 +129,7 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Style="{DynamicResource CardStyle}" Padding="10,8" Margin="4,0">
+                    <Border Style="{DynamicResource InteractiveCardStyle}" Padding="10,8" Margin="4,0">
                         <StackPanel>
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
@@ -125,6 +147,7 @@
                                 </Border>
                                 <Button Grid.Column="2" Content="&#x2715;"
                                         Command="{Binding DataContext.RemoveShipmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        ToolTip="{x:Static res:Strings.Remove}" AutomationProperties.Name="{x:Static res:Strings.Remove}"
                                         CommandParameter="{Binding Id}"
                                         Style="{DynamicResource GhostButtonStyle}" FontSize="9" Padding="4,0"/>
                             </Grid>
@@ -134,14 +157,18 @@
                             <!-- Progress bar -->
                             <Grid Height="6" Margin="0,0,0,4">
                                 <Border Background="{DynamicResource GlassFillBrush}" CornerRadius="3"/>
-                                <Border CornerRadius="3" HorizontalAlignment="Left"
-                                        Background="{DynamicResource AccentBrush}">
-                                    <Border.Width>
-                                        <MultiBinding Converter="{x:Null}">
-                                            <Binding Path="PercentComplete"/>
-                                        </MultiBinding>
-                                    </Border.Width>
-                                </Border>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{Binding PercentComplete, Converter={StaticResource PercentToStar}}"/>
+                                        <ColumnDefinition Width="{Binding PercentComplete, Converter={StaticResource PercentToStar}, ConverterParameter=remainder}"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" CornerRadius="3"
+                                            Background="{DynamicResource AccentBrush}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.5" Color="#6C63FF"/>
+                                        </Border.Effect>
+                                    </Border>
+                                </Grid>
                             </Grid>
 
                             <Grid>

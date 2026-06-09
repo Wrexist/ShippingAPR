@@ -1,6 +1,7 @@
 <UserControl x:Class="ShippingAPR.App.Views.GeofencePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="clr-namespace:ShippingAPR.App.Resources">
     <Grid Margin="14,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -9,13 +10,13 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Geofence Zones"
+        <TextBlock Grid.Row="0" Text="{x:Static res:Strings.GeofenceZones}"
                    Style="{DynamicResource HeaderTextStyle}"
                    Margin="0,0,0,12"/>
 
         <!-- Add Zone -->
         <StackPanel Grid.Row="1" Margin="0,0,0,12">
-            <TextBlock Text="Zone Name" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
+            <TextBlock Text="{x:Static res:Strings.ZoneName}" Style="{DynamicResource SubTextStyle}" FontSize="11" Margin="0,0,0,3"/>
             <Border Background="{DynamicResource GlassFillBrush}"
                     BorderBrush="{DynamicResource GlassBorderBrush}"
                     BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">
@@ -26,13 +27,13 @@
             </Border>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                <CheckBox Content="Alert on Entry" IsChecked="{Binding AlertOnEntry}"
+                <CheckBox Content="{x:Static res:Strings.AlertOnEntry}" IsChecked="{Binding AlertOnEntry}"
                           Style="{DynamicResource GlassToggleStyle}" Margin="0,0,12,0"/>
-                <CheckBox Content="Alert on Exit" IsChecked="{Binding AlertOnExit}"
+                <CheckBox Content="{x:Static res:Strings.AlertOnExit}" IsChecked="{Binding AlertOnExit}"
                           Style="{DynamicResource GlassToggleStyle}"/>
             </StackPanel>
 
-            <Button Content="Add from Current View"
+            <Button Content="{x:Static res:Strings.AddFromCurrentView}"
                     Command="{Binding AddFromViewportCommand}"
                     Style="{DynamicResource AccentButtonStyle}"
                     Padding="12,6" FontSize="12"
@@ -62,6 +63,7 @@
                             </StackPanel>
                             <Button Grid.Column="1" Content="X"
                                     Command="{Binding DataContext.RemoveZoneCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    ToolTip="{x:Static res:Strings.Remove}" AutomationProperties.Name="{x:Static res:Strings.Remove}"
                                     CommandParameter="{Binding Name}"
                                     Style="{DynamicResource GhostButtonStyle}"
                                     FontSize="11" Padding="6,2"

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Core.Validation;
 
 namespace ShippingAPR.Services;
 
@@ -32,14 +33,14 @@ public sealed class VesselStore : IVesselStore
     public void SetSynchronizationContext(SynchronizationContext? context) =>
         _syncContext = context;
 
-    private const int MinValidMmsi = 100_000_000;
-    private const int MaxValidMmsi = 799_999_999;
-
     public Vessel AddOrUpdate(int mmsi, VesselPosition? position, VesselStaticData? staticData)
     {
-        if (mmsi < MinValidMmsi || mmsi > MaxValidMmsi)
+        // Defensive invariant: callers on the AIS hot path pre-validate with
+        // MmsiValidator.IsValid and skip bad data, so this guard should never
+        // fire in normal operation — it only catches programming errors.
+        if (!MmsiValidator.IsValid(mmsi))
             throw new ArgumentOutOfRangeException(nameof(mmsi),
-                $"MMSI must be between {MinValidMmsi} and {MaxValidMmsi}, got {mmsi}");
+                $"MMSI must be between {MmsiValidator.MinValue} and {MmsiValidator.MaxValue}, got {mmsi}");
 
         var isNew = false;
 

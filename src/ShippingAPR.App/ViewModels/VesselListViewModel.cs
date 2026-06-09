@@ -69,6 +69,12 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
         SelectedVessel = value is not null ? _vesselStore.GetByMmsi(value.Mmsi) : null;
     }
 
+    partial void OnSortByChanged(string value)
+    {
+        // Re-sort immediately when the user changes the sort field.
+        RefreshList();
+    }
+
     private void ScheduleRefresh()
     {
         Application.Current?.Dispatcher.Invoke(() =>
@@ -136,6 +142,25 @@ public partial class VesselListViewModel : ObservableObject, IDisposable
             else
             {
                 Vessels.Add(item);
+            }
+        }
+
+        // Reorder the collection in place to match the sorted target order. The diff
+        // above only updates/adds/removes — without this the list never actually
+        // re-sorts (new items were appended at the end). Move preserves item instances
+        // and the current selection and raises Move events rather than a full reset.
+        for (int targetIndex = 0; targetIndex < vessels.Count && targetIndex < Vessels.Count; targetIndex++)
+        {
+            var targetMmsi = vessels[targetIndex].Mmsi;
+            if (Vessels[targetIndex].Mmsi == targetMmsi)
+                continue;
+            for (int j = targetIndex + 1; j < Vessels.Count; j++)
+            {
+                if (Vessels[j].Mmsi == targetMmsi)
+                {
+                    Vessels.Move(j, targetIndex);
+                    break;
+                }
             }
         }
 

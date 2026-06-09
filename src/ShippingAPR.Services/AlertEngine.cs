@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
+using ShippingAPR.Core.IO;
+
 namespace ShippingAPR.Services;
 
 public sealed class AlertTriggered
@@ -170,7 +172,7 @@ public sealed class AlertEngine : IDisposable
             lock (_rulesLock) { rules = _rules.ToList(); }
 
             var json = JsonSerializer.Serialize(rules, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(RulesPath, json);
+            AtomicFile.WriteAllText(RulesPath, json);
         }
         catch (Exception ex)
         {

@@ -72,7 +72,9 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
             var waveHeight = GetDouble(marineCurrent, "wave_height");
             var wavePeriod = GetDouble(marineCurrent, "wave_period");
             var temp = GetDouble(forecastCurrent, "temperature_2m");
-            var visibility = GetDouble(forecastCurrent, "visibility") / 1000.0; // m to km
+            // A missing visibility field must NOT read as 0 km (dense fog) and trigger a
+            // false fog alert — default to a clear value when the model has no data.
+            var visibility = GetDouble(forecastCurrent, "visibility", 10000.0) / 1000.0; // m to km
 
             var weather = new MarineWeather
             {
@@ -105,6 +107,9 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
         var latStep = (maxLat - minLat) / Math.Max(steps - 1, 1);
         var lonStep = (maxLon - minLon) / Math.Max(steps - 1, 1);
 
+        // Bound the fan-out so a large grid doesn't fire steps^2 simultaneous requests
+        // (which trips Open-Meteo's rate limit).
+        using var gate = new SemaphoreSlim(MaxConcurrentGridRequests);
         var tasks = new List<Task<MarineWeather?>>();
         for (int y = 0; y < steps; y++)
         {
@@ -112,7 +117,7 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
             {
                 var lat = minLat + y * latStep;
                 var lon = minLon + x * lonStep;
-                tasks.Add(GetWeatherAsync(lat, lon, ct));
+                tasks.Add(GetThrottledAsync(lat, lon, gate, ct));
             }
         }
 
@@ -141,12 +146,24 @@ public sealed class OpenMeteoMarineClient : IMarineWeatherClient
         }
     }
 
-    private static double GetDouble(JsonElement element, string property)
+    private const int MaxConcurrentGridRequests = 6;
+
+    private async Task<MarineWeather?> GetThrottledAsync(double lat, double lon, SemaphoreSlim gate, CancellationToken ct)
     {
-        if (!element.TryGetProperty(property, out var val)) return 0;
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try { return await GetWeatherAsync(lat, lon, ct).ConfigureAwait(false); }
+        finally { gate.Release(); }
+    }
+
+    private static double GetDouble(JsonElement element, string property) =>
+        GetDouble(element, property, 0);
+
+    private static double GetDouble(JsonElement element, string property, double defaultValue)
+    {
+        if (!element.TryGetProperty(property, out var val)) return defaultValue;
         if (val.ValueKind == JsonValueKind.Number) return val.GetDouble();
-        if (val.ValueKind == JsonValueKind.Null) return 0;
-        return double.TryParse(val.GetString(), out var d) ? d : 0;
+        if (val.ValueKind == JsonValueKind.Null) return defaultValue;
+        return double.TryParse(val.GetString(), out var d) ? d : defaultValue;
     }
 
     /// <summary>

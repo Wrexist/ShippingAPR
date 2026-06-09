@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+using ShippingAPR.Core.Validation;
 using ShippingAPR.Infrastructure.Providers;
 
 namespace ShippingAPR.Infrastructure.DataDocked;
@@ -66,7 +67,7 @@ public sealed class DataDockedClient : PollingAisProviderBase
             try
             {
                 var mmsi = vessel.TryGetProperty("mmsi", out var mmsiProp) ? mmsiProp.GetInt32() : 0;
-                if (mmsi <= 0) continue;
+                if (!MmsiValidator.IsValid(mmsi)) continue;
 
                 var lat = vessel.TryGetProperty("latitude", out var latProp) ? latProp.GetDouble() :
                           vessel.TryGetProperty("lat", out var latProp2) ? latProp2.GetDouble() : 0;
@@ -76,19 +77,14 @@ public sealed class DataDockedClient : PollingAisProviderBase
                 var course = vessel.TryGetProperty("course", out var courseProp) ? courseProp.GetDouble() : 0;
                 var heading = vessel.TryGetProperty("heading", out var headingProp) ? headingProp.GetDouble() : 0;
 
+                var position = AisPositionNormalizer.TryCreate(lat, lon, speed, course, heading);
+                if (position is null) continue; // no usable fix (missing/out-of-range/Null Island)
+
                 EmitMessage(new AisMessageEventArgs
                 {
                     MessageType = "PositionReport",
                     Mmsi = mmsi,
-                    Position = new VesselPosition
-                    {
-                        Latitude = lat,
-                        Longitude = lon,
-                        SpeedOverGround = speed,
-                        CourseOverGround = course,
-                        TrueHeading = heading > 0 ? heading : course,
-                        Timestamp = DateTime.UtcNow
-                    }
+                    Position = position
                 });
 
                 var name = vessel.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;

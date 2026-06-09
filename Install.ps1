@@ -7,7 +7,9 @@ $ErrorActionPreference = "Stop"
 
 $repoUrl = "https://github.com/Wrexist/ShippingAPR"
 $downloadUrl = "$repoUrl/releases/latest/download/ShippingAPR-Setup.exe"
+$checksumUrl = "$downloadUrl.sha256"
 $tempPath = Join-Path $env:TEMP "ShippingAPR-Setup.exe"
+$checksumPath = "$tempPath.sha256"
 
 Write-Host ""
 Write-Host "  ========================================" -ForegroundColor Cyan
@@ -23,6 +25,19 @@ try {
 
     $size = [math]::Round((Get-Item $tempPath).Length / 1MB, 1)
     Write-Host "  Downloaded ($size MB)" -ForegroundColor Green
+
+    # Verify the installer's integrity against the published SHA-256 before running it.
+    Write-Host "  Verifying integrity..." -ForegroundColor White
+    Invoke-WebRequest -Uri $checksumUrl -OutFile $checksumPath -UseBasicParsing
+    $expected = ((Get-Content $checksumPath -Raw).Trim() -split '\s+')[0].ToLower()
+    $actual = (Get-FileHash -Path $tempPath -Algorithm SHA256).Hash.ToLower()
+    if ($expected -ne $actual) {
+        Remove-Item $tempPath, $checksumPath -ErrorAction SilentlyContinue
+        throw "Checksum mismatch — the download may be corrupt or tampered with. Expected $expected but got $actual."
+    }
+    Write-Host "  Integrity verified." -ForegroundColor Green
+    Remove-Item $checksumPath -ErrorAction SilentlyContinue
+
     Write-Host ""
     Write-Host "  Starting installer..." -ForegroundColor White
     Write-Host "  (Follow the setup wizard to complete installation)" -ForegroundColor Gray

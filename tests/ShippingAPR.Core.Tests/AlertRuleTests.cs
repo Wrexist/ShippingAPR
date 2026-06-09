@@ -127,6 +127,40 @@ public class AlertRuleTests
     }
 
     [Fact]
+    public void SpeedFilter_WithNoPosition_ReturnsFalse()
+    {
+        var rule = new AlertRule { Name = "Fast vessels", MinSpeedKnots = 15.0 };
+
+        var vessel = new Vessel { Mmsi = 100000001 };
+        vessel.UpdateStaticData(new VesselStaticData { ShipType = VesselType.Cargo, CountryCode = "SE" });
+
+        rule.Matches(vessel).Should().BeFalse();
+    }
+
+    [Fact]
+    public void StatusFilter_WithNoPosition_ReturnsFalse()
+    {
+        var rule = new AlertRule { Name = "Anchored", StatusFilter = NavigationalStatus.AtAnchor };
+
+        var vessel = new Vessel { Mmsi = 100000001 };
+        vessel.UpdateStaticData(new VesselStaticData { ShipType = VesselType.Cargo });
+
+        rule.Matches(vessel).Should().BeFalse();
+    }
+
+    [Fact]
+    public void StaticOnlyFilter_WithNoPosition_StillMatches()
+    {
+        // A flag/type rule has no position dependency, so it should still match.
+        var rule = new AlertRule { Name = "Swedish", FlagFilter = "SE" };
+
+        var vessel = new Vessel { Mmsi = 100000001 };
+        vessel.UpdateStaticData(new VesselStaticData { ShipType = VesselType.Cargo, CountryCode = "SE" });
+
+        rule.Matches(vessel).Should().BeTrue();
+    }
+
+    [Fact]
     public void ZoneFilter_WithNoPosition_ReturnsFalse()
     {
         var zone = new AlertZone("Test Zone", 57.0, 58.0, 11.0, 12.0);

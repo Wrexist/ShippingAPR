@@ -1,9 +1,8 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -13,6 +12,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Win32;
 using ShippingAPR.App.Configuration;
 using ShippingAPR.App.Views;
+using ShippingAPR.Core.Diagnostics;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
@@ -34,7 +34,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly EventHandler _onStoreCleared;
     private readonly PropertyChangedEventHandler _onSelectedVesselChanged;
     private readonly EventHandler<Vessel> _onVesselSelected;
+    private readonly EventHandler<Vessel> _onVesselUpdated;
     private CancellationTokenSource? _notificationCts;
+
+    // Data-freshness tracking
+    private readonly DispatcherTimer _freshnessTimer;
+    private readonly TimeSpan _dataStaleThreshold;
+    private volatile bool _isConnected;
+    private DateTime? _lastDataUtc;
 
     [ObservableProperty]
     private string _connectionStatusText = Strings.Disconnected;
@@ -46,7 +53,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private int _vesselCount;
 
     [ObservableProperty]
-    private string _messageRateText = "";
+    private string _dataFreshnessText = "";
 
     [ObservableProperty]
     private bool _isDarkTheme = true;
@@ -93,6 +100,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _rightPanelIndex; // 0=Detail, 1=Dashboard, 2=Achievements, 3=PortCam, 4=Alerts, 5=Chokepoints, 6=Journal, 7=Shipments, 8=News
 
+    // Foldable Liquid Glass side panels — collapse to give the map full width.
+    [ObservableProperty]
+    private bool _isLeftPanelExpanded = true;
+
+    [ObservableProperty]
+    private bool _isRightPanelExpanded = true;
+
     public MainViewModel(
         IVesselStore vesselStore,
         IVesselTrackingService trackingService,
@@ -123,7 +137,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _logger = logger;
         _uiOptions = uiOptions.Value;
         _exportService = exportService;
-        _connectionStatusColor = _uiOptions.StatusColorError;
+        _connectionStatusColor = _uiOptions.StatusColorDisconnected;
 
         // Check if API key is configured for the active provider
         var activeProvider = configuration["AisProvider:Active"] ?? "AisStream";
@@ -154,10 +168,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _onConnectionStatusChanged = OnConnectionStatusChanged;
         _trackingService.ConnectionStatusChanged += _onConnectionStatusChanged;
 
-        _onVesselAdded = (_, _) => VesselCount = _vesselStore.Count;
+        _onVesselAdded = (_, _) => { VesselCount = _vesselStore.Count; _lastDataUtc = DateTime.UtcNow; };
+        _onVesselUpdated = (_, _) => _lastDataUtc = DateTime.UtcNow;
         _onStoreCleared = (_, _) => VesselCount = 0;
         _vesselStore.VesselAdded += _onVesselAdded;
+        _vesselStore.VesselUpdated += _onVesselUpdated;
         _vesselStore.StoreCleared += _onStoreCleared;
+
+        // Poll data freshness so a silently stalled stream (no socket error) is
+        // surfaced to the user instead of a frozen but "Connected" map.
+        _dataStaleThreshold = TimeSpan.FromSeconds(_uiOptions.DataStaleThresholdSeconds);
+        _freshnessTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(_uiOptions.DataFreshnessPollMs)
+        };
+        _freshnessTimer.Tick += (_, _) => UpdateDataFreshness();
+        _freshnessTimer.Start();
 
         // Listen for notifications
         WeakReferenceMessenger.Default.Register<NotificationPublished>(this, (_, msg) =>
@@ -230,6 +256,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (IsNotificationCenterOpen)
             NotificationCenterViewModel.MarkAllReadCommand.Execute(null);
     }
+
+    [RelayCommand]
+    private void ToggleLeftPanel() => IsLeftPanelExpanded = !IsLeftPanelExpanded;
+
+    [RelayCommand]
+    private void ToggleRightPanel() => IsRightPanelExpanded = !IsRightPanelExpanded;
 
     [RelayCommand]
     private void ToggleDashboard()
@@ -353,39 +385,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StartTrackingTooltip));
     }
 
-    internal static bool SaveApiKey(string apiKey)
+    internal static bool SaveApiKey(string apiKey) =>
+        SaveProviderApiKey("AisStream", apiKey);
+
+    /// <summary>
+    /// Saves an API key to the section for the chosen provider and makes that provider
+    /// active, so a non-AisStream choice in the welcome dialog is honoured.
+    /// </summary>
+    internal static bool SaveProviderApiKey(string provider, string apiKey)
     {
-        try
+        var section = provider switch
         {
-            var exePath = Environment.ProcessPath;
-            var baseDir = exePath is not null
-                ? Path.GetDirectoryName(exePath)
-                : AppContext.BaseDirectory;
-            var path = Path.Combine(baseDir ?? AppContext.BaseDirectory, "appsettings.json");
-
-            if (!File.Exists(path)) return false;
-
-            // Use proper JSON parsing to avoid injection via malformed keys
-            var json = File.ReadAllText(path);
-            var root = JsonNode.Parse(json) ?? new JsonObject();
-            var aisSection = root["AisStream"]?.AsObject();
-            if (aisSection is null)
-            {
-                aisSection = new JsonObject();
-                root["AisStream"] = aisSection;
-            }
-            aisSection["ApiKey"] = apiKey;
-
-            File.WriteAllText(path, root.ToJsonString(
-                new JsonSerializerOptions { WriteIndented = true }));
-            return true;
-        }
-        catch (Exception ex)
+            "Datalastic" => "Datalastic",
+            "DataDocked" => "DataDocked",
+            _ => "AisStream"
+        };
+        return LocalSettingsStore.Update(root =>
         {
-            // Non-critical — user can manually edit appsettings.json
-            System.Diagnostics.Debug.WriteLine($"Failed to save API key: {ex.Message}");
-            return false;
-        }
+            LocalSettingsStore.SetSectionValue(root, section, "ApiKey", apiKey);
+            LocalSettingsStore.SetSectionValue(root, "AisProvider", "Active", section);
+        });
     }
 
     [RelayCommand]
@@ -541,6 +560,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)
     {
+        _isConnected = status == ConnectionStatus.Connected;
+
         Application.Current?.Dispatcher.Invoke(() =>
         {
             var providerName = _configuration["AisProvider:Active"] ?? "AisStream";
@@ -563,23 +584,39 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 ConnectionStatus.Connected => _uiOptions.StatusColorConnected,
                 ConnectionStatus.Connecting or ConnectionStatus.Reconnecting => _uiOptions.StatusColorConnecting,
-                _ => _uiOptions.StatusColorError
+                ConnectionStatus.Disconnected => _uiOptions.StatusColorDisconnected,
+                _ => _uiOptions.StatusColorError // Error / Failed
             };
         });
     }
 
+    private void UpdateDataFreshness()
+    {
+        var state = DataFreshness.Evaluate(_isConnected, _lastDataUtc, DateTime.UtcNow, _dataStaleThreshold);
+        DataFreshnessText = state switch
+        {
+            DataFreshnessState.Live => "● Live",
+            DataFreshnessState.Waiting => "Waiting for data…",
+            DataFreshnessState.Stale => $"⚠ No data {DataFreshness.DescribeAge(DateTime.UtcNow - _lastDataUtc!.Value)}",
+            _ => string.Empty // Idle / not connected
+        };
+    }
+
     public void Dispose()
     {
+        _freshnessTimer.Stop();
         _notificationCts?.Cancel();
         _notificationCts?.Dispose();
         _trackingService.ConnectionStatusChanged -= _onConnectionStatusChanged;
         _vesselStore.VesselAdded -= _onVesselAdded;
+        _vesselStore.VesselUpdated -= _onVesselUpdated;
         _vesselStore.StoreCleared -= _onStoreCleared;
         VesselListViewModel.PropertyChanged -= _onSelectedVesselChanged;
         SearchViewModel.VesselSelected -= _onVesselSelected;
         WeakReferenceMessenger.Default.Unregister<NotificationPublished>(this);
         MapViewModel.Dispose();
         VesselListViewModel.Dispose();
+        VesselDetailViewModel.Dispose();
         StatisticsViewModel.Dispose();
         ChokepointViewModel.Dispose();
         EncounterJournalViewModel.Dispose();

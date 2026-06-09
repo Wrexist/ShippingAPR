@@ -165,6 +165,166 @@ public class AisMessageMapperTests
         _mapper.Map(msg).Should().BeNull();
     }
 
+    // --- AIS Sentinel / "not available" values ---
+
+    [Fact]
+    public void MapPositionReport_SentinelLatitude91_ReturnsNull()
+    {
+        // lat=91 is the AIS "position not available" sentinel — must not be plotted.
+        var msg = CreatePositionReportMessage(lat: 91.0);
+        _mapper.Map(msg).Should().BeNull();
+    }
+
+    [Fact]
+    public void MapPositionReport_SentinelLongitude181_ReturnsNull()
+    {
+        // lon=181 is the AIS "position not available" sentinel — must not be plotted.
+        var msg = CreatePositionReportMessage(lon: 181.0);
+        _mapper.Map(msg).Should().BeNull();
+    }
+
+    [Fact]
+    public void MapPositionReport_BoundaryLatLon_StillMapped()
+    {
+        // Exact bounds (±90 / ±180) are valid positions, not sentinels.
+        var msg = CreatePositionReportMessage(lat: 90.0, lon: 180.0);
+        var result = _mapper.Map(msg);
+
+        result.Should().NotBeNull();
+        result!.Position!.Latitude.Should().Be(90.0);
+        result.Position.Longitude.Should().Be(180.0);
+    }
+
+    [Fact]
+    public void MapPositionReport_SpeedNotAvailable_NormalisedToZero()
+    {
+        // SOG 102.3 (raw 1023) means "not available" — must not be shown as 102.3 kn.
+        var msg = CreatePositionReportMessage(sog: 102.3);
+        var result = _mapper.Map(msg);
+
+        result!.Position!.SpeedOverGround.Should().Be(0);
+    }
+
+    [Fact]
+    public void MapPositionReport_CourseNotAvailable_NormalisedToZero()
+    {
+        // COG 360.0 (raw 3600) means "not available".
+        var msg = CreatePositionReportMessage(cog: 360.0);
+        var result = _mapper.Map(msg);
+
+        result!.Position!.CourseOverGround.Should().Be(0);
+    }
+
+    [Fact]
+    public void MapPositionReport_CourseNotAvailable_HeadingFallbackAlsoNormalised()
+    {
+        // TrueHeading=511 falls back to COG; if COG is also "not available" the
+        // heading must end up as 0, not 360.
+        var msg = CreatePositionReportMessage(trueHeading: 511, cog: 360.0);
+        var result = _mapper.Map(msg);
+
+        result!.Position!.TrueHeading.Should().Be(0);
+    }
+
+    // --- Class B Tests ---
+
+    [Fact]
+    public void MapStandardClassB_MapsPositionWithNotDefinedStatus()
+    {
+        var json = JsonSerializer.Serialize(new
+        {
+            StandardClassBPositionReport = new
+            {
+                UserID = 265000099,
+                Sog = 6.0,
+                Cog = 120.0,
+                TrueHeading = 511, // not available → falls back to COG
+                Latitude = 57.6,
+                Longitude = 11.8
+            }
+        });
+        var msg = new AisMessage
+        {
+            MessageType = "StandardClassBPositionReport",
+            Message = JsonDocument.Parse(json).RootElement,
+            MetaData = new AisMetaData { Mmsi = 265000099, Latitude = 57.6, Longitude = 11.8 }
+        };
+
+        var result = _mapper.Map(msg);
+
+        result.Should().NotBeNull();
+        result!.MessageType.Should().Be("StandardClassBPositionReport");
+        result.Mmsi.Should().Be(265000099);
+        result.Position.Should().NotBeNull();
+        result.Position!.Latitude.Should().Be(57.6);
+        result.Position.SpeedOverGround.Should().Be(6.0);
+        ((int)result.Position.Status).Should().Be(15); // NotDefined, not 0 ("under way")
+        result.Position.TrueHeading.Should().Be(120.0); // COG fallback
+    }
+
+    [Fact]
+    public void MapExtendedClassB_MapsPositionAndStaticData()
+    {
+        var json = JsonSerializer.Serialize(new
+        {
+            ExtendedClassBPositionReport = new
+            {
+                UserID = 265000098,
+                Sog = 4.0,
+                Cog = 90.0,
+                TrueHeading = 90,
+                Latitude = 57.5,
+                Longitude = 11.7,
+                Name = "SEA SCOUT@@@",
+                Type = 37, // PleasureCraft
+                Dimension = new { A = 5, B = 5, C = 2, D = 2 }
+            }
+        });
+        var msg = new AisMessage
+        {
+            MessageType = "ExtendedClassBPositionReport",
+            Message = JsonDocument.Parse(json).RootElement,
+            MetaData = new AisMetaData { Mmsi = 265000098, Latitude = 57.5, Longitude = 11.7 }
+        };
+
+        var result = _mapper.Map(msg);
+
+        result.Should().NotBeNull();
+        result!.Position.Should().NotBeNull();
+        result.StaticData.Should().NotBeNull();
+        result.StaticData!.Name.Should().Be("SEA SCOUT");
+        result.StaticData.ShipType.Should().Be(VesselType.PleasureCraft);
+        result.StaticData.LengthOverall.Should().Be(10);
+    }
+
+    [Fact]
+    public void MapStaticDataReport_MapsNameTypeAndCallSign()
+    {
+        var json = JsonSerializer.Serialize(new
+        {
+            StaticDataReport = new
+            {
+                UserID = 265000097,
+                ReportA = new { Name = "LITTLE WING@@" },
+                ReportB = new { ShipType = 30, CallSign = "SXYZ", Dimension = new { A = 3, B = 3, C = 1, D = 1 } }
+            }
+        });
+        var msg = new AisMessage
+        {
+            MessageType = "StaticDataReport",
+            Message = JsonDocument.Parse(json).RootElement,
+            MetaData = new AisMetaData { Mmsi = 265000097 }
+        };
+
+        var result = _mapper.Map(msg);
+
+        result.Should().NotBeNull();
+        result!.StaticData.Should().NotBeNull();
+        result.StaticData!.Name.Should().Be("LITTLE WING");
+        result.StaticData.CallSign.Should().Be("SXYZ");
+        result.StaticData.ShipType.Should().Be(VesselType.Fishing);
+    }
+
     // --- Static Data Tests ---
 
     [Fact]

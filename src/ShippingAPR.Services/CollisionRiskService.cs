@@ -15,8 +15,12 @@ public sealed class CollisionRiskService : BackgroundService
     private readonly ILogger<CollisionRiskService> _logger;
     private readonly TrackingOptions _options;
 
-    // Track active risks to avoid duplicate alerts (key: sorted MMSI pair)
+    // Track active risk episodes to avoid duplicate alerts (key: sorted MMSI pair,
+    // value: time the pair was last seen at risk).
     private readonly ConcurrentDictionary<(int, int), DateTime> _activeRisks = new();
+
+    // Overridable for deterministic testing.
+    internal TimeProvider Clock { get; set; } = TimeProvider.System;
 
     public CollisionRiskService(
         IVesselStore vesselStore,
@@ -50,7 +54,7 @@ public sealed class CollisionRiskService : BackgroundService
         }
     }
 
-    private void ScanForCollisionRisks()
+    internal void ScanForCollisionRisks()
     {
         var vessels = _vesselStore.Vessels.Values
             .Where(v => v.CurrentPosition is not null &&
@@ -63,12 +67,17 @@ public sealed class CollisionRiskService : BackgroundService
         var preFilterNm = _options.CpaPreFilterDistanceNm;
         var warningNm = _options.CpaWarningDistanceNm;
 
-        // Clean up old risks (older than 5 minutes)
-        var cutoff = DateTime.UtcNow.AddMinutes(-5);
-        foreach (var key in _activeRisks.Keys)
+        var now = Clock.GetUtcNow().UtcDateTime;
+
+        // A risk episode stays active while the pair keeps being seen at risk.
+        // Once a pair hasn't been seen at risk for the clear window, the episode
+        // is considered resolved, so a later re-detection is a new episode that
+        // alerts again. This replaces the previous fixed-cadence re-alert bug.
+        var clearWindow = TimeSpan.FromSeconds(Math.Max(60, _options.CpaScanIntervalSeconds * 3));
+        foreach (var kv in _activeRisks)
         {
-            if (_activeRisks.TryGetValue(key, out var time) && time < cutoff)
-                _activeRisks.TryRemove(key, out _);
+            if (now - kv.Value > clearWindow)
+                _activeRisks.TryRemove(kv.Key, out _);
         }
 
         for (int i = 0; i < vessels.Count; i++)
@@ -97,18 +106,29 @@ public sealed class CollisionRiskService : BackgroundService
                 // Create sorted pair key to avoid duplicate alerts
                 var key = v1.Mmsi < v2.Mmsi ? (v1.Mmsi, v2.Mmsi) : (v2.Mmsi, v1.Mmsi);
 
-                if (!_activeRisks.TryAdd(key, DateTime.UtcNow)) continue;
+                // Refresh the last-seen-at-risk time every scan; only alert on the
+                // first detection of an episode.
+                var alreadyActive = _activeRisks.ContainsKey(key);
+                _activeRisks[key] = now;
+                if (alreadyActive) continue;
 
                 _logger.LogWarning(
                     "Collision risk: {V1} and {V2}, CPA={Cpa:F2} NM in {Tcpa}",
                     v1.DisplayName, v2.DisplayName,
                     result.CpaNauticalMiles, result.TimeToCpa);
 
+                // Show seconds for sub-minute TCPA so the most urgent case
+                // doesn't read as "0m".
+                var tcpa = result.TimeToCpa;
+                var tcpaText = tcpa.TotalMinutes >= 1
+                    ? $"{(int)tcpa.TotalMinutes}m"
+                    : $"{(int)tcpa.TotalSeconds}s";
+
                 _notificationService.Publish(new NotificationMessage
                 {
                     Title = "Collision Risk Detected",
                     Body = $"{v1.DisplayName} & {v2.DisplayName}: " +
-                           $"CPA {result.CpaNauticalMiles:F2} NM in {(int)result.TimeToCpa.TotalMinutes}m",
+                           $"CPA {result.CpaNauticalMiles:F2} NM in {tcpaText}",
                     Type = NotificationType.CollisionRisk
                 });
             }

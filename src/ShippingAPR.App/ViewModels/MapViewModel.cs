@@ -56,6 +56,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
     private bool _isTracking;
     private bool _featuresNeedRebuild;
     private readonly EventHandler<Vessel> _onVesselChanged;
+    private readonly EventHandler<Vessel> _onVesselRemoved;
     private readonly EventHandler _onStoreCleared;
 
     [ObservableProperty]
@@ -140,12 +141,14 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _uiOptions = uiOptions.Value;
 
         _onVesselChanged = (_, v) => OnVesselChanged(null, v);
+        _onVesselRemoved = (_, v) => RemoveVessel(v.Mmsi);
         _onStoreCleared = (_, _) => ClearVessels();
 
         InitializeMap();
 
         _vesselStore.VesselAdded += _onVesselChanged;
         _vesselStore.VesselUpdated += _onVesselChanged;
+        _vesselStore.VesselRemoved += _onVesselRemoved;
         _vesselStore.StoreCleared += _onStoreCleared;
         _areaMonitorService.GeofencesChanged += (_, _) =>
             Application.Current?.Dispatcher.Invoke(RenderGeofences);
@@ -320,7 +323,16 @@ public partial class MapViewModel : ObservableObject, IDisposable
         SelectedArea = viewportArea;
         AreaStatusText = FormatAreaName(viewportArea);
 
-        _ = _trackingService.ChangeAreaAsync(viewportArea);
+        _ = ChangeAreaSafeAsync(viewportArea);
+    }
+
+    // Tracking-area changes are fire-and-forget from UI events. Swallow transient
+    // failures (e.g. a brief connection error) so they don't surface as unobserved
+    // task exceptions — the connection-status indicator already reflects stream health.
+    private async Task ChangeAreaSafeAsync(BoundingBox area)
+    {
+        try { await _trackingService.ChangeAreaAsync(area); }
+        catch (Exception) { /* connection status indicator reflects failures */ }
     }
 
     private static bool HasAreaChangedSignificantly(BoundingBox old, BoundingBox current, double threshold)
@@ -424,7 +436,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
             _viewportTrackingEnabled = true;
 
             // Start tracking the new area
-            _ = _trackingService.ChangeAreaAsync(SelectedArea);
+            _ = ChangeAreaSafeAsync(SelectedArea);
         }
     }
 
@@ -773,19 +785,34 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _clusterLayer.DataHasChanged();
     }
 
+    // Reusable, immutable style sub-objects. Brush (per vessel type) and the three
+    // outline Pens are fully determined by a small finite set of inputs, so we cache
+    // them instead of re-allocating one per vessel on every 250ms render tick. Only
+    // the SymbolStyle itself is created per update, because it carries the vessel's
+    // per-heading SymbolRotation. All access is on the UI thread (DispatcherTimer).
+    private static readonly Pen OutlinePenHighlighted = new(Mapsui.Styles.Color.White, 3);
+    private static readonly Pen OutlinePenWatched = new(new Mapsui.Styles.Color(255, 215, 0), 2); // gold
+    private static readonly Pen OutlinePenNormal = new(Mapsui.Styles.Color.FromArgb(180, 0, 0, 0), 1);
+    private readonly Dictionary<VesselType, Brush> _fillBrushCache = new();
+
+    private Brush GetFillBrush(VesselType type)
+    {
+        if (!_fillBrushCache.TryGetValue(type, out var brush))
+        {
+            brush = new Brush(GetVesselColor(type));
+            _fillBrushCache[type] = brush;
+        }
+        return brush;
+    }
+
     private SymbolStyle CreateVesselStyle(Vessel vessel)
     {
         var isHighlighted = _highlightedVessel?.Mmsi == vessel.Mmsi;
         var isWatched = _watchlistService.IsWatched(vessel.Mmsi);
-        var color = GetVesselColor(vessel.Type);
 
-        Pen outline;
-        if (isHighlighted)
-            outline = new Pen(Mapsui.Styles.Color.White, 3);
-        else if (isWatched)
-            outline = new Pen(new Mapsui.Styles.Color(255, 215, 0), 2); // Gold outline for watched
-        else
-            outline = new Pen(Mapsui.Styles.Color.FromArgb(180, 0, 0, 0), 1);
+        var outline = isHighlighted ? OutlinePenHighlighted
+            : isWatched ? OutlinePenWatched
+            : OutlinePenNormal;
 
         var scale = isHighlighted ? _uiOptions.VesselScaleHighlighted
             : isWatched ? _uiOptions.VesselScaleNormal * 1.15
@@ -795,7 +822,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
         {
             SymbolScale = scale,
             SymbolRotation = vessel.CurrentPosition?.TrueHeading ?? 0,
-            Fill = new Brush(color),
+            Fill = GetFillBrush(vessel.Type),
             Outline = outline,
             SymbolType = SymbolType.Triangle
         };
@@ -912,6 +939,30 @@ public partial class MapViewModel : ObservableObject, IDisposable
 
         _geofenceLayer.Features = features;
         _geofenceLayer.DataHasChanged();
+    }
+
+    private void RemoveVessel(int mmsi)
+    {
+        // Drop purged/stale vessels from the map instead of leaking their markers
+        // for the lifetime of the session.
+        Application.Current?.Dispatcher.Invoke(() =>
+        {
+            lock (_pendingLock)
+            {
+                _pendingUpdates.RemoveAll(u => u.Mmsi == mmsi);
+            }
+
+            if (!_vesselFeatures.Remove(mmsi)) return;
+            _featuresNeedRebuild = true;
+            if (_vesselLayer is not null)
+            {
+                _vesselLayer.Features = _vesselFeatures.Values.ToList();
+                _vesselLayer.DataHasChanged();
+            }
+
+            if (_highlightedVessel?.Mmsi == mmsi)
+                _highlightedVessel = null;
+        });
     }
 
     private void ClearVessels()
@@ -1192,9 +1243,20 @@ public partial class MapViewModel : ObservableObject, IDisposable
     // Map Layer Switching
     // ═══════════════════════════════════════════════
 
+    private TileLayer? _seaMarkLayer;
+
     [RelayCommand]
     private void SwitchMapLayer(string layerName)
     {
+        // OpenSeaMap is a transparent nautical-chart OVERLAY (buoys, lighthouses,
+        // seamarks), not a basemap — toggle it on top of the current base rather than
+        // replacing the base.
+        if (layerName == "SeaMap")
+        {
+            ToggleSeaMarkOverlay();
+            return;
+        }
+
         CurrentMapLayer = layerName;
 
         // Remove the current base tile layer (always index 0)
@@ -1204,10 +1266,49 @@ public partial class MapViewModel : ObservableObject, IDisposable
         var tileLayer = layerName switch
         {
             "Dark" => CreateDarkTileLayer(),
-            _ => OpenStreetMap.CreateTileLayer()
+            "Satellite" => CreateSatelliteTileLayer(),
+            "Depth" => CreateBathymetryTileLayer(),
+            _ => OpenStreetMap.CreateTileLayer() // Standard / OpenStreetMap
         };
 
         Map.Layers.Insert(0, tileLayer);
+    }
+
+    private static TileLayer CreateBathymetryTileLayer()
+    {
+        // EMODnet Bathymetry depth-shaded basemap (free XYZ tiles). A practical
+        // alternative to GEBCO's WMS for showing sea-floor depth; vessels render on top.
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png",
+            name: "EMODnet Bathymetry",
+            attribution: new BruTile.Attribution("(C) EMODnet Bathymetry", "https://emodnet.ec.europa.eu/en/bathymetry"));
+        return new TileLayer(tileSource) { Name = "EMODnet Bathymetry" };
+    }
+
+    private void ToggleSeaMarkOverlay()
+    {
+        if (_seaMarkLayer is not null)
+        {
+            Map.Layers.Remove(_seaMarkLayer);
+            _seaMarkLayer = null;
+            return;
+        }
+
+        _seaMarkLayer = CreateSeaMarkLayer();
+        // Insert just above the base tile layer so vessels still render on top of it.
+        var index = Math.Min(1, Map.Layers.Count);
+        Map.Layers.Insert(index, _seaMarkLayer);
+    }
+
+    private static TileLayer CreateSeaMarkLayer()
+    {
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+            name: "OpenSeaMap Seamarks",
+            attribution: new BruTile.Attribution("(C) OpenSeaMap contributors", "https://www.openseamap.org/"));
+        return new TileLayer(tileSource) { Name = "OpenSeaMap Seamarks" };
     }
 
     private static TileLayer CreateDarkTileLayer()
@@ -1219,6 +1320,18 @@ public partial class MapViewModel : ObservableObject, IDisposable
             name: "CartoDB Dark",
             attribution: new BruTile.Attribution("(C) OpenStreetMap contributors, (C) CARTO", "https://carto.com/attributions"));
         return new TileLayer(tileSource) { Name = "CartoDB Dark" };
+    }
+
+    private static TileLayer CreateSatelliteTileLayer()
+    {
+        // Esri World Imagery (satellite/aerial). Esri tiles use {z}/{y}/{x} order and
+        // a single host (no {s} subdomains).
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            name: "Esri World Imagery",
+            attribution: new BruTile.Attribution("(C) Esri, Maxar, Earthstar Geographics", "https://www.esri.com/"));
+        return new TileLayer(tileSource) { Name = "Esri World Imagery" };
     }
 
     // ═══════════════════════════════════════════════
@@ -1302,6 +1415,7 @@ public partial class MapViewModel : ObservableObject, IDisposable
         _viewportDebounceTimer.Stop();
         _vesselStore.VesselAdded -= _onVesselChanged;
         _vesselStore.VesselUpdated -= _onVesselChanged;
+        _vesselStore.VesselRemoved -= _onVesselRemoved;
         _vesselStore.StoreCleared -= _onStoreCleared;
     }
 }

@@ -71,6 +71,74 @@ public class AreaMonitorServiceTests
         eventCount.Should().Be(0);
     }
 
+    [Fact]
+    public void VesselJitteringOnBoundary_DoesNotFlap()
+    {
+        // Monitored area's north edge is at lat 57.75; the hysteresis deadband extends a
+        // little beyond it. A vessel oscillating across that edge must not flap alerts.
+        var events = new List<VesselAreaEvent>();
+        _monitor.VesselAreaChanged += (_, evt) => events.Add(evt);
+
+        // Start clearly outside, then cross clearly inside → a single "entered".
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.90, 11.95), null); // baseline outside
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null); // enters
+
+        // Now jitter just across the boundary, within the deadband — no further alerts.
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.752, 11.95), null); // just outside box
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.748, 11.95), null); // just inside box
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.752, 11.95), null);
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.748, 11.95), null);
+
+        events.Should().ContainSingle();
+        events[0].Entered.Should().BeTrue();
+    }
+
+    [Fact]
+    public void VesselLeavingBeyondMargin_FiresLeftOnce()
+    {
+        var events = new List<VesselAreaEvent>();
+
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.70, 11.95), null); // baseline inside
+
+        _monitor.VesselAreaChanged += (_, evt) => events.Add(evt);
+
+        // Drift just outside the box but within the deadband — still considered inside.
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.752, 11.95), null);
+        events.Should().BeEmpty();
+
+        // Move clearly beyond the deadband — a confirmed exit, fired exactly once.
+        _vesselStore.AddOrUpdate(100000001, CreatePosition(57.90, 11.95), null);
+        events.Should().ContainSingle();
+        events[0].Entered.Should().BeFalse();
+    }
+
+    [Fact]
+    public void PolygonGeofence_TriggersInsidePolygonNotJustBoundingBox()
+    {
+        var store = new VesselStore();
+        var monitor = new AreaMonitorService(store, Mock.Of<ILogger<AreaMonitorService>>());
+        // Right triangle (lat,lon): (0,0)-(0,10)-(10,0). Inside iff lat+lon <= 10.
+        monitor.AddGeofence(new GeofenceZone
+        {
+            Name = "Tri",
+            Bounds = new BoundingBox(0, 0, 10, 10),
+            Polygon = new GeoPoint[] { new(0, 0), new(0, 10), new(10, 0) }
+        });
+
+        var entered = new List<VesselGeofenceEvent>();
+        monitor.GeofenceTriggered += (_, e) => entered.Add(e);
+
+        // Inside the bounding box but outside the triangle (lat+lon > 10): no entry.
+        store.AddOrUpdate(100000001, CreatePosition(8, 8), null);
+        store.AddOrUpdate(100000001, CreatePosition(9, 9), null);
+        entered.Should().BeEmpty();
+
+        // Cross into the triangle proper: entry fires once.
+        store.AddOrUpdate(100000001, CreatePosition(2, 2), null);
+        entered.Should().ContainSingle();
+        entered[0].Entered.Should().BeTrue();
+    }
+
     private static VesselPosition CreatePosition(double lat, double lon) =>
         new()
         {

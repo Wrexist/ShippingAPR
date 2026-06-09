@@ -28,6 +28,16 @@ public sealed record BoundingBox
         latitude >= MinLatitude && latitude <= MaxLatitude &&
         longitude >= MinLongitude && longitude <= MaxLongitude;
 
+    /// <summary>
+    /// Like <see cref="Contains"/> but with the box grown outward by the given margins.
+    /// Used for geofence hysteresis: a vessel inside the box only counts as having left
+    /// once it is also outside this enlarged box, creating a deadband that stops a vessel
+    /// hovering on the boundary from flapping enter/leave alerts.
+    /// </summary>
+    public bool ContainsWithMargin(double latitude, double longitude, double latMargin, double lonMargin) =>
+        latitude >= MinLatitude - latMargin && latitude <= MaxLatitude + latMargin &&
+        longitude >= MinLongitude - lonMargin && longitude <= MaxLongitude + lonMargin;
+
     /// <summary>Gothenburg harbor.</summary>
     public static BoundingBox GothenburgDefault =>
         new(57.65, 11.80, 57.75, 12.05);

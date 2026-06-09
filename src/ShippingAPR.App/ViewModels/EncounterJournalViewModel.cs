@@ -11,6 +11,7 @@ public partial class EncounterJournalViewModel : ObservableObject, IDisposable
 {
     private readonly EncounterJournalService _journalService;
     private readonly DispatcherTimer _refreshTimer;
+    private readonly DispatcherTimer _searchDebounceTimer;
 
     [ObservableProperty] private int _totalEncounters;
     [ObservableProperty] private int _uniqueCountries;
@@ -27,10 +28,19 @@ public partial class EncounterJournalViewModel : ObservableObject, IDisposable
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _refreshTimer.Tick += (_, _) => Refresh();
         _refreshTimer.Start();
+
+        // Debounce search so we don't re-query + rebuild the list on every keystroke.
+        _searchDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        _searchDebounceTimer.Tick += (_, _) => { _searchDebounceTimer.Stop(); Refresh(); };
+
         Refresh();
     }
 
-    partial void OnSearchQueryChanged(string value) => Refresh();
+    partial void OnSearchQueryChanged(string value)
+    {
+        _searchDebounceTimer.Stop();
+        _searchDebounceTimer.Start();
+    }
 
     [RelayCommand]
     private void ClearSearch()
@@ -73,6 +83,7 @@ public partial class EncounterJournalViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _refreshTimer.Stop();
+        _searchDebounceTimer.Stop();
     }
 }
 

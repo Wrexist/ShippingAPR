@@ -11,6 +11,11 @@ public sealed class UiOptions
     public int NotificationTimeoutMs { get; set; } = 5000;
     public int StartupDelayMs { get; set; } = 500;
 
+    // Data freshness: while connected, if no AIS data arrives for this long the
+    // stream is treated as stalled and the UI surfaces a "no data" warning.
+    public int DataStaleThresholdSeconds { get; set; } = 30;
+    public int DataFreshnessPollMs { get; set; } = 1000;
+
     // Map defaults
     public double DefaultCenterLon { get; set; } = 10.0;
     public double DefaultCenterLat { get; set; } = 54.0;
@@ -39,6 +44,8 @@ public sealed class UiOptions
     public string StatusColorConnected { get; set; } = "#FF00D68F";
     public string StatusColorConnecting { get; set; } = "#FFFFAA00";
     public string StatusColorError { get; set; } = "#FFFF3D71";
+    // Neutral grey for the idle/Disconnected state so it is not mistaken for a real error.
+    public string StatusColorDisconnected { get; set; } = "#FF8A8D91";
 
     // Map colors (ARGB bytes)
     public byte TrailAlpha { get; set; } = 128;

@@ -143,9 +143,15 @@ public sealed class ExportService
         return sb.ToString();
     }
 
-    private static string Escape(string value)
+    internal static string Escape(string value)
     {
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+        // Mitigate CSV/formula injection: AIS Name/Destination are untrusted broadcast
+        // strings, and a field beginning with one of these characters is executed as a
+        // formula by Excel/Sheets. Prefix with a single quote so it renders as text.
+        if (value.Length > 0 && value[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
+            value = "'" + value;
+
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
     }

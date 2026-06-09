@@ -4,9 +4,12 @@ using System.Text.Json;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using Microsoft.Extensions.Logging;
+using ShippingAPR.Core.Constants;
 using ShippingAPR.Core.Enums;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
+
+using ShippingAPR.Core.IO;
 
 namespace ShippingAPR.Services;
 
@@ -81,10 +84,13 @@ public sealed class AchievementService : IDisposable
             if (vessel.StaticData?.CountryCode is { Length: > 0 } cc)
                 _countriesTracked.Add(cc);
 
-            if (vessel.CurrentPosition is { SpeedOverGround: > 0 } pos)
+            // Ignore implausible speeds (AIS noise / the 102.3 "not available" sentinel)
+            // so a single bad packet can't permanently unlock a speed achievement.
+            if (vessel.CurrentPosition is { SpeedOverGround: > 0 } pos &&
+                pos.SpeedOverGround <= NavigationConstants.MaxPlausibleSpeedKnots &&
+                pos.SpeedOverGround > _fastestSpeedSeen)
             {
-                if (pos.SpeedOverGround > _fastestSpeedSeen)
-                    _fastestSpeedSeen = pos.SpeedOverGround;
+                _fastestSpeedSeen = pos.SpeedOverGround;
             }
 
             if (vessel.StaticData is { LengthOverall: > 0 } sd)
@@ -230,7 +236,7 @@ public sealed class AchievementService : IDisposable
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(DataPath, json);
+            AtomicFile.WriteAllText(DataPath, json);
         }
         catch (Exception ex)
         {

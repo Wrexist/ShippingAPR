@@ -1,16 +1,20 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ShippingAPR.Core.Formatting;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
 
-public partial class VesselDetailViewModel : ObservableObject
+public partial class VesselDetailViewModel : ObservableObject, IDisposable
 {
     private readonly IWatchlistService _watchlistService;
     private readonly VoyageNarrativeService _narrativeService;
     private readonly EmissionsEstimatorService _emissionsService;
+    private readonly IVesselStore _vesselStore;
+    private readonly EventHandler<int> _onWatchlistChanged;
+    private readonly EventHandler<Vessel> _onVesselUpdated;
 
     [ObservableProperty]
     private Vessel? _vessel;
@@ -24,18 +28,42 @@ public partial class VesselDetailViewModel : ObservableObject
     [ObservableProperty]
     private string _voyageStoryText = "";
 
-    public VesselDetailViewModel(IWatchlistService watchlistService, VoyageNarrativeService narrativeService, EmissionsEstimatorService emissionsService)
+    public VesselDetailViewModel(IWatchlistService watchlistService, VoyageNarrativeService narrativeService, EmissionsEstimatorService emissionsService, IVesselStore vesselStore)
     {
         _watchlistService = watchlistService;
         _narrativeService = narrativeService;
         _emissionsService = emissionsService;
-        _watchlistService.WatchlistChanged += (_, _) => UpdateIsWatched();
+        _vesselStore = vesselStore;
+
+        _onWatchlistChanged = (_, _) => UpdateIsWatched();
+        _onVesselUpdated = OnStoreVesselUpdated;
+        _watchlistService.WatchlistChanged += _onWatchlistChanged;
+        // Refresh the panel live while a vessel stays selected (the Vessel POCO has no
+        // INotifyPropertyChanged, so without this the panel froze until reselection).
+        _vesselStore.VesselUpdated += _onVesselUpdated;
+    }
+
+    private void OnStoreVesselUpdated(object? sender, Vessel vessel)
+    {
+        if (Vessel is not null && vessel.Mmsi == Vessel.Mmsi)
+            RaiseComputedProperties();
     }
 
     partial void OnVesselChanged(Vessel? value)
     {
         HasVessel = value is not null;
         UpdateIsWatched();
+        RaiseComputedProperties();
+
+        // Generate voyage story (only on selection change — it's relatively expensive)
+        if (value is not null)
+            VoyageStoryText = _narrativeService.GenerateNarrative(value.Mmsi);
+        else
+            VoyageStoryText = "";
+    }
+
+    private void RaiseComputedProperties()
+    {
         OnPropertyChanged(nameof(DisplayName));
         OnPropertyChanged(nameof(MmsiText));
         OnPropertyChanged(nameof(ImoText));
@@ -65,12 +93,12 @@ public partial class VesselDetailViewModel : ObservableObject
         OnPropertyChanged(nameof(CiiRatingText));
         OnPropertyChanged(nameof(CiiRatingColor));
         OnPropertyChanged(nameof(HasEmissions));
+    }
 
-        // Generate voyage story
-        if (value is not null)
-            VoyageStoryText = _narrativeService.GenerateNarrative(value.Mmsi);
-        else
-            VoyageStoryText = "";
+    public void Dispose()
+    {
+        _watchlistService.WatchlistChanged -= _onWatchlistChanged;
+        _vesselStore.VesselUpdated -= _onVesselUpdated;
     }
 
     [RelayCommand]
@@ -125,7 +153,7 @@ public partial class VesselDetailViewModel : ObservableObject
 
     public string PositionText =>
         Vessel?.CurrentPosition is not null
-            ? $"{Vessel.CurrentPosition.Latitude:F4}°N, {Vessel.CurrentPosition.Longitude:F4}°E"
+            ? CoordinateFormatter.Format(Vessel.CurrentPosition.Latitude, Vessel.CurrentPosition.Longitude)
             : "--";
 
     public string LastUpdateText =>

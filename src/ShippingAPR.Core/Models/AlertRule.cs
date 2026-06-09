@@ -26,6 +26,14 @@ public sealed class AlertRule
         if (VesselTypeFilter.HasValue && vessel.Type != VesselTypeFilter.Value)
             return false;
 
+        // Conditions that depend on live position data cannot be satisfied by a vessel
+        // that hasn't reported a position yet — treat them as non-matching rather than
+        // letting the rule fire vacuously on a positionless vessel.
+        var needsPosition = MinSpeedKnots.HasValue || MaxSpeedKnots.HasValue
+            || StatusFilter.HasValue || ZoneFilter is not null;
+        if (needsPosition && vessel.CurrentPosition is null)
+            return false;
+
         if (vessel.CurrentPosition is { } pos)
         {
             if (MinSpeedKnots.HasValue && pos.SpeedOverGround < MinSpeedKnots.Value)

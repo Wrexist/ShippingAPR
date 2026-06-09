@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
@@ -7,10 +8,14 @@ namespace ShippingAPR.Services;
 
 /// <summary>
 /// Monitors weather conditions and generates alerts when vessels
-/// are in or approaching severe weather zones.
+/// are in or approaching severe weather zones. Runs as a hosted background
+/// service that samples vessel positions on a periodic timer.
 /// </summary>
-public sealed class WeatherAlertService : IDisposable
+public sealed class WeatherAlertService : BackgroundService
 {
+    private static readonly TimeSpan ScanInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan StartupDelay = TimeSpan.FromSeconds(20);
+
     private readonly IVesselStore _vesselStore;
     private readonly IMarineWeatherClient _weatherClient;
     private readonly NotificationService _notificationService;
@@ -35,6 +40,38 @@ public sealed class WeatherAlertService : IDisposable
         _weatherClient = weatherClient;
         _notificationService = notificationService;
         _logger = logger;
+
+        // Prevent unbounded growth of per-MMSI alert state over a 24/7 session.
+        _vesselStore.VesselRemoved += OnVesselRemoved;
+    }
+
+    private void OnVesselRemoved(object? sender, Vessel vessel) =>
+        _alertedVessels.TryRemove(vessel.Mmsi, out _);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try { await Task.Delay(StartupDelay, stoppingToken); }
+        catch (OperationCanceledException) { return; }
+
+        using var timer = new PeriodicTimer(ScanInterval);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await CheckVesselWeatherAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during weather alert scan");
+            }
+
+            try
+            {
+                if (!await timer.WaitForNextTickAsync(stoppingToken)) break;
+            }
+            catch (OperationCanceledException) { break; }
+        }
     }
 
     /// <summary>
@@ -150,10 +187,5 @@ public sealed class WeatherAlertService : IDisposable
         if (_alertedVessels.TryGetValue(mmsi, out var lastAlert))
             return DateTime.UtcNow - lastAlert > AlertCooldown;
         return true;
-    }
-
-    public void Dispose()
-    {
-        _activeAlerts.Clear();
     }
 }

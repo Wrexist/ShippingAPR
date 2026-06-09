@@ -43,11 +43,12 @@ public partial class WelcomeDialog : Window
 
     private void GetStartedClick(object sender, RoutedEventArgs e)
     {
-        var key = ApiKeyInput.Text.Trim();
+        var key = ApiKeyInput.Password.Trim();
 
         if (string.IsNullOrEmpty(key))
         {
-            TestResultText.Text = Strings.ConnectionFailed;
+            // No connection is attempted here — only validate that a key was entered.
+            TestResultText.Text = Strings.ApiKeyRequired;
             TestResultText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
             TestResultText.Visibility = Visibility.Visible;
             return;

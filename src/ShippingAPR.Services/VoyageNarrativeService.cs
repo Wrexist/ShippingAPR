@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using ShippingAPR.Core.Enums;
+using ShippingAPR.Core.Formatting;
 using ShippingAPR.Core.Interfaces;
 using ShippingAPR.Core.Models;
 
@@ -178,7 +179,7 @@ public sealed class VoyageNarrativeService : IDisposable
         // Current state
         if (pos is not null)
         {
-            parts.Add($"Currently at {pos.Latitude:F3}°N, {pos.Longitude:F3}°E " +
+            parts.Add($"Currently at {CoordinateFormatter.Format(pos.Latitude, pos.Longitude, 3)} " +
                        $"making {pos.SpeedOverGround:F1} knots on course {pos.CourseOverGround:F0}°.");
         }
 
@@ -231,7 +232,7 @@ public sealed class VoyageNarrativeService : IDisposable
     private static string FormatPosition(Vessel vessel)
     {
         if (vessel.CurrentPosition is not { } pos) return "unknown position";
-        return $"{pos.Latitude:F2}°N, {pos.Longitude:F2}°E";
+        return CoordinateFormatter.Format(pos.Latitude, pos.Longitude, 2);
     }
 
     private static string FormatTimeAgo(DateTime timestamp)

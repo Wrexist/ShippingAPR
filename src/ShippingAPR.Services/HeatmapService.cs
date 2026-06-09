@@ -36,8 +36,10 @@ public sealed class HeatmapService : IDisposable
         if (!IsEnabled) return;
         if (vessel.CurrentPosition is not { } pos) return;
 
-        var latBucket = (int)(pos.Latitude / BucketSizeDegrees);
-        var lonBucket = (int)(pos.Longitude / BucketSizeDegrees);
+        // Use Math.Floor so negative (S/W hemisphere) coordinates bucket correctly —
+        // a plain (int) cast truncates toward zero, mis-binning negatives by one bucket.
+        var latBucket = (int)Math.Floor(pos.Latitude / BucketSizeDegrees);
+        var lonBucket = (int)Math.Floor(pos.Longitude / BucketSizeDegrees);
 
         _densityMap.AddOrUpdate(
             (latBucket, lonBucket),
@@ -81,12 +83,14 @@ public sealed class HeatmapService : IDisposable
             Cells = cells
         };
 
-        // Project accumulated density data onto the grid
+        // Project accumulated density data onto the grid, weighting each cell by the
+        // number of points it accumulated (previously every bucket counted as 1,
+        // measuring "cells visited" rather than traffic volume).
         foreach (var kvp in _densityMap)
         {
-            var lat = kvp.Key.latBucket * BucketSizeDegrees;
-            var lon = kvp.Key.lonBucket * BucketSizeDegrees;
-            grid.AddPoint(lat, lon);
+            var lat = (kvp.Key.latBucket + 0.5) * BucketSizeDegrees;
+            var lon = (kvp.Key.lonBucket + 0.5) * BucketSizeDegrees;
+            grid.AddPoint(lat, lon, kvp.Value);
         }
 
         // Apply simple gaussian-like smoothing
@@ -109,7 +113,7 @@ public sealed class HeatmapService : IDisposable
                     for (int dx = -1; dx <= 1; dx++)
                         sum += grid.Cells[y + dy, x + dx].Intensity;
 
-                smoothed[y, x] = sum / 5; // Light smoothing
+                smoothed[y, x] = sum / 9; // Normalised 3x3 box blur (9 cells)
             }
         }
 

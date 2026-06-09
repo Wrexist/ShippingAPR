@@ -9,9 +9,9 @@ using ShippingAPR.Core.Models;
 namespace ShippingAPR.Infrastructure.Weather;
 
 /// <summary>
-/// Fetches tide/sea level data from the Open-Meteo Marine API.
-/// Uses wave height and sea level data as tide proxy for global coverage.
-/// Falls back to a simple tidal model when API data is unavailable.
+/// Fetches tide/sea-level data from the Open-Meteo Marine API using the
+/// <c>sea_level_height_msl</c> field (the tidal offset from mean sea level).
+/// Returns null when the API has no data for the location.
 /// </summary>
 public sealed class TideDataClient : ITideDataClient
 {
@@ -43,10 +43,10 @@ public sealed class TideDataClient : ITideDataClient
 
         try
         {
-            // Use Open-Meteo Marine API for hourly wave/sea data
+            // Use Open-Meteo Marine API for hourly tidal sea level (height above MSL).
             var url = $"{_options.BaseUrl}/v1/marine?" +
                       $"latitude={latitude:F2}&longitude={longitude:F2}" +
-                      "&hourly=wave_height,wave_period" +
+                      "&hourly=sea_level_height_msl" +
                       "&forecast_days=1&timezone=UTC";
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -61,37 +61,42 @@ public sealed class TideDataClient : ITideDataClient
                 .Where(t => t.HasValue)
                 .Select(t => t!.Value)
                 .ToList();
-            var waveHeights = hourly.GetProperty("wave_height").EnumerateArray()
-                .Select(v => v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0.0).ToList();
 
-            if (waveHeights.Count == 0)
+            if (!hourly.TryGetProperty("sea_level_height_msl", out var levelArray) ||
+                levelArray.ValueKind != JsonValueKind.Array)
                 return null;
 
-            // Find high/low points from wave height data
+            var levels = levelArray.EnumerateArray()
+                .Select(v => v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0.0).ToList();
+
+            if (levels.Count == 0)
+                return null;
+
+            // Find high/low points from the tidal sea-level series.
             var now = DateTime.UtcNow;
             var currentIndex = times.FindIndex(t => t >= now);
             if (currentIndex < 0) currentIndex = 0;
 
-            var currentLevel = currentIndex < waveHeights.Count ? waveHeights[currentIndex] : 0;
-            var maxWave = waveHeights.Max();
-            var minWave = waveHeights.Min();
+            var currentLevel = currentIndex < levels.Count ? levels[currentIndex] : 0;
+            var maxLevel = levels.Max();
+            var minLevel = levels.Min();
 
-            // Find next high and low tide times
+            // Find next high and low tide times (local maxima/minima of sea level).
             DateTime? nextHigh = null, nextLow = null;
-            for (int i = currentIndex + 1; i < waveHeights.Count - 1; i++)
+            for (int i = currentIndex + 1; i < levels.Count - 1; i++)
             {
-                if (waveHeights[i] >= waveHeights[i - 1] && waveHeights[i] >= waveHeights[i + 1] && nextHigh is null)
+                if (levels[i] >= levels[i - 1] && levels[i] >= levels[i + 1] && nextHigh is null)
                     nextHigh = times[i];
-                if (waveHeights[i] <= waveHeights[i - 1] && waveHeights[i] <= waveHeights[i + 1] && nextLow is null)
+                if (levels[i] <= levels[i - 1] && levels[i] <= levels[i + 1] && nextLow is null)
                     nextLow = times[i];
                 if (nextHigh is not null && nextLow is not null) break;
             }
 
-            // Determine tide state
+            // Determine tide state (rising/falling) from the trend.
             var state = TideState.Unknown;
-            if (currentIndex > 0 && currentIndex < waveHeights.Count)
+            if (currentIndex > 0 && currentIndex < levels.Count)
             {
-                var prev = waveHeights[currentIndex - 1];
+                var prev = levels[currentIndex - 1];
                 state = currentLevel > prev ? TideState.Rising
                     : currentLevel < prev ? TideState.Falling
                     : TideState.Slack;
@@ -102,8 +107,8 @@ public sealed class TideDataClient : ITideDataClient
                 PortLocode = portLocode,
                 PortName = portName,
                 CurrentLevelMeters = currentLevel,
-                HighTideMeters = maxWave,
-                LowTideMeters = minWave,
+                HighTideMeters = maxLevel,
+                LowTideMeters = minLevel,
                 NextHighTide = nextHigh,
                 NextLowTide = nextLow,
                 State = state,

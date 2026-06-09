@@ -20,7 +20,8 @@ public class PortRepositoryTests
     {
         var port = _repo.FindByLocode("SEGOT");
         port.Should().NotBeNull();
-        port!.Name.Should().Contain("Gothenburg").Or.Contain("Göteborg").Or.Contain("GOTHENBURG");
+        var name = port!.Name.ToLowerInvariant();
+        (name.Contains("gothenburg") || name.Contains("göteborg")).Should().BeTrue();
     }
 
     [Fact]
@@ -81,6 +82,13 @@ public class PortRepositoryTests
         port!.Locode.Should().Contain("GOT");
     }
 
+    [Fact]
+    public void FindNearest_FarFromAnyPort_ReturnsNull()
+    {
+        // Middle of the South Pacific — no port within the default 100 NM.
+        _repo.FindNearest(-30.0, -140.0).Should().BeNull();
+    }
+
     // --- SearchPorts ---
 
     [Fact]
@@ -100,7 +108,8 @@ public class PortRepositoryTests
     [Fact]
     public void SearchPorts_ByCountry_ReturnsMatches()
     {
-        var results = _repo.SearchPorts("Sweden").ToList();
+        // ports.json stores ISO country codes (e.g. "SE"), not full names.
+        var results = _repo.SearchPorts("SE").ToList();
         results.Should().NotBeEmpty();
     }
 

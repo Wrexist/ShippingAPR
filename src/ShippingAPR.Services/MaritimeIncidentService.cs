@@ -9,6 +9,11 @@ namespace ShippingAPR.Services;
 /// <summary>
 /// Manages maritime incidents, navigational warnings, and news items.
 /// Provides proximity alerts when tracked vessels are near active incidents.
+///
+/// NOTE: the items seeded by <see cref="SeedInitialIncidents"/> are static,
+/// illustrative reference zones — they are NOT a live feed and are not sourced
+/// from the named authorities. Replace with a real data source (NGA NAVAREA,
+/// UKMTO, NOAA, RSS) before presenting these as current advisories.
 /// </summary>
 public sealed class MaritimeIncidentService : IDisposable
 {
@@ -134,7 +139,8 @@ public sealed class MaritimeIncidentService : IDisposable
 
     private void SeedInitialIncidents()
     {
-        // Seed with representative global awareness zones
+        // Static, illustrative reference zones (NOT a live feed / not from the named
+        // authorities). The Source is labelled accordingly so the UI does not imply attribution.
         AddIncident(new MaritimeIncident
         {
             Title = "Gulf of Guinea Piracy Zone",
@@ -142,7 +148,7 @@ public sealed class MaritimeIncidentService : IDisposable
             Latitude = 3.0, Longitude = 3.0,
             Severity = IncidentSeverity.Warning,
             Category = IncidentCategory.Piracy,
-            Source = "MDAT-GoG",
+            Source = "Built-in reference zone (sample)",
             ExpiresAt = DateTime.UtcNow.AddDays(90)
         });
         AddIncident(new MaritimeIncident
@@ -152,7 +158,7 @@ public sealed class MaritimeIncidentService : IDisposable
             Latitude = 26.5, Longitude = 56.3,
             Severity = IncidentSeverity.Advisory,
             Category = IncidentCategory.SecurityAlert,
-            Source = "UKMTO",
+            Source = "Built-in reference zone (sample)",
             ExpiresAt = DateTime.UtcNow.AddDays(30)
         });
         AddIncident(new MaritimeIncident
@@ -162,7 +168,7 @@ public sealed class MaritimeIncidentService : IDisposable
             Latitude = 13.0, Longitude = 43.0,
             Severity = IncidentSeverity.Critical,
             Category = IncidentCategory.SecurityAlert,
-            Source = "UKMTO",
+            Source = "Built-in reference zone (sample)",
             ExpiresAt = DateTime.UtcNow.AddDays(60)
         });
         AddIncident(new MaritimeIncident
@@ -172,7 +178,7 @@ public sealed class MaritimeIncidentService : IDisposable
             Latitude = 54.5, Longitude = 3.5,
             Severity = IncidentSeverity.Advisory,
             Category = IncidentCategory.NavigationalWarning,
-            Source = "NAVAREA I",
+            Source = "Built-in reference zone (sample)",
             ExpiresAt = DateTime.UtcNow.AddDays(180)
         });
         AddIncident(new MaritimeIncident
@@ -182,7 +188,7 @@ public sealed class MaritimeIncidentService : IDisposable
             Latitude = 62.0, Longitude = 20.0,
             Severity = IncidentSeverity.Info,
             Category = IncidentCategory.Weather,
-            Source = "SMHI",
+            Source = "Built-in reference zone (sample)",
             ExpiresAt = DateTime.UtcNow.AddDays(45)
         });
     }

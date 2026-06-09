@@ -24,7 +24,10 @@ public sealed class PortActivityService : IDisposable
     private Dictionary<(int latBucket, int lonBucket), List<Port>>? _portGrid;
     private readonly object _portGridLock = new();
 
-    private const double PortRadiusNm = 3.0; // nautical miles
+    private const double PortRadiusNm = 3.0; // arrival radius (nautical miles)
+    // A vessel only counts as departed once it is beyond this larger radius, so a vessel
+    // manoeuvring on the 3 NM boundary doesn't flap arrival/departure pairs.
+    private const double DepartureRadiusNm = 4.0;
     private const int MaxActivityRecords = 200;
 
     public string? SelectedPortName { get; set; }
@@ -44,6 +47,7 @@ public sealed class PortActivityService : IDisposable
 
         _vesselStore.VesselAdded += OnVesselUpdate;
         _vesselStore.VesselUpdated += OnVesselUpdate;
+        _vesselStore.VesselRemoved += OnVesselRemoved;
     }
 
     private IEnumerable<Port> GetNearbyPorts(double lat, double lon)
@@ -99,26 +103,39 @@ public sealed class PortActivityService : IDisposable
             if (distNm > PortRadiusNm * 3) continue; // Skip distant ports entirely
 
             var vesselSet = _vesselsInPort.GetOrAdd(port.Name, _ => new HashSet<int>());
-            bool wasInPort, isInPort = distNm <= PortRadiusNm;
+            bool arrived = false, departed = false;
 
             lock (vesselSet)
             {
-                wasInPort = vesselSet.Contains(vessel.Mmsi);
+                var wasInPort = vesselSet.Contains(vessel.Mmsi);
 
-                if (isInPort && !wasInPort)
+                if (!wasInPort && distNm <= PortRadiusNm)
                 {
-                    // Arrival
                     vesselSet.Add(vessel.Mmsi);
-                    RecordActivity(port.Name, vessel, PortActivityType.Arrival, pos.SpeedOverGround);
+                    arrived = true;
                 }
-                else if (!isInPort && wasInPort)
+                else if (wasInPort && distNm > DepartureRadiusNm)
                 {
-                    // Departure
+                    // Must clear the larger departure radius — the gap to the arrival
+                    // radius is a deadband that absorbs boundary jitter.
                     vesselSet.Remove(vessel.Mmsi);
-                    RecordActivity(port.Name, vessel, PortActivityType.Departure, pos.SpeedOverGround);
+                    departed = true;
                 }
             }
+
+            // Record outside the lock to avoid holding it across event handlers.
+            if (arrived)
+                RecordActivity(port.Name, vessel, PortActivityType.Arrival, pos.SpeedOverGround);
+            else if (departed)
+                RecordActivity(port.Name, vessel, PortActivityType.Departure, pos.SpeedOverGround);
         }
+    }
+
+    private void OnVesselRemoved(object? sender, Vessel vessel)
+    {
+        // A vessel that dropped out of the feed should no longer count as in port.
+        foreach (var set in _vesselsInPort.Values)
+            lock (set) { set.Remove(vessel.Mmsi); }
     }
 
     private void RecordActivity(string portName, Vessel vessel, PortActivityType type, double speed)
@@ -218,5 +235,6 @@ public sealed class PortActivityService : IDisposable
     {
         _vesselStore.VesselAdded -= OnVesselUpdate;
         _vesselStore.VesselUpdated -= OnVesselUpdate;
+        _vesselStore.VesselRemoved -= OnVesselRemoved;
     }
 }

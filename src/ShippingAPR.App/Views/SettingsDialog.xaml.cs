@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using ShippingAPR.App.ViewModels;
 
@@ -27,11 +28,23 @@ public partial class SettingsDialog : Window
     {
         if (_viewModel.SaveToAppsettings())
         {
-            MessageBox.Show(
-                "Settings saved. Restart the application for changes to take effect.",
-                "ShippingAPR", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Provider/key/poll changes are read once at startup (IOptions), so they
+            // only take effect after a restart. Offer to restart now rather than
+            // claiming "Save & Restart" and doing nothing.
+            var restart = MessageBox.Show(
+                "Settings saved. Restart now to apply the changes?",
+                "ShippingAPR", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
             DialogResult = true;
             Close();
+
+            if (restart == MessageBoxResult.Yes)
+            {
+                var exePath = Environment.ProcessPath;
+                if (!string.IsNullOrEmpty(exePath))
+                    Process.Start(exePath);
+                Application.Current.Shutdown();
+            }
         }
         else
         {
