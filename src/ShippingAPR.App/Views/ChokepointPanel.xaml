@@ -13,7 +13,7 @@
             <ItemsControl ItemsSource="{Binding Chokepoints}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Style="{DynamicResource CardStyle}" Margin="0,0,0,8">
+                        <Border Style="{DynamicResource InteractiveCardStyle}" Margin="0,0,0,8">
                             <StackPanel>
                                 <!-- Header row -->
                                 <Grid Margin="0,0,0,8">

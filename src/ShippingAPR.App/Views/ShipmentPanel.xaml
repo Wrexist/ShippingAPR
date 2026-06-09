@@ -129,7 +129,7 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Style="{DynamicResource CardStyle}" Padding="10,8" Margin="4,0">
+                    <Border Style="{DynamicResource InteractiveCardStyle}" Padding="10,8" Margin="4,0">
                         <StackPanel>
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
@@ -163,7 +163,11 @@
                                         <ColumnDefinition Width="{Binding PercentComplete, Converter={StaticResource PercentToStar}, ConverterParameter=remainder}"/>
                                     </Grid.ColumnDefinitions>
                                     <Border Grid.Column="0" CornerRadius="3"
-                                            Background="{DynamicResource AccentBrush}"/>
+                                            Background="{DynamicResource AccentBrush}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.5" Color="#6C63FF"/>
+                                        </Border.Effect>
+                                    </Border>
                                 </Grid>
                             </Grid>
 

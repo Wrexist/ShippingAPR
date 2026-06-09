@@ -44,7 +44,11 @@
                                 <ColumnDefinition Width="{Binding ProgressPercent, Converter={StaticResource PercentToStar}}"/>
                                 <ColumnDefinition Width="{Binding ProgressPercent, Converter={StaticResource PercentToStar}, ConverterParameter=remainder}"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" CornerRadius="3" Background="{DynamicResource AccentBrush}"/>
+                            <Border Grid.Column="0" CornerRadius="3" Background="{DynamicResource AccentBrush}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.5" Color="#6C63FF"/>
+                                </Border.Effect>
+                            </Border>
                         </Grid>
                     </Grid>
                     <TextBlock Text="{Binding ProgressPercent, StringFormat='{}{0:F0}% complete'}"
