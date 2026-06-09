@@ -331,4 +331,7 @@ public class Strings
     public static string AlertOnEntry => GetString("AlertOnEntry");
     public static string AlertOnExit => GetString("AlertOnExit");
     public static string AddFromView => GetString("AddFromView");
+
+    public static string ToggleListPanel => GetString("ToggleListPanel");
+    public static string ToggleToolsPanel => GetString("ToggleToolsPanel");
 }

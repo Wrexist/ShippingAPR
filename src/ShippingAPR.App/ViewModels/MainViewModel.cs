@@ -100,6 +100,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _rightPanelIndex; // 0=Detail, 1=Dashboard, 2=Achievements, 3=PortCam, 4=Alerts, 5=Chokepoints, 6=Journal, 7=Shipments, 8=News
 
+    // Foldable Liquid Glass side panels — collapse to give the map full width.
+    [ObservableProperty]
+    private bool _isLeftPanelExpanded = true;
+
+    [ObservableProperty]
+    private bool _isRightPanelExpanded = true;
+
     public MainViewModel(
         IVesselStore vesselStore,
         IVesselTrackingService trackingService,
@@ -249,6 +256,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (IsNotificationCenterOpen)
             NotificationCenterViewModel.MarkAllReadCommand.Execute(null);
     }
+
+    [RelayCommand]
+    private void ToggleLeftPanel() => IsLeftPanelExpanded = !IsLeftPanelExpanded;
+
+    [RelayCommand]
+    private void ToggleRightPanel() => IsRightPanelExpanded = !IsRightPanelExpanded;
 
     [RelayCommand]
     private void ToggleDashboard()
