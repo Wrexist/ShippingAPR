@@ -42,6 +42,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly TimeSpan _dataStaleThreshold;
     private volatile bool _isConnected;
     private DateTime? _lastDataUtc;
+    private DateTime? _connectedSinceUtc;
 
     [ObservableProperty]
     private string _connectionStatusText = Strings.Disconnected;
@@ -561,6 +562,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void OnConnectionStatusChanged(object? sender, ConnectionStatus status)
     {
         _isConnected = status == ConnectionStatus.Connected;
+        // Track when the current connected session began so the UI can escalate from
+        // "waiting" to an actionable hint if data never starts flowing.
+        if (_isConnected) _connectedSinceUtc ??= DateTime.UtcNow;
+        else _connectedSinceUtc = null;
 
         Application.Current?.Dispatcher.Invoke(() =>
         {
@@ -571,8 +576,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 ConnectionStatus.Connecting => Strings.Connecting,
                 ConnectionStatus.Reconnecting => Strings.Reconnecting,
                 ConnectionStatus.Disconnected => Strings.Disconnected,
-                ConnectionStatus.Error => Strings.Error,
-                ConnectionStatus.Failed => Strings.Error + " (reconnection failed)",
+                ConnectionStatus.Error => Strings.Error + " — check your AisStream API key",
+                ConnectionStatus.Failed => Strings.Error + " — can't reach AisStream (check key/network)",
                 _ => status.ToString()
             };
 
@@ -596,7 +601,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         DataFreshnessText = state switch
         {
             DataFreshnessState.Live => "● Live",
-            DataFreshnessState.Waiting => "Waiting for data…",
+            DataFreshnessState.Waiting => _connectedSinceUtc is { } since && DateTime.UtcNow - since > TimeSpan.FromSeconds(20)
+                ? "No AIS data yet — check your key in ⚙ Settings, or use Select Area over open water"
+                : "Waiting for data…",
             DataFreshnessState.Stale => $"⚠ No data {DataFreshness.DescribeAge(DateTime.UtcNow - _lastDataUtc!.Value)}",
             _ => string.Empty // Idle / not connected
         };
