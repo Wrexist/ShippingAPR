@@ -277,4 +277,23 @@
   <data name="CiiRating"><value>CII Rating</value></data>
   <data name="Fuel"><value>Fuel</value></data>
   <data name="VoyageStory"><value>Voyage Story</value></data>
+  <data name="SettingsSubtitle"><value>Configure AIS data providers and API keys</value></data>
+  <data name="DataProvider"><value>DATA PROVIDER</value></data>
+  <data name="DatalasticPoll"><value>Datalastic poll (sec):</value></data>
+  <data name="DataDockedPoll"><value>Data Docked poll (sec):</value></data>
+  <data name="ApiKeys"><value>API KEYS</value></data>
+  <data name="AisStreamKeyLabel"><value>AisStream (free WebSocket streaming)</value></data>
+  <data name="DatalasticKeyLabel"><value>Datalastic (REST API)</value></data>
+  <data name="DataDockedKeyLabel"><value>Data Docked (REST API + Satellite AIS)</value></data>
+  <data name="VesselFinderKeyLabel"><value>VesselFinder (vessel enrichment)</value></data>
+  <data name="Cancel"><value>Cancel</value></data>
+  <data name="AddFromCurrentView"><value>Add from Current View</value></data>
+  <data name="FlagCountryCode"><value>Flag (country code)</value></data>
+  <data name="FeatureLivePositions"><value>Live ship positions</value></data>
+  <data name="FeatureEta"><value>ETA calculations</value></data>
+  <data name="FeatureAreaMonitoring"><value>Area monitoring</value></data>
+  <data name="FeatureVesselSearch"><value>Vessel search</value></data>
+  <data name="ProviderLabel"><value>Provider:</value></data>
+  <data name="SkipForNow"><value>Skip for now</value></data>
+  <data name="ApiKeyLaterHint"><value>You can add your API key later in Settings.</value></data>
 </root>

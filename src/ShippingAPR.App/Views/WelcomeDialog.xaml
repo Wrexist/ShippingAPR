@@ -63,23 +63,19 @@
                 <WrapPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,20">
                     <Border Background="{DynamicResource GlassFillBrush}"
                             CornerRadius="8" Padding="10,5" Margin="3">
-                        <TextBlock Text="&#x1F6A2; Live ship positions"
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"/>
+                        <TextBlock Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"><Run Text="&#x1F6A2; "/><Run Text="{x:Static res:Strings.FeatureLivePositions}"/></TextBlock>
                     </Border>
                     <Border Background="{DynamicResource GlassFillBrush}"
                             CornerRadius="8" Padding="10,5" Margin="3">
-                        <TextBlock Text="&#x23F1; ETA calculations"
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"/>
+                        <TextBlock Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"><Run Text="&#x23F1; "/><Run Text="{x:Static res:Strings.FeatureEta}"/></TextBlock>
                     </Border>
                     <Border Background="{DynamicResource GlassFillBrush}"
                             CornerRadius="8" Padding="10,5" Margin="3">
-                        <TextBlock Text="&#x1F4CD; Area monitoring"
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"/>
+                        <TextBlock Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"><Run Text="&#x1F4CD; "/><Run Text="{x:Static res:Strings.FeatureAreaMonitoring}"/></TextBlock>
                     </Border>
                     <Border Background="{DynamicResource GlassFillBrush}"
                             CornerRadius="8" Padding="10,5" Margin="3">
-                        <TextBlock Text="&#x1F50D; Vessel search"
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"/>
+                        <TextBlock Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11.5"><Run Text="&#x1F50D; "/><Run Text="{x:Static res:Strings.FeatureVesselSearch}"/></TextBlock>
                     </Border>
                 </WrapPanel>
 
@@ -101,7 +97,7 @@
 
                     <!-- Provider selector -->
                     <StackPanel Orientation="Horizontal" Margin="36,0,0,10">
-                        <TextBlock Text="Provider:" FontSize="13"
+                        <TextBlock Text="{x:Static res:Strings.ProviderLabel}" FontSize="13"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <ComboBox x:Name="ProviderSelector" SelectedIndex="0" Width="180">
@@ -170,7 +166,7 @@
                             Margin="0,0,12,0"
                             Padding="18,10"
                             FontSize="13">
-                        <TextBlock Text="Skip for now"
+                        <TextBlock Text="{x:Static res:Strings.SkipForNow}"
                                    Foreground="{DynamicResource SecondaryTextBrush}"/>
                     </Button>
 
@@ -184,7 +180,7 @@
 
                 <!-- Helper text -->
                 <TextBlock Grid.Row="8"
-                           Text="You can add your API key later in Settings."
+                           Text="{x:Static res:Strings.ApiKeyLaterHint}"
                            FontSize="11.5"
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            Opacity="0.6"

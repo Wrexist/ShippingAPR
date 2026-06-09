@@ -296,4 +296,30 @@ public class Strings
     public static string CiiRating => GetString("CiiRating");
     public static string Fuel => GetString("Fuel");
     public static string VoyageStory => GetString("VoyageStory");
+
+    public static string SettingsSubtitle => GetString("SettingsSubtitle");
+    public static string DataProvider => GetString("DataProvider");
+    public static string ActiveProvider => GetString("ActiveProvider");
+    public static string FallbackProvider => GetString("FallbackProvider");
+    public static string DatalasticPoll => GetString("DatalasticPoll");
+    public static string DataDockedPoll => GetString("DataDockedPoll");
+    public static string ApiKeys => GetString("ApiKeys");
+    public static string AisStreamKeyLabel => GetString("AisStreamKeyLabel");
+    public static string DatalasticKeyLabel => GetString("DatalasticKeyLabel");
+    public static string DataDockedKeyLabel => GetString("DataDockedKeyLabel");
+    public static string VesselFinderKeyLabel => GetString("VesselFinderKeyLabel");
+    public static string Cancel => GetString("Cancel");
+    public static string SaveRestart => GetString("SaveRestart");
+    public static string GeofenceZones => GetString("GeofenceZones");
+    public static string ZoneName => GetString("ZoneName");
+    public static string AddFromCurrentView => GetString("AddFromCurrentView");
+    public static string AdvancedFilters => GetString("AdvancedFilters");
+    public static string FlagCountryCode => GetString("FlagCountryCode");
+    public static string FeatureLivePositions => GetString("FeatureLivePositions");
+    public static string FeatureEta => GetString("FeatureEta");
+    public static string FeatureAreaMonitoring => GetString("FeatureAreaMonitoring");
+    public static string FeatureVesselSearch => GetString("FeatureVesselSearch");
+    public static string ProviderLabel => GetString("ProviderLabel");
+    public static string SkipForNow => GetString("SkipForNow");
+    public static string ApiKeyLaterHint => GetString("ApiKeyLaterHint");
 }

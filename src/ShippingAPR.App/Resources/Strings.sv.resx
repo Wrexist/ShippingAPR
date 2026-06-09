@@ -277,4 +277,23 @@
   <data name="CiiRating"><value>CII-betyg</value></data>
   <data name="Fuel"><value>Bränsle</value></data>
   <data name="VoyageStory"><value>Reseberättelse</value></data>
+  <data name="SettingsSubtitle"><value>Konfigurera AIS-dataleverantörer och API-nycklar</value></data>
+  <data name="DataProvider"><value>DATALEVERANTÖR</value></data>
+  <data name="DatalasticPoll"><value>Datalastic-intervall (s):</value></data>
+  <data name="DataDockedPoll"><value>Data Docked-intervall (s):</value></data>
+  <data name="ApiKeys"><value>API-NYCKLAR</value></data>
+  <data name="AisStreamKeyLabel"><value>AisStream (gratis WebSocket-strömning)</value></data>
+  <data name="DatalasticKeyLabel"><value>Datalastic (REST-API)</value></data>
+  <data name="DataDockedKeyLabel"><value>Data Docked (REST-API + satellit-AIS)</value></data>
+  <data name="VesselFinderKeyLabel"><value>VesselFinder (fartygsberikning)</value></data>
+  <data name="Cancel"><value>Avbryt</value></data>
+  <data name="AddFromCurrentView"><value>Lägg till från aktuell vy</value></data>
+  <data name="FlagCountryCode"><value>Flagga (landskod)</value></data>
+  <data name="FeatureLivePositions"><value>Live fartygspositioner</value></data>
+  <data name="FeatureEta"><value>ETA-beräkningar</value></data>
+  <data name="FeatureAreaMonitoring"><value>Områdesövervakning</value></data>
+  <data name="FeatureVesselSearch"><value>Fartygssökning</value></data>
+  <data name="ProviderLabel"><value>Leverantör:</value></data>
+  <data name="SkipForNow"><value>Hoppa över tills vidare</value></data>
+  <data name="ApiKeyLaterHint"><value>Du kan lägga till din API-nyckel senare i Inställningar.</value></data>
 </root>
