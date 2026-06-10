@@ -18,10 +18,13 @@ public sealed class AlertTriggered
 
 public sealed class AlertEngine : IDisposable
 {
-    private static readonly string RulesPath = Path.Combine(
+    private static readonly string DefaultRulesPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "ShippingAPR",
         "alert-rules.json");
+
+    // Injectable so tests persist to a temp file instead of the user's real AppData.
+    private readonly string _rulesPath;
 
     private readonly IVesselStore _vesselStore;
     private readonly NotificationService _notificationService;
@@ -44,11 +47,13 @@ public sealed class AlertEngine : IDisposable
     public AlertEngine(
         IVesselStore vesselStore,
         NotificationService notificationService,
-        ILogger<AlertEngine> logger)
+        ILogger<AlertEngine> logger,
+        string? rulesPath = null)
     {
         _vesselStore = vesselStore;
         _notificationService = notificationService;
         _logger = logger;
+        _rulesPath = rulesPath ?? DefaultRulesPath;
 
         Load();
 
@@ -144,8 +149,8 @@ public sealed class AlertEngine : IDisposable
     {
         try
         {
-            if (!File.Exists(RulesPath)) return;
-            var json = File.ReadAllText(RulesPath);
+            if (!File.Exists(_rulesPath)) return;
+            var json = File.ReadAllText(_rulesPath);
             var rules = JsonSerializer.Deserialize<List<AlertRule>>(json);
             if (rules is null) return;
 
@@ -165,14 +170,14 @@ public sealed class AlertEngine : IDisposable
     {
         try
         {
-            var dir = Path.GetDirectoryName(RulesPath)!;
+            var dir = Path.GetDirectoryName(_rulesPath)!;
             Directory.CreateDirectory(dir);
 
             List<AlertRule> rules;
             lock (_rulesLock) { rules = _rules.ToList(); }
 
             var json = JsonSerializer.Serialize(rules, new JsonSerializerOptions { WriteIndented = true });
-            AtomicFile.WriteAllText(RulesPath, json);
+            AtomicFile.WriteAllText(_rulesPath, json);
         }
         catch (Exception ex)
         {

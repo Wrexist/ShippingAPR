@@ -13,14 +13,12 @@ public class AlertEngineTests : IDisposable
     private readonly VesselStore _store = new();
     private readonly NotificationService _notificationService;
     private readonly AlertEngine _sut;
+    // Isolated per-test rules file — never touch the user's real AppData.
+    private readonly string _rulesPath = Path.Combine(
+        Path.GetTempPath(), $"shippingapr-rules-{Guid.NewGuid():N}.json");
 
     public AlertEngineTests()
     {
-        var dataPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ShippingAPR", "alert-rules.json");
-        if (File.Exists(dataPath)) File.Delete(dataPath);
-
         var areaMonitor = new AreaMonitorService(_store, NullLogger<AreaMonitorService>.Instance);
         _notificationService = new NotificationService(
             areaMonitor,
@@ -29,7 +27,8 @@ public class AlertEngineTests : IDisposable
         _sut = new AlertEngine(
             _store,
             _notificationService,
-            NullLogger<AlertEngine>.Instance);
+            NullLogger<AlertEngine>.Instance,
+            _rulesPath);
     }
 
     [Fact]
@@ -163,5 +162,6 @@ public class AlertEngineTests : IDisposable
     public void Dispose()
     {
         _sut.Dispose();
+        File.Delete(_rulesPath);
     }
 }
