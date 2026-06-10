@@ -25,7 +25,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          # Build the ref that triggered the release (the tag), so released
+          # binaries always match the tagged commit. Manual dispatch builds the
+          # ref the workflow was dispatched from.
+          ref: ${{ github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET 8
