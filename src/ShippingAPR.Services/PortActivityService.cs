@@ -100,7 +100,20 @@ public sealed class PortActivityService : IDisposable
         {
             var distNm = HaversineCalculator.DistanceInNauticalMiles(
                 pos.Latitude, pos.Longitude, port.Latitude, port.Longitude);
-            if (distNm > PortRadiusNm * 3) continue; // Skip distant ports entirely
+            if (distNm > PortRadiusNm * 3)
+            {
+                // Far outside the port — but if we still had this vessel marked
+                // in-port (sparse updates can jump straight past the departure
+                // band), record the departure instead of leaving it stranded.
+                if (_vesselsInPort.TryGetValue(port.Name, out var staleSet))
+                {
+                    bool wasStranded;
+                    lock (staleSet) { wasStranded = staleSet.Remove(vessel.Mmsi); }
+                    if (wasStranded)
+                        RecordActivity(port.Name, vessel, PortActivityType.Departure, pos.SpeedOverGround);
+                }
+                continue;
+            }
 
             var vesselSet = _vesselsInPort.GetOrAdd(port.Name, _ => new HashSet<int>());
             bool arrived = false, departed = false;

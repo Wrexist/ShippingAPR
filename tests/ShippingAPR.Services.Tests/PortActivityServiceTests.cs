@@ -155,6 +155,21 @@ public class PortActivityServiceTests : IDisposable
     }
 
     [Fact]
+    public void VesselJumpingFarBeyondScanRadius_StillRecordsDeparture()
+    {
+        var records = new List<PortActivityRecord>();
+        _sut.ActivityRecorded += (_, r) => records.Add(r);
+
+        _store.AddOrUpdate(100000123, PositionAt(57.709, 11.975), null);            // arrival
+        // ~30 NM north in one update — skips the 3–9 NM departure band entirely.
+        _store.AddOrUpdate(100000123, PositionAt(57.7089 + 30.0 / 60.0, 11.9746), null);
+
+        records.Should().HaveCount(2);
+        records[1].ActivityType.Should().Be(PortActivityType.Departure);
+        _sut.GetCongestion("Gothenburg").VesselsInPort.Should().Be(0);
+    }
+
+    [Fact]
     public void VesselRemovedFromFeed_NoLongerCountsInPort()
     {
         _store.AddOrUpdate(100000123, PositionAt(57.709, 11.975), null);
