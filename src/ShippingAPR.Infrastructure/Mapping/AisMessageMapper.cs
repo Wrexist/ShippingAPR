@@ -95,9 +95,10 @@ public sealed class AisMessageMapper
         if (latitude is < -90 or > 90 || longitude is < -180 or > 180)
             return null;
 
-        // SOG 102.3 (raw 1023) and COG 360.0 (raw 3600) are "not available" codes.
-        var s = sog >= NavigationConstants.SpeedOverGroundNotAvailable ? 0 : sog;
-        var c = cog >= NavigationConstants.CourseOverGroundNotAvailable ? 0 : cog;
+        // SOG 102.3 (raw 1023) and COG 360.0 (raw 3600) are "not available" codes;
+        // negatives are malformed. Same rules as AisPositionNormalizer.
+        var s = sog is >= NavigationConstants.SpeedOverGroundNotAvailable or < 0 ? 0 : sog;
+        var c = cog is >= NavigationConstants.CourseOverGroundNotAvailable or < 0 ? 0 : cog;
 
         return new VesselPosition
         {

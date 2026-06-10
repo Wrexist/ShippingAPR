@@ -103,8 +103,11 @@ public abstract class PollingAisProviderBase : IAisDataProvider, IDisposable
             {
                 await Task.Delay(interval, ct);
 
-                BoundingBox area;
-                lock (_areaLock) { area = _currentArea!; }
+                BoundingBox? area;
+                lock (_areaLock) { area = _currentArea; }
+                // No area yet (subscription update raced ahead of connect) —
+                // skip this tick rather than dereferencing null.
+                if (area is null) continue;
 
                 await FetchAndEmitAsync(area, ct);
                 consecutiveErrors = 0;

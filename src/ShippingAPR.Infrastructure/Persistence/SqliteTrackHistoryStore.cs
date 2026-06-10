@@ -151,7 +151,11 @@ public sealed class SqliteTrackHistoryStore : ITrackHistoryStore, IDisposable
     }
 
     private static long ToUnixMs(DateTime dt) =>
-        new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+        // Convert Local kinds instead of silently relabeling them as UTC;
+        // Unspecified is assumed UTC (the convention throughout this codebase).
+        new DateTimeOffset(dt.Kind == DateTimeKind.Local
+            ? dt.ToUniversalTime()
+            : DateTime.SpecifyKind(dt, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
 
     private static DateTime FromUnixMs(long ms) =>
         DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;

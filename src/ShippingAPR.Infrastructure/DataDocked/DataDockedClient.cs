@@ -98,7 +98,7 @@ public sealed class DataDockedClient : PollingAisProviderBase
                         {
                             Name = name,
                             CallSign = vessel.TryGetProperty("callsign", out var csProp) ? csProp.GetString() : null,
-                            ImoNumber = vessel.TryGetProperty("imo", out var imoProp) && imoProp.ValueKind == JsonValueKind.Number ? imoProp.GetInt32() : 0,
+                            ImoNumber = ReadImo(vessel),
                             Destination = vessel.TryGetProperty("destination", out var destProp) ? destProp.GetString() : null
                         }
                     });
@@ -109,5 +109,17 @@ public sealed class DataDockedClient : PollingAisProviderBase
                 _logger.LogDebug(ex, "Failed to parse DataDocked vessel entry");
             }
         }
+    }
+
+    /// <summary>Reads the IMO field tolerantly — APIs send it as a number or a numeric string.</summary>
+    private static int ReadImo(JsonElement vessel)
+    {
+        if (!vessel.TryGetProperty("imo", out var imo)) return 0;
+        return imo.ValueKind switch
+        {
+            JsonValueKind.Number => imo.TryGetInt32(out var n) ? n : 0,
+            JsonValueKind.String => int.TryParse(imo.GetString(), out var p) ? p : 0,
+            _ => 0
+        };
     }
 }

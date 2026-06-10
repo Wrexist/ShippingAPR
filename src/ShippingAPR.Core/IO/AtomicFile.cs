@@ -19,8 +19,18 @@ public static class AtomicFile
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
 
-        var temp = path + ".tmp";
-        File.WriteAllText(temp, contents);
-        File.Move(temp, path, overwrite: true);
+        // Unique temp name so two concurrent writers to the same path can't
+        // stomp each other's temp file or double-move it.
+        var temp = $"{path}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllText(temp, contents);
+            File.Move(temp, path, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(temp); } catch { /* best effort */ }
+            throw;
+        }
     }
 }
