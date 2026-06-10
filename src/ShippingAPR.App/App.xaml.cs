@@ -276,13 +276,18 @@ public partial class App : Application
             if (welcomeDialog.ShowDialog() == true && !string.IsNullOrEmpty(welcomeDialog.ApiKey))
             {
                 // Save the key to the section for the provider the user actually chose.
-                if (!MainViewModel.SaveProviderApiKey(welcomeDialog.SelectedProvider, welcomeDialog.ApiKey))
+                if (MainViewModel.SaveProviderApiKey(welcomeDialog.SelectedProvider, welcomeDialog.ApiKey))
                 {
+                    mainViewModel.HasApiKey = true;
+                }
+                else
+                {
+                    // Don't claim a key exists when nothing was persisted — tracking
+                    // would be enabled and then fail with an empty key.
                     MessageBox.Show(
                         "Failed to save the API key.\nYou can add it manually in Settings.",
                         "ShippingAPR", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
-                mainViewModel.HasApiKey = true;
             }
         }
 

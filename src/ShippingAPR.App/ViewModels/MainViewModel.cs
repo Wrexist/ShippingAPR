@@ -368,7 +368,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
         var dialog = new WelcomeDialog();
         if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.ApiKey))
         {
-            SaveApiKey(dialog.ApiKey);
+            // Honour the provider chosen in the dialog — saving under "AisStream"
+            // unconditionally would activate AisStream with an empty key.
+            if (!SaveProviderApiKey(dialog.SelectedProvider, dialog.ApiKey))
+            {
+                MessageBox.Show(
+                    "Could not save the API key to local settings. Check disk permissions and try again.",
+                    "ShippingAPR", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             HasApiKey = true;
             OnPropertyChanged(nameof(StartTrackingTooltip));
 
@@ -385,9 +393,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(StartTrackingTooltip));
     }
-
-    internal static bool SaveApiKey(string apiKey) =>
-        SaveProviderApiKey("AisStream", apiKey);
 
     /// <summary>
     /// Saves an API key to the section for the chosen provider and makes that provider
