@@ -74,6 +74,7 @@ public sealed class AchievementService : IDisposable
 
     private void OnVesselUpdate(object? sender, Vessel vessel)
     {
+        bool unlocked;
         lock (_lock)
         {
             var isNew = _uniqueMmsis.Add(vessel.Mmsi);
@@ -102,12 +103,19 @@ public sealed class AchievementService : IDisposable
             if (_rareTypes.Contains(vessel.Type) && isNew)
                 _rareSpotCount++;
 
-            CheckAchievements();
+            unlocked = CheckAchievements();
         }
+
+        // Persist only when something actually unlocked, and outside the lock so
+        // the disk write never stalls the AIS update hot path. Progress counts
+        // are recomputed from the saved sets on load, so not writing every tick
+        // is safe; a graceful shutdown still saves via Dispose.
+        if (unlocked) Save();
     }
 
-    private void CheckAchievements()
+    private bool CheckAchievements()
     {
+        var anyUnlocked = false;
         foreach (var def in _definitions)
         {
             var progress = _progress.GetOrAdd(def.Id, _ => new AchievementProgress
@@ -134,10 +142,11 @@ public sealed class AchievementService : IDisposable
 
                 WeakReferenceMessenger.Default.Send(new AchievementUnlocked(def));
                 _logger.LogInformation("Achievement unlocked: {Name}", def.Name);
+                anyUnlocked = true;
             }
         }
 
-        Save();
+        return anyUnlocked;
     }
 
     private int GetCurrentValue(AchievementDefinition def) => def.Category switch
@@ -219,12 +228,12 @@ public sealed class AchievementService : IDisposable
 
     private void Save()
     {
-        try
+        // Snapshot the mutable state under the lock, then serialise + write the
+        // file outside it (callers invoke Save() without holding _lock).
+        AchievementSaveData data;
+        lock (_lock)
         {
-            var dir = Path.GetDirectoryName(DataPath)!;
-            Directory.CreateDirectory(dir);
-
-            var data = new AchievementSaveData
+            data = new AchievementSaveData
             {
                 UniqueMmsis = [.. _uniqueMmsis],
                 TypesDiscovered = [.. _typesDiscovered],
@@ -234,7 +243,12 @@ public sealed class AchievementService : IDisposable
                 RareSpotCount = _rareSpotCount,
                 Achievements = [.. _progress.Values]
             };
+        }
 
+        try
+        {
+            var dir = Path.GetDirectoryName(DataPath)!;
+            Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
             AtomicFile.WriteAllText(DataPath, json);
         }

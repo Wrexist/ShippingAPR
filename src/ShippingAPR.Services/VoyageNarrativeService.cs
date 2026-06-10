@@ -43,6 +43,15 @@ public sealed class VoyageNarrativeService : IDisposable
 
     private void OnVesselAdded(object? sender, Vessel vessel)
     {
+        // Seed the speed/status baselines BEFORE publishing the first-seen event,
+        // so a near-simultaneous OnVesselUpdated can't read default(0) baselines
+        // and log a spurious speed/status-change event for a brand-new vessel.
+        if (vessel.CurrentPosition is { } pos)
+        {
+            _lastSpeed[vessel.Mmsi] = pos.SpeedOverGround;
+            _lastStatus[vessel.Mmsi] = pos.Status;
+        }
+
         var events = _vesselEvents.GetOrAdd(vessel.Mmsi, _ => new List<VoyageEvent>());
         lock (events)
         {
@@ -55,13 +64,6 @@ public sealed class VoyageNarrativeService : IDisposable
                 Longitude = vessel.CurrentPosition?.Longitude,
                 SpeedKnots = vessel.CurrentPosition?.SpeedOverGround
             });
-        }
-
-        // Initialize baseline speed/status so subsequent updates can detect changes
-        if (vessel.CurrentPosition is { } pos)
-        {
-            _lastSpeed[vessel.Mmsi] = pos.SpeedOverGround;
-            _lastStatus[vessel.Mmsi] = pos.Status;
         }
     }
 
