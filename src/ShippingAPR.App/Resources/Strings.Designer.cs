@@ -341,4 +341,24 @@ public class Strings
     public static string NoEncountersYet => GetString("NoEncountersYet");
 
     public static string SortVessels => GetString("SortVessels");
+
+    public static string TabVesselDetails => GetString("TabVesselDetails");
+    public static string TabDashboard => GetString("TabDashboard");
+    public static string TabShipSpotter => GetString("TabShipSpotter");
+    public static string TabPortActivity => GetString("TabPortActivity");
+    public static string TabSmartAlerts => GetString("TabSmartAlerts");
+    public static string TabChokepoints => GetString("TabChokepoints");
+    public static string TabJournal => GetString("TabJournal");
+    public static string TabShipments => GetString("TabShipments");
+    public static string TabMaritimeNews => GetString("TabMaritimeNews");
+    public static string TabGeofences => GetString("TabGeofences");
+    public static string ConnectionStatusTooltip => GetString("ConnectionStatusTooltip");
+    public static string DataFreshnessTooltip => GetString("DataFreshnessTooltip");
+    public static string MapWeatherOverlay => GetString("MapWeatherOverlay");
+    public static string MapTrafficHeatmap => GetString("MapTrafficHeatmap");
+    public static string MapMeasureDistance => GetString("MapMeasureDistance");
+    public static string MapOpenStreetMap => GetString("MapOpenStreetMap");
+    public static string MapSatelliteView => GetString("MapSatelliteView");
+    public static string MapNauticalChart => GetString("MapNauticalChart");
+    public static string MapBathymetry => GetString("MapBathymetry");
 }

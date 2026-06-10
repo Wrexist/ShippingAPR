@@ -104,20 +104,20 @@
                 </Border.Effect>
                 <StackPanel>
                     <!-- Weather overlay toggle -->
-                    <Button Content="&#x26C5;" ToolTip="Weather Overlay"
+                    <Button Content="&#x26C5;" ToolTip="{x:Static res:Strings.MapWeatherOverlay}"
                             Command="{Binding ToggleWeatherOverlayCommand}"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"
                             Opacity="{Binding ShowWeatherOverlay, Converter={StaticResource BoolToOpacity}}"/>
                     <!-- Heatmap toggle -->
-                    <Button Content="&#x1F525;" ToolTip="Traffic Heatmap"
+                    <Button Content="&#x1F525;" ToolTip="{x:Static res:Strings.MapTrafficHeatmap}"
                             Command="{Binding ToggleHeatmapCommand}"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"/>
                     <!-- Distance measurement -->
-                    <Button Content="&#x1F4CF;" ToolTip="Measure Distance"
+                    <Button Content="&#x1F4CF;" ToolTip="{x:Static res:Strings.MapMeasureDistance}"
                             Command="{Binding ToggleMeasurementCommand}"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
@@ -126,22 +126,22 @@
                             Background="{DynamicResource GlassBorderBrush}"
                             Margin="6,2"/>
                     <!-- Map layer selector -->
-                    <Button Content="&#x1F5FA;" ToolTip="OpenStreetMap"
+                    <Button Content="&#x1F5FA;" ToolTip="{x:Static res:Strings.MapOpenStreetMap}"
                             Command="{Binding SwitchMapLayerCommand}" CommandParameter="OpenStreetMap"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"/>
-                    <Button Content="&#x1F6F0;" ToolTip="Satellite View"
+                    <Button Content="&#x1F6F0;" ToolTip="{x:Static res:Strings.MapSatelliteView}"
                             Command="{Binding SwitchMapLayerCommand}" CommandParameter="Satellite"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"/>
-                    <Button Content="&#x2693;" ToolTip="Nautical Chart (OpenSeaMap overlay)"
+                    <Button Content="&#x2693;" ToolTip="{x:Static res:Strings.MapNauticalChart}"
                             Command="{Binding SwitchMapLayerCommand}" CommandParameter="SeaMap"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"
                             Padding="0" HorizontalContentAlignment="Center"/>
-                    <Button Content="&#x1F30A;" ToolTip="Depth / Bathymetry"
+                    <Button Content="&#x1F30A;" ToolTip="{x:Static res:Strings.MapBathymetry}"
                             Command="{Binding SwitchMapLayerCommand}" CommandParameter="Depth"
                             Style="{DynamicResource GhostButtonStyle}"
                             FontSize="14" Width="36" Height="36"

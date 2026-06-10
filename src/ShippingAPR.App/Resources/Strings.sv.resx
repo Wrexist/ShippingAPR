@@ -302,4 +302,23 @@
   <data name="NoShipmentsYet"><value>Inga sändningar än — lägg till en ovan</value></data>
   <data name="NoEncountersYet"><value>Inga fartyg loggade än</value></data>
   <data name="SortVessels"><value>Sortera fartyg</value></data>
+  <data name="TabVesselDetails"><value>Fartygsdetaljer — Visa valt fartyg (1)</value></data>
+  <data name="TabDashboard"><value>Översikt — Live flottstatistik (2)</value></data>
+  <data name="TabShipSpotter"><value>Fartygsskådare — Utmärkelser och sällsynta typer (3)</value></data>
+  <data name="TabPortActivity"><value>Hamnaktivitet — Ankomster och avgångar (4)</value></data>
+  <data name="TabSmartAlerts"><value>Smarta larm — Anpassade aviseringar (5)</value></data>
+  <data name="TabChokepoints"><value>Flaskhalsar — Globala flaskhalsar i sjöfarten</value></data>
+  <data name="TabJournal"><value>Journal — Din loggbok</value></data>
+  <data name="TabShipments"><value>Sändningar — Spåra godsrörelser</value></data>
+  <data name="TabMaritimeNews"><value>Sjöfartsnyheter — Incidenter och säkerhetsrapporter</value></data>
+  <data name="TabGeofences"><value>Geofences — Övervaka geografiska zoner</value></data>
+  <data name="ConnectionStatusTooltip"><value>Anslutningsstatus — visar om AIS-strömmen är aktiv</value></data>
+  <data name="DataFreshnessTooltip"><value>AIS-dataaktualitet — varnar om strömmen stannar medan ansluten</value></data>
+  <data name="MapWeatherOverlay"><value>Väderlager</value></data>
+  <data name="MapTrafficHeatmap"><value>Trafikvärmekarta</value></data>
+  <data name="MapMeasureDistance"><value>Mät avstånd</value></data>
+  <data name="MapOpenStreetMap"><value>OpenStreetMap</value></data>
+  <data name="MapSatelliteView"><value>Satellitvy</value></data>
+  <data name="MapNauticalChart"><value>Sjökort (OpenSeaMap-lager)</value></data>
+  <data name="MapBathymetry"><value>Djup / Batymetri</value></data>
 </root>
