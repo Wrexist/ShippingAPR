@@ -6,10 +6,11 @@ using ShippingAPR.Services;
 
 namespace ShippingAPR.App.ViewModels;
 
-public partial class GeofenceViewModel : ObservableObject
+public partial class GeofenceViewModel : ObservableObject, IDisposable
 {
     private readonly AreaMonitorService _areaMonitorService;
     private readonly MapViewModel _mapViewModel;
+    private readonly EventHandler _onGeofencesChanged;
 
     [ObservableProperty] private string _newZoneName = string.Empty;
     [ObservableProperty] private bool _alertOnEntry = true;
@@ -24,7 +25,8 @@ public partial class GeofenceViewModel : ObservableObject
         _areaMonitorService = areaMonitorService;
         _mapViewModel = mapViewModel;
 
-        _areaMonitorService.GeofencesChanged += (_, _) => RefreshZones();
+        _onGeofencesChanged = (_, _) => RefreshZones();
+        _areaMonitorService.GeofencesChanged += _onGeofencesChanged;
         RefreshZones();
     }
 
@@ -65,4 +67,6 @@ public partial class GeofenceViewModel : ObservableObject
         foreach (var zone in _areaMonitorService.Geofences)
             Zones.Add(zone);
     }
+
+    public void Dispose() => _areaMonitorService.GeofencesChanged -= _onGeofencesChanged;
 }

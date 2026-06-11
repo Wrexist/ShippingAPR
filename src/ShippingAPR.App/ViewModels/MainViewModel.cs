@@ -638,5 +638,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         PortDashboardViewModel.Dispose();
         AlertRuleViewModel.Dispose();
         NotificationCenterViewModel.Dispose();
+        GeofenceViewModel.Dispose();
     }
 }

@@ -40,9 +40,13 @@ public static class LocalSettingsStore
                 new JsonSerializerOptions { WriteIndented = true }));
             return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort: a save failure is non-fatal (the user can edit the file directly).
+            // Best-effort: a save failure is non-fatal (the user can edit the file directly,
+            // and callers surface it in the UI). Trace it so a failing API-key save is
+            // diagnosable from logs rather than vanishing.
+            System.Diagnostics.Trace.TraceWarning(
+                "LocalSettingsStore.Update failed for '{0}': {1}", FilePath, ex);
             return false;
         }
     }
